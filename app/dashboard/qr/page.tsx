@@ -1,0 +1,204 @@
+import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { QrCode as QrCodeIcon, Plus, Search, Tag as TagIcon, Download } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+
+export default async function QrListPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; tag?: string; folder?: string };
+}) {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const memberships = await prisma.organizationMember.findMany({
+    where: { userId: user.id },
+    select: { orgId: true },
+  });
+  const orgIds = memberships.map((m) => m.orgId);
+
+  const workspaces = await prisma.workspace.findMany({
+    where: { orgId: { in: orgIds } },
+    select: { id: true },
+  });
+  const wsIds = workspaces.map((w) => w.id);
+
+  const where: any = { workspaceId: { in: wsIds } };
+  if (searchParams.q) {
+    where.name = { contains: searchParams.q, mode: 'insensitive' };
+  }
+  if (searchParams.folder) {
+    where.folderId = searchParams.folder;
+  }
+  if (searchParams.tag) {
+    where.tags = { some: { id: searchParams.tag } };
+  }
+
+  const [qrCodes, folders, tags] = await Promise.all([
+    prisma.qrCode.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        isDynamic: true,
+        shortCode: true,
+        status: true,
+        scanCount: true,
+        createdAt: true,
+        tags: { select: { id: true, name: true, color: true } },
+        folder: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    wsIds.length > 0
+      ? prisma.folder.findMany({ where: { workspaceId: { in: wsIds } }, select: { id: true, name: true } })
+      : [],
+    wsIds.length > 0
+      ? prisma.tag.findMany({ where: { workspaceId: { in: wsIds } }, select: { id: true, name: true, color: true } })
+      : [],
+  ]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">QR Codes</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage all your QR codes in one place
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/dashboard/qr/export">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/dashboard/qr/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Create QR Code
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <form className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            name="q"
+            placeholder="Search QR codes…"
+            defaultValue={searchParams.q}
+            className="pl-9"
+          />
+        </form>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <TagIcon className="h-4 w-4 text-muted-foreground" />
+            <Link href="/dashboard/qr">
+              <Badge variant={!searchParams.tag ? 'default' : 'secondary'} className="cursor-pointer">
+                All
+              </Badge>
+            </Link>
+            {tags.map((tag) => (
+              <Link key={tag.id} href={`/dashboard/qr?tag=${tag.id}${searchParams.q ? `&q=${searchParams.q}` : ''}`}>
+                <Badge variant={searchParams.tag === tag.id ? 'default' : 'secondary'} className="cursor-pointer">
+                  <span
+                    className="mr-1.5 inline-block h-2 w-2 rounded-full"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  {tag.name}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {qrCodes.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <QrCodeIcon className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-sm font-medium">No QR codes found</h3>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">
+              {searchParams.q || searchParams.tag
+                ? 'Try adjusting your filters.'
+                : 'Create your first QR code to get started.'}
+            </p>
+            <Button asChild>
+              <Link href="/dashboard/qr/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Create QR Code
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {qrCodes.map((qr) => (
+            <Link key={qr.id} href={`/dashboard/qr/${qr.id}`}>
+              <Card className="h-full transition-all hover:shadow-md hover:border-primary/30">
+                <CardContent className="flex items-start gap-3 p-4">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <QrCodeIcon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="truncate text-sm font-semibold">{qr.name}</h3>
+                      <Badge
+                        variant={qr.status === 'active' ? 'default' : 'secondary'}
+                        className="flex-shrink-0"
+                      >
+                        {qr.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="capitalize">{qr.type}</span>
+                      <span>·</span>
+                      <span>{qr.isDynamic ? 'Dynamic' : 'Static'}</span>
+                      <span>·</span>
+                      <span>{qr.scanCount} scans</span>
+                    </div>
+                    {qr.folder && (
+                      <p className="mt-1 text-xs text-muted-foreground">📁 {qr.folder.name}</p>
+                    )}
+                    {qr.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {qr.tags.map((tag) => (
+                          <span
+                            key={tag.id}
+                            className="rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {qr.shortCode && (
+                      <p className="mt-2 truncate text-xs text-muted-foreground">
+                        /q/{qr.shortCode}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

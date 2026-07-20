@@ -1,0 +1,169 @@
+// Prisma schema for QRNote platform
+// Connects to the Supabase PostgreSQL database via a dedicated
+// `prisma` role (BYPASSRLS) so server-side queries are not filtered
+// by auth.uid(). The auth schema is referenced for the FK to
+// auth.users but that table is managed by Supabase, not by Prisma.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public"]
+}
+
+model Profile {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  fullName  String?  @map("full_name")
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@map("profiles")
+  @@schema("public")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  logoUrl   String?  @map("logo_url")
+  ownerId   String   @map("owner_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  members    OrganizationMember[]
+  workspaces Workspace[]
+
+  @@map("organizations")
+  @@schema("public")
+}
+
+model OrganizationMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      Role     @default(editor)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@map("organization_members")
+  @@schema("public")
+}
+
+enum Role {
+  owner
+  admin
+  editor
+  viewer
+
+  @@schema("public")
+}
+
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  folders Folder[]
+  qrCodes QrCode[]
+
+  @@map("workspaces")
+  @@schema("public")
+}
+
+model Folder {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  parentId    String?  @map("parent_id") @db.Uuid
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent    Folder?   @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]  @relation("FolderChildren")
+  qrCodes   QrCode[]
+
+  @@map("folders")
+  @@schema("public")
+}
+
+enum QrStatus {
+  active
+  paused
+  archived
+
+  @@schema("public")
+}
+
+model QrCode {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.Uuid
+  folderId       String?  @map("folder_id") @db.Uuid
+  createdBy      String   @map("created_by") @db.Uuid
+  name           String
+  type           String
+  isDynamic      Boolean  @default(false) @map("is_dynamic")
+  shortCode      String?  @unique @map("short_code")
+  destinationUrl String?  @map("destination_url")
+  payload        Json     @default("{}")
+  style          Json     @default("{}")
+  status         QrStatus @default(active)
+  scanCount      Int      @default(0) @map("scan_count")
+  tags           Tag[]    @relation("QrCodeTags")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folder    Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  scans     ScanEvent[]
+
+  @@map("qr_codes")
+  @@schema("public")
+}
+
+model Tag {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String
+  color       String   @default("#6b7280")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  qrCodes QrCode[] @relation("QrCodeTags")
+
+  @@unique([workspaceId, name])
+  @@map("tags")
+  @@schema("public")
+}
+
+model ScanEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  qrId        String   @map("qr_id") @db.Uuid
+  scannedAt   DateTime @default(now()) @map("scanned_at") @db.Timestamptz
+  ipHash      String?  @map("ip_hash")
+  country     String?
+  region      String?
+  city        String?
+  browser     String?
+  os          String?
+  device      String?
+  language    String?
+  referrer    String?
+  userAgent   String?  @map("user_agent")
+  utmSource   String?  @map("utm_source")
+  utmMedium   String?  @map("utm_medium")
+  utmCampaign String?  @map("utm_campaign")
+
+  qr QrCode @relation(fields: [qrId], references: [id], onDelete: Cascade)
+
+  @@map("scan_events")
+  @@schema("public")
+}

@@ -1,0 +1,278 @@
+import Link from 'next/link';
+import { getAnalyticsOverview, getDailyScans, getTopQrCodes, getGeoInsights, getUtmInsights, getRecentScans, DateRange } from '@/lib/qr/analytics-actions';
+import { DailyScansChart } from '@/components/analytics/daily-scans-chart';
+import { BreakdownChart } from '@/components/analytics/breakdown-chart';
+import { DonutChart } from '@/components/analytics/donut-chart';
+import { DateRangeFilter } from '@/components/analytics/date-range-filter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Download, TrendingUp, QrCode, MousePointerClick, Globe, Monitor } from 'lucide-react';
+
+const VALID_RANGES = ['7d', '30d', '90d', 'all'] as const;
+
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: { range?: string };
+}) {
+  const range = (VALID_RANGES.includes(searchParams.range as any)
+    ? searchParams.range
+    : '30d') as DateRange;
+
+  const [overview, dailyScans, topQrs, geo, utm, recentScans] = await Promise.all([
+    getAnalyticsOverview(range),
+    getDailyScans(range),
+    getTopQrCodes(range),
+    getGeoInsights(range),
+    getUtmInsights(range),
+    getRecentScans(range),
+  ]);
+
+  if (!overview) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+        <Card>
+          <CardContent className="py-16 text-center text-sm text-muted-foreground">
+            No data available. Create QR codes and start scanning to see analytics.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const stats = [
+    { label: 'Total Scans', value: overview.totalScans, icon: MousePointerClick, hint: `Last ${range}` },
+    { label: 'QR Codes', value: overview.qrCount, icon: QrCode, hint: `${overview.activeQrCount} active` },
+    { label: 'Top Device', value: overview.topDevice, icon: Monitor, hint: 'Most used' },
+    { label: 'Top Country', value: geo.countries[0]?.name || '—', icon: Globe, hint: 'By scans' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted-foreground">
+            Track scans across all your QR codes
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <DateRangeFilter current={range} />
+          <Button variant="outline" asChild>
+            <Link href={`/dashboard/analytics/export?range=${range}`}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.label}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.label}
+              </CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.hint}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Daily scans chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Daily Scans
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dailyScans.length > 0 ? (
+            <DailyScansChart data={dailyScans} />
+          ) : (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No scan data for this period
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Breakdowns row */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Devices</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DonutChart data={overview.deviceBreakdown} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Browsers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownChart data={overview.browserBreakdown} title="Browsers" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Operating Systems</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownChart data={overview.osBreakdown} title="OS" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top QR codes + Geo */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Top QR Codes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topQrs.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No scans yet</p>
+            ) : (
+              <div className="space-y-2">
+                {topQrs.map((qr: any, i) => (
+                  <Link
+                    key={qr.id}
+                    href={`/dashboard/qr/${qr.id}`}
+                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors"
+                  >
+                    <span className="text-sm">
+                      <span className="mr-2 text-muted-foreground">#{i + 1}</span>
+                      {qr.name}
+                      <span className="ml-2 text-xs text-muted-foreground capitalize">{qr.type}</span>
+                    </span>
+                    <span className="text-sm font-medium">{qr.scans}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Top Countries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {geo.countries.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No geo data yet</p>
+            ) : (
+              <BreakdownChart data={geo.countries} title="Country" />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Geo details */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Top Cities</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {geo.cities.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No city data yet</p>
+            ) : (
+              <BreakdownChart data={geo.cities} title="City" />
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Top Regions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {geo.regions.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No region data yet</p>
+            ) : (
+              <BreakdownChart data={geo.regions} title="Region" />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* UTM Attribution */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">UTM Sources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownChart data={utm.sources} title="Source" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">UTM Mediums</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownChart data={utm.mediums} title="Medium" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">UTM Campaigns</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownChart data={utm.campaigns} title="Campaign" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent scans table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Recent Scans</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentScans.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">No scans yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="pb-2 pr-4 font-medium">QR Code</th>
+                    <th className="pb-2 pr-4 font-medium">Device</th>
+                    <th className="pb-2 pr-4 font-medium">Browser</th>
+                    <th className="pb-2 pr-4 font-medium">Location</th>
+                    <th className="pb-2 pr-4 font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentScans.map((scan) => (
+                    <tr key={scan.id} className="border-b last:border-0">
+                      <td className="py-2 pr-4 font-medium">{scan.qr.name}</td>
+                      <td className="py-2 pr-4 text-muted-foreground">{scan.device || '—'}</td>
+                      <td className="py-2 pr-4 text-muted-foreground">{scan.browser || '—'}</td>
+                      <td className="py-2 pr-4 text-muted-foreground">
+                        {[scan.city, scan.country].filter(Boolean).join(', ') || '—'}
+                      </td>
+                      <td className="py-2 pr-4 text-muted-foreground">
+                        {new Date(scan.scannedAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
