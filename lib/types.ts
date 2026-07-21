@@ -4,6 +4,8 @@ export type QRType =
   | 'email'
   | 'phone'
   | 'sms'
+  | 'whatsapp'
+  | 'telegram'
   | 'wifi'
   | 'vcard'
   | 'pdf'
@@ -12,13 +14,33 @@ export type QRType =
   | 'review'
   | 'event'
   | 'menu'
-  | 'video';
+  | 'video'
+  | 'app'
+  | 'geo'
+  | 'crypto'
+  | 'paypal';
 
 export type QRStatus = 'active' | 'paused' | 'archived';
+
+export type DotType =
+  | 'square'
+  | 'rounded'
+  | 'dots'
+  | 'classy'
+  | 'classy-rounded'
+  | 'extra-rounded';
+
+export type CornerSquareType = 'square' | 'dot' | 'extra-rounded';
+export type CornerDotType = 'square' | 'dot';
+
+export type GradientType = 'solid' | 'vertical' | 'horizontal' | 'diagonal' | 'radial';
 
 export interface QRStyle {
   fgColor?: string;
   bgColor?: string;
+  gradientType?: GradientType;
+  gradientColor1?: string;
+  gradientColor2?: string;
   logoUrl?: string;
   size?: number;
   margin?: number;
@@ -26,6 +48,10 @@ export interface QRStyle {
   frame?: 'none' | 'rounded' | 'border' | 'caption';
   frameColor?: string;
   caption?: string;
+  dotsType?: DotType;
+  cornerSquareType?: CornerSquareType;
+  cornerDotType?: CornerDotType;
+  templateId?: string;
 }
 
 export interface QRCode {

@@ -22,6 +22,7 @@ export function buildQRValue(
     case 'review':
     case 'menu':
     case 'video':
+    case 'app':
       return payload.url || '';
 
     case 'text':
@@ -40,6 +41,41 @@ export function buildQRValue(
 
     case 'sms': {
       return `smsto:${payload.phone || ''}:${payload.message || ''}`;
+    }
+
+    case 'whatsapp': {
+      const phone = (payload.phone || '').replace(/[^\d+]/g, '');
+      const msg = payload.message ? `?text=${encodeURIComponent(payload.message)}` : '';
+      return `https://wa.me/${phone.replace(/^\+/, '')}${msg}`;
+    }
+
+    case 'telegram': {
+      const username = (payload.username || '').replace(/^@/, '');
+      return `https://t.me/${username}`;
+    }
+
+    case 'geo': {
+      return `geo:${payload.lat || 0},${payload.lng || 0}`;
+    }
+
+    case 'crypto': {
+      const coin = payload.coin || 'bitcoin';
+      const address = payload.address || '';
+      const params = new URLSearchParams();
+      if (payload.amount) params.set('amount', payload.amount);
+      if (payload.label) params.set('label', payload.label);
+      const query = params.toString() ? `?${params.toString()}` : '';
+      return `${coin}:${address}${query}`;
+    }
+
+    case 'paypal': {
+      const email = payload.email || '';
+      const params = new URLSearchParams();
+      params.set('cmd', '_xclick');
+      params.set('business', email);
+      if (payload.amount) params.set('amount', payload.amount);
+      if (payload.currency) params.set('currency_code', payload.currency);
+      return `https://www.paypal.com/cgi-bin/webscr?${params.toString()}`;
     }
 
     case 'wifi': {
@@ -87,7 +123,6 @@ export function buildQRValue(
       return '';
   }
 }
-
 /**
  * For dynamic QRs, resolves the actual destination a scan should
  * redirect to. For static QRs, returns null (the QR value itself
@@ -102,7 +137,18 @@ export function resolveDestination(type: QRType, payload: Record<string, any>): 
     case 'review':
     case 'menu':
     case 'video':
+    case 'app':
       return payload.url || null;
+    case 'whatsapp':
+      return buildQRValue('whatsapp', payload);
+    case 'telegram':
+      return buildQRValue('telegram', payload);
+    case 'geo':
+      return buildQRValue('geo', payload);
+    case 'crypto':
+      return buildQRValue('crypto', payload);
+    case 'paypal':
+      return buildQRValue('paypal', payload);
     default:
       return null;
   }

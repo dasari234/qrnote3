@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { createTag, deleteTag } from '@/lib/qr/folder-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trash2, Plus } from 'lucide-react';
+import { createTag, deleteTag } from '@/lib/qr/folder-actions';
+import { Plus, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
 const TAG_COLORS = [
   '#6b7280',

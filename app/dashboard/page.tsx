@@ -1,16 +1,16 @@
-import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
-  QrCode,
-  MousePointerClick,
-  Folder,
-  TrendingUp,
-  Plus,
   ArrowRight,
+  Folder,
+  MousePointerClick,
+  Plus,
+  QrCode,
+  TrendingUp,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient();

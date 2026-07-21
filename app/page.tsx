@@ -1,17 +1,17 @@
-import Link from 'next/link';
-import {
-  QrCode,
-  ArrowRight,
-  BarChart3,
-  Palette,
-  Users,
-  Zap,
-  Shield,
-  Globe,
-  Check,
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  ArrowRight,
+  BarChart3,
+  Check,
+  Globe,
+  Palette,
+  QrCode,
+  Shield,
+  Users,
+  Zap,
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function LandingPage() {
   return (
@@ -240,8 +240,8 @@ export default function LandingPage() {
             </div>
             <span className="font-semibold">QRNote</span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} QRNote. Built with Next.js + Supabase.
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} QRNote by Dasari. All rights reserved.
           </p>
         </div>
       </footer>

@@ -5,7 +5,7 @@ export interface QRTypeDefinition {
   label: string;
   description: string;
   icon: string;
-  category: 'link' | 'contact' | 'media' | 'social';
+  category: 'link' | 'contact' | 'media' | 'social' | 'personal' | 'business';
   fields: QRField[];
 }
 
@@ -184,6 +184,83 @@ export const QR_TYPES: QRTypeDefinition[] = [
       { key: 'url', label: 'Video URL', type: 'url', placeholder: 'https://youtube.com/...', required: true },
     ],
   },
+  {
+    type: 'whatsapp',
+    label: 'WhatsApp',
+    description: 'Open a WhatsApp chat',
+    icon: 'MessageCircle',
+    category: 'contact',
+    fields: [
+      { key: 'phone', label: 'Phone number', type: 'text', placeholder: '+1 555 000 0000', required: true, helpText: 'Include country code, no spaces' },
+      { key: 'message', label: 'Pre-filled message', type: 'textarea', placeholder: 'Hi there!' },
+    ],
+  },
+  {
+    type: 'telegram',
+    label: 'Telegram',
+    description: 'Open a Telegram chat',
+    icon: 'Send',
+    category: 'contact',
+    fields: [
+      { key: 'username', label: 'Telegram username', type: 'text', placeholder: '@username', required: true },
+    ],
+  },
+  {
+    type: 'app',
+    label: 'App Download',
+    description: 'Link to app store listing',
+    icon: 'Smartphone',
+    category: 'link',
+    fields: [
+      { key: 'url', label: 'App store URL', type: 'url', placeholder: 'https://apps.apple.com/...', required: true },
+    ],
+  },
+  {
+    type: 'geo',
+    label: 'Location',
+    description: 'GPS coordinates',
+    icon: 'MapPin',
+    category: 'link',
+    fields: [
+      { key: 'lat', label: 'Latitude', type: 'text', placeholder: '40.7128', required: true },
+      { key: 'lng', label: 'Longitude', type: 'text', placeholder: '-74.0060', required: true },
+    ],
+  },
+  {
+    type: 'crypto',
+    label: 'Crypto',
+    description: 'Crypto wallet address',
+    icon: 'Bitcoin',
+    category: 'business',
+    fields: [
+      {
+        key: 'coin',
+        label: 'Currency',
+        type: 'select',
+        options: [
+          { label: 'Bitcoin (BTC)', value: 'bitcoin' },
+          { label: 'Ethereum (ETH)', value: 'ethereum' },
+          { label: 'Litecoin (LTC)', value: 'litecoin' },
+          { label: 'Bitcoin Cash (BCH)', value: 'bitcoincash' },
+        ],
+      },
+      { key: 'address', label: 'Wallet address', type: 'text', placeholder: 'bc1q...', required: true },
+      { key: 'amount', label: 'Amount (optional)', type: 'text', placeholder: '0.001' },
+      { key: 'label', label: 'Label (optional)', type: 'text', placeholder: 'Payment for...' },
+    ],
+  },
+  {
+    type: 'paypal',
+    label: 'PayPal',
+    description: 'Accept PayPal payments',
+    icon: 'DollarSign',
+    category: 'business',
+    fields: [
+      { key: 'email', label: 'PayPal email', type: 'text', placeholder: 'you@example.com', required: true },
+      { key: 'amount', label: 'Amount (optional)', type: 'text', placeholder: '10.00' },
+      { key: 'currency', label: 'Currency', type: 'text', placeholder: 'USD' },
+    ],
+  },
 ];
 
 export function getQRTypeDefinition(type: QRType): QRTypeDefinition | undefined {
@@ -195,4 +272,5 @@ export const QR_TYPE_CATEGORIES = [
   { id: 'contact', label: 'Contact' },
   { id: 'media', label: 'Media' },
   { id: 'social', label: 'Social' },
+  { id: 'business', label: 'Business' },
 ] as const;

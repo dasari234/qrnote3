@@ -1,18 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { updateQrCode, deleteQrCode, updateQrStatus } from '@/lib/qr/actions';
-import { QRType, QRStyle } from '@/lib/types';
+import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
-import { QrFormFields } from '@/components/qr/qr-form-fields';
-import { QR_TYPES } from '@/lib/qr/types';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Card,
   CardContent,
@@ -20,6 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -27,7 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, Trash2, Save, Copy, ExternalLink, Pause, Play } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { deleteQrCode, updateQrCode, updateQrStatus } from '@/lib/qr/actions';
+import { QR_TYPES } from '@/lib/qr/types';
+import { QRStyle, QRType } from '@/lib/types';
+import { Copy, Download, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Props {
   qr: any;

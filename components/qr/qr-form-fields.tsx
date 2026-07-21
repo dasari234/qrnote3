@@ -1,9 +1,7 @@
 'use client';
 
-import { QRTypeDefinition, QRField } from '@/lib/qr/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -11,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { QRField, QRTypeDefinition } from '@/lib/qr/types';
 
 interface QrFormFieldsProps {
   typeDef: QRTypeDefinition;

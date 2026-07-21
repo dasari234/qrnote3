@@ -1,19 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { createBrowserSupabaseClient } from '@/lib/supabase/client';
-import { createQrCode } from '@/lib/qr/actions';
-import { QR_TYPES, QR_TYPE_CATEGORIES } from '@/lib/qr/types';
-import { QRType, QRStyle } from '@/lib/types';
+import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
-import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   Card,
   CardContent,
@@ -21,30 +11,46 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { createQrCode } from '@/lib/qr/actions';
+import { QR_TYPES, QR_TYPE_CATEGORIES } from '@/lib/qr/types';
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { QRStyle, QRType } from '@/lib/types';
 import {
-  Link,
-  Type,
-  Mail,
-  Phone,
-  MessageSquare,
-  Wifi,
+  ArrowLeft,
+  Bitcoin,
+  Calendar,
   Contact,
+  DollarSign,
   FileText,
   Image as ImageIcon,
+  Link,
+  Mail,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+  Phone,
+  Save,
+  Send,
   Share2,
+  Smartphone,
   Star,
-  Calendar,
+  Type,
   UtensilsCrossed,
   Video,
-  ArrowLeft,
-  Save,
+  Wifi,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 const ICONS: Record<string, any> = {
   Link,
@@ -61,6 +67,12 @@ const ICONS: Record<string, any> = {
   Calendar,
   UtensilsCrossed,
   Video,
+  MessageCircle,
+  Send,
+  Smartphone,
+  MapPin,
+  Bitcoin,
+  DollarSign,
 };
 
 interface Props {
@@ -170,7 +182,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="link">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   {QR_TYPE_CATEGORIES.map((cat) => (
                     <TabsTrigger key={cat.id} value={cat.id}>
                       {cat.label}
