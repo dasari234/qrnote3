@@ -1,52 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-function parseUserAgent(ua: string) {
-  const browser =
-    /Edg\/|Edge\/|EdgA\/|EdgiOS/.test(ua)
-      ? 'Edge'
-      : /OPR\/|Opera/.test(ua)
-      ? 'Opera'
-      : /Chrome\/|CriOS/.test(ua)
-      ? 'Chrome'
-      : /Firefox\/|FxiOS/.test(ua)
-      ? 'Firefox'
-      : /Safari\//.test(ua)
-      ? 'Safari'
-      : 'Unknown';
-
-  const os =
-    /Windows NT 10/.test(ua)
-      ? 'Windows'
-      : /Mac OS X|Macintosh/.test(ua)
-      ? 'macOS'
-      : /iPhone|iPad|iPod/.test(ua)
-      ? 'iOS'
-      : /Android/.test(ua)
-      ? 'Android'
-      : /Linux/.test(ua)
-      ? 'Linux'
-      : 'Unknown';
-
-  const device = /iPad/.test(ua)
-    ? 'iPad'
-    : /iPhone/.test(ua)
-    ? 'iPhone'
-    : /Android/.test(ua)
-    ? 'Android'
-    : /Mobile/.test(ua)
-    ? 'Mobile'
-    : 'Desktop';
-
-  return { browser, os, device };
-}
+import { parseUserAgent } from '@/lib/utils';
 
 export async function GET(
-  req: Request,
-  { params }: { params: { shortCode: string } }
+  req: NextRequest,
+  context: { params: Promise<{ shortCode: string }> }
 ) {
+  const { shortCode } = await context.params;
   const qr = await prisma.qrCode.findUnique({
-    where: { shortCode: params.shortCode },
+    where: { shortCode: shortCode },
     select: { id: true, type: true, isDynamic: true, destinationUrl: true, status: true },
   });
 
@@ -97,3 +59,4 @@ export async function GET(
 
   return NextResponse.redirect(qr.destinationUrl, { status: 302 });
 }
+
