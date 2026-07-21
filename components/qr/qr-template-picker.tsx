@@ -31,14 +31,16 @@ export function QrTemplatePicker({ selectedId, onSelect }: QrTemplatePickerProps
                 <Check className="h-3 w-3" />
               </span>
             )}
-            <div className="flex h-24 items-center justify-center">
-              <QRPreview
-                type="url"
-                payload={{ url: 'https://example.com' }}
-                isDynamic={false}
-                style={template.style}
-                size={96}
-              />
+            <div className="flex h-28 w-full items-center justify-center overflow-hidden rounded-md bg-background">
+              <div className="flex items-center justify-center p-2">
+                <QRPreview
+                  type="url"
+                  payload={{ url: 'https://example.com' }}
+                  isDynamic={false}
+                  style={template.style}
+                  size={80}
+                />
+              </div>
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-semibold">{template.name}</p>

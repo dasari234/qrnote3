@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 export default async function QrListPage({
-  searchParams,
+  searchParams: searchParamsPromise
 }: {
-  searchParams: { q?: string; tag?: string; folder?: string };
+  searchParams: Promise<{ q?: string; tag?: string; folder?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },

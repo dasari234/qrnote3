@@ -127,9 +127,9 @@ export function DashboardShell({
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
-                <span className="hidden text-sm font-medium sm:inline">
+                {/* <span className="hidden text-sm font-medium sm:inline">
                   {profile.fullName || profile.email}
-                </span>
+                </span> */}
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>

@@ -4,7 +4,7 @@ import { buildQRValue } from '@/lib/qr/factory';
 import { QRStyle, QRType } from '@/lib/types';
 import type { Options } from 'qr-code-styling';
 import QRCodeStyling from 'qr-code-styling';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface QRPreviewProps {
   type: QRType;
@@ -25,6 +25,7 @@ export function QRPreview({
 }: QRPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<QRCodeStyling | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   const value = useMemo(
     () => buildQRValue(type, payload, { dynamic: isDynamic, shortLinkUrl }),
@@ -34,6 +35,7 @@ export function QRPreview({
   const options = useMemo<Options>(() => buildOptions(value, style, size), [value, style, size]);
 
   useEffect(() => {
+    setIsMounted(true);
     if (!containerRef.current) return;
     if (!qrRef.current) {
       qrRef.current = new QRCodeStyling(options);
@@ -51,17 +53,17 @@ export function QRPreview({
     frame === 'rounded'
       ? 'rounded-2xl p-4'
       : frame === 'border'
-      ? 'rounded-lg border-4 p-4'
-      : frame === 'caption'
-      ? 'rounded-xl border-2 p-4 pb-2'
-      : '';
+        ? 'rounded-lg border-4 p-4'
+        : frame === 'caption'
+          ? 'rounded-xl border-2 p-4 pb-2'
+          : '';
 
   const frameStyle =
     frame === 'none'
       ? {}
       : frame === 'caption'
-      ? { borderColor: frameColor, color: frameColor }
-      : { borderColor: frameColor };
+        ? { borderColor: frameColor, color: frameColor }
+        : { borderColor: frameColor };
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -79,7 +81,7 @@ export function QRPreview({
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        {isDynamic && shortLinkUrl
+        {isMounted && isDynamic && shortLinkUrl
           ? `Dynamic · ${shortLinkUrl.replace(/^https?:\/\//, '')}`
           : 'Static QR'}
       </p>

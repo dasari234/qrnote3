@@ -26,9 +26,9 @@ import { QR_TYPES } from '@/lib/qr/types';
 import { QRStyle, QRType } from '@/lib/types';
 import { Copy, Download, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-
+import { jsPDF } from 'jspdf';
 interface Props {
   qr: any;
   folders: { id: string; name: string }[];
@@ -39,7 +39,7 @@ interface Props {
 export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   const router = useRouter();
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
-
+  const [isMounted, setIsMounted] = useState(false);
   const [name, setName] = useState(qr.name);
   const [type, setType] = useState<QRType>(qr.type);
   const [payload, setPayload] = useState<Record<string, any>>(qr.payload || {});
@@ -53,10 +53,12 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   const [loading, setLoading] = useState(false);
 
   const typeDef = QR_TYPES.find((t) => t.type === type)!;
-  const shortLinkUrl =
-    typeof window !== 'undefined' && qr.shortCode
-      ? `${window.location.origin}/q/${qr.shortCode}`
-      : `/q/${qr.shortCode || 'preview'}`;
+  const shortLinkUrl = useMemo(() => {
+    if (isMounted && typeof window !== 'undefined' && qr.shortCode) {
+      return `${window.location.origin}/q/${qr.shortCode}`;
+    }
+    return `/q/${qr.shortCode || 'preview'}`;
+  }, [isMounted, qr.shortCode]);
 
   const handleFieldChange = (key: string, value: string) => {
     setPayload((prev) => ({ ...prev, [key]: value }));
@@ -118,6 +120,40 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
     a.click();
   };
 
+  const handleDownloadPdf = () => {
+    // 1. Locate the canvas element inside the wrapper
+    const canvas = canvasWrapperRef.current?.querySelector('canvas');
+    if (!canvas) return;
+
+    // 2. Convert canvas drawing to an image data URL string
+    const imgData = canvas.toDataURL('image/png');
+
+    // 3. Initialize jsPDF in portrait mode using millimeters
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4', // standard page sizing
+    });
+
+    // 4. Calculate dimensions to center the QR code nicely
+    const qrSizeMM = 100; // Size of the QR code on the PDF page (100mm x 100mm)
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const xCentered = (pageWidth - qrSizeMM) / 2;
+    const yTopMargin = 40; // Spacing from top of the page
+
+    // 5. Add optional title text above the QR Code
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text(name, pageWidth / 2, 25, { align: 'center' });
+
+    // 6. Draw the QR code image onto the canvas layer
+    pdf.addImage(imgData, 'PNG', xCentered, yTopMargin, qrSizeMM, qrSizeMM);
+
+    // 7. Generate a clean slug for the filename and trigger download
+    const safeName = name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+    pdf.save(`${safeName}.pdf`);
+  };
+
   const handleCopyLink = () => {
     if (!qr.shortCode) {
       toast.error('Static QR codes do not have a short link');
@@ -127,6 +163,10 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
     navigator.clipboard.writeText(link);
     toast.success('Short link copied');
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -225,11 +265,10 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                               active ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
                             );
                           }}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                            active
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-background hover:bg-accent'
-                          }`}
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${active
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background hover:bg-accent'
+                            }`}
                         >
                           <span
                             className="mr-1.5 inline-block h-2 w-2 rounded-full"
@@ -291,7 +330,13 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                   <Download className="mr-2 h-4 w-4" />
                   Download PNG
                 </Button>
-                {qr.isDynamic && qr.shortCode && (
+
+                <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
+                </Button>
+
+                {isMounted && qr.isDynamic && qr.shortCode && (
                   <div className="w-full space-y-2">
                     <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2 text-xs">
                       <span className="truncate text-muted-foreground">

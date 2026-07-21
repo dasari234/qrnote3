@@ -11,10 +11,12 @@ import { Download, TrendingUp, QrCode, MousePointerClick, Globe, Monitor } from 
 const VALID_RANGES = ['7d', '30d', '90d', 'all'] as const;
 
 export default async function AnalyticsPage({
-  searchParams,
+  searchParams: searchParamsPromise,
 }: {
-  searchParams: { range?: string };
+  searchParams: Promise<{ range?: string }>;
 }) {
+  const searchParams = await searchParamsPromise;
+
   const range = (VALID_RANGES.includes(searchParams.range as any)
     ? searchParams.range
     : '30d') as DateRange;

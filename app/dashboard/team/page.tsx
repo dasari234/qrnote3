@@ -20,7 +20,6 @@ export default async function TeamPage() {
     const firstOrg = memberships[0].orgId;
     members = await prisma.organizationMember.findMany({
       where: { orgId: firstOrg },
-      include: { user: { select: { email: true } } },
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -48,8 +47,8 @@ export default async function TeamPage() {
               {members.map((m) => (
                 <div key={m.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
-                    <p className="text-sm font-medium">{m.user.email}</p>
-                    <p className="text-xs text-muted-foreground">{m.user.email}</p>
+                    <p className="text-sm font-medium">{m.orgId}</p>
+                    <p className="text-xs text-muted-foreground">{m.userId}</p>
                   </div>
                   <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium capitalize text-primary">
                     {m.role}
