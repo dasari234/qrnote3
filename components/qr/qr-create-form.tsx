@@ -117,9 +117,11 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
   const typeDef = useMemo(() => QR_TYPES.find((t) => t.type === type)!, [type]);
 
   const tabsRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("link");
 
   const updateScrollButtons = () => {
     const el = tabsRef.current;
@@ -129,6 +131,16 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
     setCanScrollRight(
       el.scrollLeft + el.clientWidth < el.scrollWidth - 5
     );
+  };
+
+  const scrollActiveTabIntoView = (value: string) => {
+    const tab = tabRefs.current[value];
+
+    tab?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
   };
 
   const scrollTabs = (direction: "left" | "right") => {
@@ -152,6 +164,10 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
       window.removeEventListener("resize", updateScrollButtons);
     };
   }, []);
+
+  useEffect(() => {
+    scrollActiveTabIntoView(activeCategory);
+  }, [activeCategory]);
 
   const shortLinkUrl = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -238,7 +254,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
               <CardDescription>Choose what your QR code will do</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="link">
+              <Tabs defaultValue="link" value={activeCategory}  onValueChange={setActiveCategory}>
                <div className="relative flex items-center">
                   {canScrollLeft && (
                     <Button
@@ -261,6 +277,9 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                         <TabsTrigger
                           key={cat.id}
                           value={cat.id}
+                          ref={(el) => {
+                            tabRefs.current[cat.id] = el;
+                          }}
                           className="min-w-[140px]"
                         >
                           {cat.label}
