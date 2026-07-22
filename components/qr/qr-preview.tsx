@@ -150,12 +150,12 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
     image: style?.logoUrl || undefined,
     imageOptions: {
       crossOrigin: 'anonymous',
-      margin: 16,
+      margin: 6,
       hideBackgroundDots: true,
       imageSize: 0.3,
       backgroundOptions: {
         color: qrBgColor,
-        borderRadius: 18,
+        borderRadius: 30,
       },
     } as any,
   };
