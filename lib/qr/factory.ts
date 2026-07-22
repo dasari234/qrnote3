@@ -58,26 +58,6 @@ export function buildQRValue(
       return `geo:${payload.lat || 0},${payload.lng || 0}`;
     }
 
-    case 'crypto': {
-      const coin = payload.coin || 'bitcoin';
-      const address = payload.address || '';
-      const params = new URLSearchParams();
-      if (payload.amount) params.set('amount', payload.amount);
-      if (payload.label) params.set('label', payload.label);
-      const query = params.toString() ? `?${params.toString()}` : '';
-      return `${coin}:${address}${query}`;
-    }
-
-    case 'paypal': {
-      const email = payload.email || '';
-      const params = new URLSearchParams();
-      params.set('cmd', '_xclick');
-      params.set('business', email);
-      if (payload.amount) params.set('amount', payload.amount);
-      if (payload.currency) params.set('currency_code', payload.currency);
-      return `https://www.paypal.com/cgi-bin/webscr?${params.toString()}`;
-    }
-
     case 'wifi': {
       const enc = payload.encryption || 'WPA';
       const ssid = payload.ssid || '';
@@ -119,6 +99,44 @@ export function buildQRValue(
         .join('\n');
     }
 
+    case 'catalog':
+      return payload.catalogUrl || payload.url || '';
+
+    case 'product':
+      return payload.productUrl || payload.url || '';
+
+    case 'resume':
+      return payload.resumeUrl || payload.url || '';
+
+    case 'portfolio':
+      return payload.portfolioUrl || payload.url || '';
+
+    case 'wedding':
+      return payload.rsvpUrl || payload.url || '';
+
+    case 'birthday':
+      return payload.rsvpUrl || payload.url || '';
+
+    case 'conference':
+      return payload.registerUrl || payload.website || payload.url || '';
+
+    case 'seminar':
+      return payload.registerUrl || payload.url || '';
+
+    case 'meetup':
+      return payload.groupUrl || payload.url || '';
+
+    case 'rsvp':
+      return payload.url || '';
+
+    case 'medical_emergency':
+    case 'pet_id':
+    case 'gift_memories':
+    case 'doorbell':
+    case 'memorial':
+    case 'lost_found':
+      return options.shortLinkUrl || '';
+
     default:
       return '';
   }
@@ -128,8 +146,12 @@ export function buildQRValue(
  * redirect to. For static QRs, returns null (the QR value itself
  * is the destination).
  */
-export function resolveDestination(type: QRType, payload: Record<string, any>): string | null {
+export function resolveDestination(
+  type: QRType,
+  payload: Record<string, any>
+): string | null {
   switch (type) {
+    // Direct URL redirects
     case 'url':
     case 'pdf':
     case 'image':
@@ -139,16 +161,59 @@ export function resolveDestination(type: QRType, payload: Record<string, any>): 
     case 'video':
     case 'app':
       return payload.url || null;
+
+    case 'catalog':
+      return payload.catalogUrl || null;
+
+    case 'product':
+      return payload.productUrl || null;
+
+    case 'portfolio':
+      return payload.portfolioUrl || null;
+
+    case 'resume':
+      return payload.resumeUrl || null;
+
+    case 'wedding':
+    case 'birthday':
+      return payload.rsvpUrl || null;
+
+    case 'conference':
+      return (
+        payload.registerUrl ||
+        payload.website ||
+        null
+      );
+
+    case 'meetup':
+      return payload.groupUrl || null;
+
+    case 'seminar':
+      return payload.registerUrl || null;
+
+    // URI schemes
     case 'whatsapp':
-      return buildQRValue('whatsapp', payload);
     case 'telegram':
-      return buildQRValue('telegram', payload);
     case 'geo':
-      return buildQRValue('geo', payload);
-    case 'crypto':
-      return buildQRValue('crypto', payload);
-    case 'paypal':
-      return buildQRValue('paypal', payload);
+    case 'phone':
+    case 'sms':
+    case 'email':
+      return buildQRValue(type, payload);
+
+    // These are rendered as landing pages
+    case 'vcard':
+    case 'wifi':
+    case 'text':
+    case 'event':
+    case 'medical_emergency':
+    case 'pet_id':
+    case 'gift_memories':
+    case 'doorbell':
+    case 'memorial':
+    case 'lost_found':
+    case 'rsvp':
+      return null;
+
     default:
       return null;
   }
