@@ -441,11 +441,11 @@ export function getQRTypeDefinition(type: QRType): QRTypeDefinition | undefined 
 }
 
 export const QR_TYPE_CATEGORIES = [
+  { id: 'link', label: 'Links' },
   { id: 'healthcare', label: 'Healthcare' },
   { id: 'personal', label: 'Personal' },
   { id: 'events', label: 'Events' },
   { id: 'contact', label: 'Contact' },
-  { id: 'link', label: 'Links' },
   { id: 'media', label: 'Media' },
   { id: 'social', label: 'Social' },
 ] as const;
