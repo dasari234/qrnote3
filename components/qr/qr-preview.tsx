@@ -77,9 +77,9 @@ export function QRPreview({
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="inline-flex flex-col items-center" style={frameStyle}>
-        <div className={frameClass}>
-          <div ref={containerRef} />
-        </div>
+       <div className={`${frameClass} rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5`}>
+        <div ref={containerRef} />
+      </div>
         {frame === 'caption' && (
           <p
             className="mt-2 text-sm font-semibold uppercase tracking-wide"
@@ -137,9 +137,11 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
     height: size,
     type: 'canvas',
     data: value || ' ',
-    margin: style?.margin ?? 10,
+    margin: 16,
     qrOptions: {
-      errorCorrectionLevel: (style?.errorCorrection || 'M') as any,
+        errorCorrectionLevel: style?.logoUrl
+          ? 'H'
+          : (style?.errorCorrection || 'M'),
     },
     dotsOptions,
     cornersSquareOptions,
@@ -150,12 +152,13 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
     image: style?.logoUrl || undefined,
     imageOptions: {
       crossOrigin: 'anonymous',
-      margin: 6,
+      margin: 18,
       hideBackgroundDots: true,
-      imageSize: 0.3,
+      saveAsBlob: true,
+      imageSize: 0.22,
       backgroundOptions: {
-        color: qrBgColor,
-        borderRadius: 8,
+        color: '#ffffff',
+        borderRadius: 999,
       },
     } as any,
   };

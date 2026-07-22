@@ -1,11 +1,11 @@
-import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { QrCode as QrCodeIcon, Plus, Search, Tag as TagIcon, Download } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Download, Plus, QrCode as QrCodeIcon, Search, Tag as TagIcon } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function QrListPage({
   searchParams: searchParamsPromise
@@ -73,7 +73,7 @@ export default async function QrListPage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">QR Codes</h1>
           <p className="text-sm text-muted-foreground">
-            Manage all your QR codes in one place
+            Create, manage, and download QR codes for anything.
           </p>
         </div>
         <div className="flex gap-2">
@@ -132,7 +132,7 @@ export default async function QrListPage({
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <QrCodeIcon className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="text-sm font-medium">No QR codes found</h3>
+            <h3 className="text-sm font-medium">No QR codes yet</h3>
             <p className="mb-4 mt-1 text-sm text-muted-foreground">
               {searchParams.q || searchParams.tag
                 ? 'Try adjusting your filters.'
@@ -141,7 +141,7 @@ export default async function QrListPage({
             <Button asChild>
               <Link href="/dashboard/qr/new">
                 <Plus className="mr-2 h-4 w-4" />
-                Create QR Code
+                Create Your First QR Code
               </Link>
             </Button>
           </CardContent>
