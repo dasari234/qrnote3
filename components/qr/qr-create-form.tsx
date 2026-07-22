@@ -281,7 +281,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                           ref={(el) => {
                             tabRefs.current[cat.id] = el;
                           }}
-                          className="min-w-[140px] transition-all duration-200 ease-in-out hover:bg-muted hover:text-foreground hover:shadow-sm hover:-translate-y-0.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:translate-y-0 data-[state=active]:font-semibold disabled:pointer-events-none"
+                          className="min-w-[140px] transition-all duration-200 ease-in-out hover:bg-muted hover:text-foreground hover:shadow-sm hover:-translate-y-0.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border data-[state=active]:border-primary data-[state=active]:shadow-md data-[state=active]:translate-y-0 data-[state=active]:font-semibold disabled:pointer-events-none"
                         >
                           {cat.label}
                         </TabsTrigger>
