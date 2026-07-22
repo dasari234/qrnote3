@@ -256,17 +256,18 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
             <CardContent>
               <Tabs defaultValue="link" value={activeCategory}  onValueChange={setActiveCategory}>
                <div className="relative flex items-center">
-                  {canScrollLeft && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="absolute left-0 z-10 h-8 w-8 rounded-full"
-                      onClick={() => scrollTabs("left")}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                  )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute left-0 z-10 h-8 w-8 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={!canScrollLeft}
+                    onClick={() => scrollTabs("left")}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
 
                   <div
                     ref={tabsRef}
@@ -288,17 +289,17 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                     </TabsList>
                   </div>
 
-                  {canScrollRight && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="absolute right-0 z-10 h-8 w-8 rounded-full"
-                      onClick={() => scrollTabs("right")}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute right-0 z-10 h-8 w-8 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={!canScrollRight}
+                    onClick={() => scrollTabs("right")}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+
                </div>
                 {QR_TYPE_CATEGORIES.map((cat) => (
                   <TabsContent key={cat.id} value={cat.id} className="mt-4">
