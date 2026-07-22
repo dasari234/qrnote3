@@ -17,8 +17,22 @@ export type QRType =
   | 'video'
   | 'app'
   | 'geo'
-  | 'crypto'
-  | 'paypal';
+  | 'catalog'
+  | 'product'
+  | 'portfolio'
+  | 'resume'
+  | 'wedding'
+  | 'birthday'
+  | 'rsvp'
+  | 'conference'
+  | 'meetup'
+  | 'medical_emergency'
+  | 'pet_id'
+  | 'gift_memories'
+  | 'doorbell'
+  | 'memorial'
+  | 'lost_found'
+  | 'seminar';
 
 export type QRStatus = 'active' | 'paused' | 'archived';
 

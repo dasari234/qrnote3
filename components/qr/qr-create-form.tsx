@@ -31,22 +31,30 @@ import {
   Contact,
   DollarSign,
   FileText,
+  Flower2,
+  Gift,
+  HeartPulse,
+  Home,
   Image as ImageIcon,
   Link,
   Mail,
   MapPin,
   MessageCircle,
   MessageSquare,
+  PawPrint,
   Phone,
   Save,
+  Search,
   Send,
   Share2,
   Smartphone,
   Star,
   Type,
+  User,
+  Users,
   UtensilsCrossed,
   Video,
-  Wifi,
+  Wifi
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -73,6 +81,14 @@ const ICONS: Record<string, any> = {
   MapPin,
   Bitcoin,
   DollarSign,
+  User,
+  HeartPulse,
+  PawPrint,
+  Search,
+  Flower2,
+  Home,
+  Gift,
+  Users
 };
 
 interface Props {

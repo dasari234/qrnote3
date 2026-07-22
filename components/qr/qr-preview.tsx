@@ -27,6 +27,11 @@ export function QRPreview({
   const qrRef = useRef<QRCodeStyling | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  // Mount detection prevents hydration mismatch between server and client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const value = useMemo(
     () => buildQRValue(type, payload, { dynamic: isDynamic, shortLinkUrl }),
     [type, payload, isDynamic, shortLinkUrl]
@@ -35,15 +40,19 @@ export function QRPreview({
   const options = useMemo<Options>(() => buildOptions(value, style, size), [value, style, size]);
 
   useEffect(() => {
-    setIsMounted(true);
-    if (!containerRef.current) return;
+    if (!isMounted || !containerRef.current) return;
+
+    // Clear old elements to prevent canvas duplication in Strict Mode
+    containerRef.current.innerHTML = '';
+
     if (!qrRef.current) {
       qrRef.current = new QRCodeStyling(options);
-      qrRef.current.append(containerRef.current);
     } else {
       qrRef.current.update(options);
     }
-  }, [options]);
+
+    qrRef.current.append(containerRef.current);
+  }, [options, isMounted]);
 
   const frame = style?.frame || 'none';
   const frameColor = style?.frameColor || '#000000';
@@ -121,6 +130,8 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
     cornersDotOptions.color = style?.fgColor || '#000000';
   }
 
+  const qrBgColor = style?.bgColor || '#ffffff';
+
   return {
     width: size,
     height: size,
@@ -134,15 +145,19 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
     cornersSquareOptions,
     cornersDotOptions,
     backgroundOptions: {
-      color: style?.bgColor || '#ffffff',
+      color: qrBgColor,
     },
     image: style?.logoUrl || undefined,
     imageOptions: {
       crossOrigin: 'anonymous',
-      margin: 4,
+      margin: 6,
       hideBackgroundDots: true,
-      imageSize: 0.4,
-    },
+      imageSize: 0.3,
+      backgroundOptions: {
+        color: qrBgColor,
+        borderRadius: 8,
+      },
+    } as any,
   };
 }
 
