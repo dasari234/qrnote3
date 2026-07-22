@@ -28,6 +28,8 @@ import {
   ArrowLeft,
   Bitcoin,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Contact,
   DollarSign,
   FileText,
@@ -57,7 +59,7 @@ import {
   Wifi
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const ICONS: Record<string, any> = {
@@ -88,7 +90,9 @@ const ICONS: Record<string, any> = {
   Flower2,
   Home,
   Gift,
-  Users
+  Users,
+  ChevronRight,
+  ChevronLeft
 };
 
 interface Props {
@@ -111,6 +115,43 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
   const [loading, setLoading] = useState(false);
 
   const typeDef = useMemo(() => QR_TYPES.find((t) => t.type === type)!, [type]);
+
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = () => {
+    const el = tabsRef.current;
+    if (!el) return;
+
+    setCanScrollLeft(el.scrollLeft > 5);
+    setCanScrollRight(
+      el.scrollLeft + el.clientWidth < el.scrollWidth - 5
+    );
+  };
+
+  const scrollTabs = (direction: "left" | "right") => {
+    tabsRef.current?.scrollBy({
+      left: direction === "left" ? -220 : 220,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    updateScrollButtons();
+
+    const el = tabsRef.current;
+    if (!el) return;
+
+    el.addEventListener("scroll", updateScrollButtons);
+    window.addEventListener("resize", updateScrollButtons);
+
+    return () => {
+      el.removeEventListener("scroll", updateScrollButtons);
+      window.removeEventListener("resize", updateScrollButtons);
+    };
+  }, []);
 
   const shortLinkUrl = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -198,13 +239,48 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="link">
-                <TabsList className="grid w-full grid-cols-5">
-                  {QR_TYPE_CATEGORIES.map((cat) => (
-                    <TabsTrigger key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+               <div className="relative flex items-center">
+                  {canScrollLeft && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="absolute left-0 z-10 h-8 w-8 rounded-full"
+                      onClick={() => scrollTabs("left")}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  <div
+                    ref={tabsRef}
+                    className="mx-10 flex-1 overflow-x-auto scrollbar-hide"
+                  >
+                    <TabsList className="inline-flex w-max min-w-full">
+                      {QR_TYPE_CATEGORIES.map((cat) => (
+                        <TabsTrigger
+                          key={cat.id}
+                          value={cat.id}
+                          className="min-w-[140px]"
+                        >
+                          {cat.label}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+
+                  {canScrollRight && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="absolute right-0 z-10 h-8 w-8 rounded-full"
+                      onClick={() => scrollTabs("right")}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
+               </div>
                 {QR_TYPE_CATEGORIES.map((cat) => (
                   <TabsContent key={cat.id} value={cat.id} className="mt-4">
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

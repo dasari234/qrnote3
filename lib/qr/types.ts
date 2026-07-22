@@ -338,7 +338,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     ],
   },
   {
-    type: 'medical_emergency', label: 'Medical Emergency Card', description: 'Emergency medical info accessible by scanning', icon: 'HeartPulse', category: 'personal',
+    type: 'medical_emergency', label: 'Medical Emergency Card', description: 'Emergency medical info accessible by scanning', icon: 'HeartPulse', category: 'healthcare',
     fields: [
       { key: 'fullName', label: 'Full Name', type: 'text', required: true },
       { key: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
@@ -441,10 +441,11 @@ export function getQRTypeDefinition(type: QRType): QRTypeDefinition | undefined 
 }
 
 export const QR_TYPE_CATEGORIES = [
-  { id: 'link', label: 'Links' },
-  { id: 'contact', label: 'Contact' },
-  { id: 'media', label: 'Media' },
-  { id: 'social', label: 'Social' },
+  { id: 'healthcare', label: 'Healthcare' },
   { id: 'personal', label: 'Personal' },
   { id: 'events', label: 'Events' },
+  { id: 'contact', label: 'Contact' },
+  { id: 'link', label: 'Links' },
+  { id: 'media', label: 'Media' },
+  { id: 'social', label: 'Social' },
 ] as const;
