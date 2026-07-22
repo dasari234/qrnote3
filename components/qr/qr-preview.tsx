@@ -158,7 +158,7 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
       imageSize: 0.22,
       backgroundOptions: {
         color: '#ffffff',
-        borderRadius: 999,
+        borderRadius: 18,
       },
     } as any,
   };
