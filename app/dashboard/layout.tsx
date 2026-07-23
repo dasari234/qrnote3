@@ -1,5 +1,6 @@
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { prisma } from '@/lib/prisma';
+import { checkIsSuperAdmin } from '@/lib/rbac';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -12,8 +13,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   try {
-    // Fetch memberships and relevant workspaces in parallel to prevent waterfall delays
-    const [memberships, workspaces] = await Promise.all([
+    // Fetch memberships, workspaces, and super-admin flag in parallel
+    const [memberships, workspaces, isSuperAdmin] = await Promise.all([
       prisma.organizationMember.findMany({
         where: { userId: user.id },
         include: {
@@ -29,7 +30,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           }
         },
         select: { id: true, orgId: true, name: true },
-      })
+      }),
+      checkIsSuperAdmin(user.id),
     ]);
 
     const profile = {
@@ -47,6 +49,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         }))}
         workspaces={workspaces.map((w) => ({ id: w.id, org_id: w.orgId, name: w.name }))}
         profile={profile}
+        isSuperAdmin={isSuperAdmin}
       >
         {children}
       </DashboardShell>

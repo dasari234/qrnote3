@@ -1,25 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  QrCode,
-  LayoutDashboard,
-  Folder,
-  BarChart3,
-  Settings,
-  Users,
-  CreditCard,
-  Menu,
-  X,
-  Plus,
-  ChevronDown,
-  Upload,
-  Tag,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers/auth-provider';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,13 +11,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import {
+  BarChart3,
+  ChevronDown,
+  CreditCard,
+  Folder,
+  LayoutDashboard,
+  Menu,
+  Plus,
+  QrCode,
+  Settings,
+  ShieldAlert,
+  Upload,
+  Users,
+  X,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { ReactNode, useState } from 'react';
 
 interface DashboardShellProps {
   children: ReactNode;
   organizations: { id: string; name: string; slug: string; role: string }[];
   workspaces: { id: string; org_id: string; name: string }[];
   profile: { email: string; fullName: string };
+  isSuperAdmin?: boolean;
 }
 
 const navItems = [
@@ -54,6 +55,7 @@ export function DashboardShell({
   organizations,
   workspaces,
   profile,
+  isSuperAdmin = false,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const { signOut } = useAuth();
@@ -78,6 +80,7 @@ export function DashboardShell({
           currentOrg={currentOrg}
           currentWorkspace={currentWorkspace}
           pathname={pathname}
+          isSuperAdmin={isSuperAdmin}
         />
       </aside>
 
@@ -100,6 +103,7 @@ export function DashboardShell({
               currentOrg={currentOrg}
               currentWorkspace={currentWorkspace}
               pathname={pathname}
+              isSuperAdmin={isSuperAdmin}
               onNavigate={() => setMobileOpen(false)}
             />
           </aside>
@@ -166,12 +170,14 @@ function SidebarContent({
   currentOrg,
   currentWorkspace,
   pathname,
+  isSuperAdmin,
   onNavigate,
 }: {
   organizations: any[];
   currentOrg: any;
   currentWorkspace: any;
   pathname: string;
+  isSuperAdmin?: boolean;
   onNavigate?: () => void;
 }) {
   return (
@@ -236,6 +242,25 @@ function SidebarContent({
           );
         })}
       </nav>
+
+       {/* Super admin link */}
+      {isSuperAdmin && (
+        <div className="border-t p-3">
+          <Link
+            href="/dashboard/admin"
+            onClick={onNavigate}
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              pathname.startsWith('/dashboard/admin')
+                ? 'bg-destructive text-destructive-foreground'
+                : 'text-destructive hover:bg-destructive/10'
+            )}
+          >
+            <ShieldAlert className="h-4 w-4" />
+            Admin Panel
+          </Link>
+        </div>
+      )}
 
       {/* Create button */}
       <div className="border-t p-3">

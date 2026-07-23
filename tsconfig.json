@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -23,12 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "prisma/config": [
-        "./node_modules/prisma/build/config.d.ts"
-      ]
+      "@/*": ["./*"],
+      "prisma/config": ["./node_modules/prisma/build/config.d.ts"]
     }
   },
   "include": [
@@ -37,9 +29,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "prisma.config.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "components/admin/admin-org-detail-client.tsx‎"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
