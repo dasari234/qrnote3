@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Upload,
   Tag,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/providers/auth-provider';
@@ -36,6 +37,7 @@ interface DashboardShellProps {
   organizations: { id: string; name: string; slug: string; role: string }[];
   workspaces: { id: string; org_id: string; name: string }[];
   profile: { email: string; fullName: string };
+  isSuperAdmin?: boolean;
 }
 
 const navItems = [
@@ -54,6 +56,7 @@ export function DashboardShell({
   organizations,
   workspaces,
   profile,
+  isSuperAdmin = false,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const { signOut } = useAuth();
@@ -78,6 +81,7 @@ export function DashboardShell({
           currentOrg={currentOrg}
           currentWorkspace={currentWorkspace}
           pathname={pathname}
+          isSuperAdmin={isSuperAdmin}
         />
       </aside>
 
@@ -100,6 +104,7 @@ export function DashboardShell({
               currentOrg={currentOrg}
               currentWorkspace={currentWorkspace}
               pathname={pathname}
+              isSuperAdmin={isSuperAdmin}
               onNavigate={() => setMobileOpen(false)}
             />
           </aside>
@@ -166,12 +171,14 @@ function SidebarContent({
   currentOrg,
   currentWorkspace,
   pathname,
+  isSuperAdmin,
   onNavigate,
 }: {
   organizations: any[];
   currentOrg: any;
   currentWorkspace: any;
   pathname: string;
+  isSuperAdmin?: boolean;
   onNavigate?: () => void;
 }) {
   return (
@@ -236,6 +243,25 @@ function SidebarContent({
           );
         })}
       </nav>
+
+      {/* Super admin link */}
+      {isSuperAdmin && (
+        <div className="border-t p-3">
+          <Link
+            href="/dashboard/admin"
+            onClick={onNavigate}
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              pathname.startsWith('/dashboard/admin')
+                ? 'bg-destructive text-destructive-foreground'
+                : 'text-destructive hover:bg-destructive/10'
+            )}
+          >
+            <ShieldAlert className="h-4 w-4" />
+            Admin Panel
+          </Link>
+        </div>
+      )}
 
       {/* Create button */}
       <div className="border-t p-3">

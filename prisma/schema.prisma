@@ -15,12 +15,13 @@ datasource db {
 }
 
 model Profile {
-  id        String   @id @db.Uuid
-  email     String   @unique
-  fullName  String?  @map("full_name")
-  avatarUrl String?  @map("avatar_url")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  id           String   @id @db.Uuid
+  email        String   @unique
+  fullName     String?  @map("full_name")
+  avatarUrl    String?  @map("avatar_url")
+  isSuperAdmin Boolean  @default(false) @map("is_super_admin")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz
 
   @@map("profiles")
   @@schema("public")
@@ -37,6 +38,7 @@ model Organization {
 
   members    OrganizationMember[]
   workspaces Workspace[]
+  invites    OrgInvite[]
 
   @@map("organizations")
   @@schema("public")
@@ -62,6 +64,23 @@ enum Role {
   editor
   viewer
 
+  @@schema("public")
+}
+
+model OrgInvite {
+  id        String    @id @default(uuid()) @db.Uuid
+  orgId     String    @map("org_id") @db.Uuid
+  email     String
+  role      Role      @default(editor)
+  token     String    @unique
+  accepted  Boolean   @default(false)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, email])
+  @@map("org_invites")
   @@schema("public")
 }
 

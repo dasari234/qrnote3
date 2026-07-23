@@ -1,64 +1,82 @@
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { checkIsSuperAdmin } from '@/lib/rbac';
+import { TeamPageClient } from '@/components/team/team-page-client';
+import { redirect } from 'next/navigation';
 
 export default async function TeamPage() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) redirect('/sign-in?redirect=/dashboard/team');
 
-  const memberships = await prisma.organizationMember.findMany({
+  const membership = await prisma.organizationMember.findFirst({
     where: { userId: user.id },
-    select: { orgId: true },
+    select: { orgId: true, role: true },
   });
 
-  let members: any[] = [];
-  if (memberships.length > 0) {
-    const firstOrg = memberships[0].orgId;
-    members = await prisma.organizationMember.findMany({
-      where: { orgId: firstOrg },
-      orderBy: { createdAt: 'asc' },
-    });
-  }
-
-  return (
-    <div className="space-y-6">
-      <div>
+  if (!membership) {
+    return (
+      <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">Team</h1>
         <p className="text-sm text-muted-foreground">
-          Manage members of your organization. Invitations and RBAC arrive in Phase 4.
+          You are not a member of any organization yet.
         </p>
       </div>
+    );
+  }
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="h-5 w-5" /> Members
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {members.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No members found</p>
-          ) : (
-            <div className="space-y-2">
-              {members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <p className="text-sm font-medium">{m.orgId}</p>
-                    <p className="text-xs text-muted-foreground">{m.userId}</p>
-                  </div>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium capitalize text-primary">
-                    {m.role}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+  const { orgId, role } = membership;
+
+  const [org, members, pendingInvites, superAdmin] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { id: true, name: true },
+    }),
+    prisma.organizationMember.findMany({
+      where: { orgId },
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.orgInvite.findMany({
+      where: { orgId, accepted: false, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    checkIsSuperAdmin(user.id),
+  ]);
+
+  // Enrich members with profile data
+  const profileIds = members.map((m) => m.userId);
+  const profiles = await prisma.profile.findMany({
+    where: { id: { in: profileIds } },
+    select: { id: true, email: true, fullName: true },
+  });
+  const profileMap = Object.fromEntries(profiles.map((p) => [p.id, p]));
+
+  const enrichedMembers = members.map((m) => ({
+    id: m.id,
+    userId: m.userId,
+    role: m.role,
+    createdAt: m.createdAt.toISOString(),
+    email: profileMap[m.userId]?.email ?? m.userId,
+    fullName: profileMap[m.userId]?.fullName ?? null,
+  }));
+
+  return (
+    <TeamPageClient
+      orgId={orgId}
+      orgName={org?.name ?? ''}
+      currentUserId={user.id}
+      currentUserRole={role}
+      isSuperAdmin={superAdmin}
+      members={enrichedMembers}
+      pendingInvites={pendingInvites.map((inv) => ({
+        id: inv.id,
+        email: inv.email,
+        role: inv.role,
+        expiresAt: inv.expiresAt.toISOString(),
+        createdAt: inv.createdAt.toISOString(),
+      }))}
+    />
   );
 }
