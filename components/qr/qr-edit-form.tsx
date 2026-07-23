@@ -24,11 +24,13 @@ import { Switch } from '@/components/ui/switch';
 import { deleteQrCode, updateQrCode, updateQrStatus } from '@/lib/qr/actions';
 import { QR_TYPES } from '@/lib/qr/types';
 import { QRStyle, QRType } from '@/lib/types';
-import { Copy, Download, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
+import { Copy, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { jsPDF } from 'jspdf';
+import { QrPdfDownload } from './qr-pdf-download';
+import { QrPngDownload } from './qr-png-download';
+
 interface Props {
   qr: any;
   folders: { id: string; name: string }[];
@@ -108,50 +110,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
     } catch (err: any) {
       toast.error(err.message);
     }
-  };
-
-  const handleDownload = () => {
-    const canvas = canvasWrapperRef.current?.querySelector('canvas');
-    if (!canvas) return;
-    const url = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.png`;
-    a.click();
-  };
-
-  const handleDownloadPdf = () => {
-    // 1. Locate the canvas element inside the wrapper
-    const canvas = canvasWrapperRef.current?.querySelector('canvas');
-    if (!canvas) return;
-
-    // 2. Convert canvas drawing to an image data URL string
-    const imgData = canvas.toDataURL('image/png');
-
-    // 3. Initialize jsPDF in portrait mode using millimeters
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4', // standard page sizing
-    });
-
-    // 4. Calculate dimensions to center the QR code nicely
-    const qrSizeMM = 100; // Size of the QR code on the PDF page (100mm x 100mm)
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const xCentered = (pageWidth - qrSizeMM) / 2;
-    const yTopMargin = 40; // Spacing from top of the page
-
-    // 5. Add optional title text above the QR Code
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.text(name, pageWidth / 2, 25, { align: 'center' });
-
-    // 6. Draw the QR code image onto the canvas layer
-    pdf.addImage(imgData, 'PNG', xCentered, yTopMargin, qrSizeMM, qrSizeMM);
-
-    // 7. Generate a clean slug for the filename and trigger download
-    const safeName = name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-    pdf.save(`${safeName}.pdf`);
   };
 
   const handleCopyLink = () => {
@@ -326,15 +284,19 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                     style={style}
                   />
                 </div>
-                <Button variant="outline" className="w-full" onClick={handleDownload}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PNG
-                </Button>
+                <QrPngDownload
+                  canvasWrapperRef={canvasWrapperRef}
+                  name={name}
+                />
 
-                <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </Button>
+                <QrPdfDownload
+                  canvasWrapperRef={canvasWrapperRef}
+                  name={name}
+                  typeLabel={typeDef?.label ?? type}
+                  scanCount={qr.scanCount}
+                  isDynamic={isDynamic}
+                  shortLinkUrl={isDynamic && qr.shortCode ? shortLinkUrl : undefined}
+                />
 
                 {isMounted && qr.isDynamic && qr.shortCode && (
                   <div className="w-full space-y-2">
