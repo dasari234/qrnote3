@@ -51,6 +51,7 @@ export function QRPreview({
   const frame = style?.frame || 'none';
   const frameColor = style?.frameColor || '#000000';
   const caption = style?.caption || 'Scan me';
+
   const frameClass =
     frame === 'rounded'
       ? 'rounded-2xl p-4'
@@ -64,13 +65,13 @@ export function QRPreview({
     frame === 'none'
       ? {}
       : frame === 'caption'
-      ? { borderColor: frameColor, color: frameColor }
-      : { borderColor: frameColor };
+      ? { borderStyle: 'solid', borderColor: frameColor, color: frameColor }
+      : { borderStyle: 'solid', borderColor: frameColor };
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="inline-flex flex-col items-center" style={frameStyle}>
-        <div className={frameClass}>
+      <div className={`inline-flex flex-col items-center ${frameClass}`} style={frameStyle}>
+        <div>
           <div ref={containerRef} />
         </div>
         {frame === 'caption' && (
