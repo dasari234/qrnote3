@@ -530,7 +530,7 @@ export function TeamPageClient({
                 can also copy the link below to share manually.
               </p>
               <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
-                <span className="flex-1 truncate text-xs font-mono text-muted-foreground break-all">
+                <span className="flex-1 text-xs font-mono text-muted-foreground break-all">
                   {inviteLink}
                 </span>
                 <Button
