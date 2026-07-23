@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Download, Loader2 } from 'lucide-react';
+import { FileDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -53,7 +53,7 @@ export function QrPngDownload({ canvasWrapperRef, name, className }: QrPngDownlo
         </>
       ) : (
         <>
-          <Download className="mr-2 h-4 w-4" />
+          <FileDown className="mr-2 h-4 w-4" />
           Download PNG
         </>
       )}
