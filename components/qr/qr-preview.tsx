@@ -58,7 +58,7 @@ const frameClass =
     : frame === 'border'
     ? 'rounded-none border-4 border-solid p-4'
     : frame === 'caption'
-    ? 'rounded-none border-2 border-solid p-4 pb-2'
+    ? 'rounded-lg border-2 border-solid p-4 pb-2'
     : '';
 
   const frameStyle =
