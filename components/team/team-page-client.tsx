@@ -4,55 +4,55 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { can, canAssignRole, type Role } from '@/lib/rbac-client';
 import {
-    changeMemberRole,
-    inviteMember,
-    removeMember,
-    revokeInvite,
+  changeMemberRole,
+  inviteMember,
+  removeMember,
+  revokeInvite,
 } from '@/lib/team/actions';
 import { cn } from '@/lib/utils';
 import {
-    Check,
-    Clock,
-    Copy,
-    Mail,
-    MoreHorizontal,
-    Shield,
-    Trash2,
-    UserPlus,
-    Users
+  Check,
+  Clock,
+  Copy,
+  Mail,
+  MoreHorizontal,
+  Shield,
+  Trash2,
+  UserPlus,
+  Users
 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -530,7 +530,7 @@ export function TeamPageClient({
                 can also copy the link below to share manually.
               </p>
               <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
-                <span className="flex-1 truncate text-xs font-mono text-muted-foreground">
+                <span className="flex-1 truncate text-xs font-mono text-muted-foreground break-all">
                   {inviteLink}
                 </span>
                 <Button
