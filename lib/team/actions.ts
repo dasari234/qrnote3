@@ -73,7 +73,7 @@ export async function inviteMember(input: {
     select: { name: true },
   });
 
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/invite/accept?token=${token}`;
+  const inviteUrl = `${window.location.origin}/invite/accept?token=${token}`;
 
   const adminClient = createAdminSupabaseClient();
   await adminClient.auth.admin.inviteUserByEmail(input.email, {
