@@ -1,8 +1,43 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { QRType, QRStyle } from '@/lib/types';
-import { resolveDestination, generateUniqueShortCode } from '@/lib/qr/factory';
+import { generateUniqueShortCode, resolveDestination } from '@/lib/qr/factory';
+import { QRStyle, QRType } from '@/lib/types';
+
+import { requireOrgPermission } from '@/lib/rbac';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+
+/** Resolve the orgId for a given workspaceId */
+async function getOrgIdForWorkspace(workspaceId: string): Promise<string> {
+  const ws = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { orgId: true },
+  });
+  if (!ws) throw new Error('Workspace not found.');
+  return ws.orgId;
+}
+
+/** Resolve the orgId for a given QR code id */
+async function getOrgIdForQr(qrId: string): Promise<string> {
+  const qr = await prisma.qrCode.findUnique({
+    where: { id: qrId },
+    include: { workspace: { select: { orgId: true } } },
+  });
+  if (!qr) throw new Error('QR code not found.');
+  return qr.workspace.orgId;
+}
+
+/** Get the authenticated user's id — throws if unauthenticated */
+async function getAuthUserId(): Promise<string> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Unauthenticated.');
+  return user.id;
+}
+
+// ---------------------------------------------------------------------------
 
 export async function createQrCode(input: {
   workspaceId: string;
@@ -15,6 +50,10 @@ export async function createQrCode(input: {
   folderId?: string;
   tagIds?: string[];
 }) {
+  const userId = await getAuthUserId();
+  const orgId = await getOrgIdForWorkspace(input.workspaceId);
+  await requireOrgPermission(userId, orgId, 'qr:create');
+
   let shortCode: string | null = null;
   let destinationUrl: string | null = null;
 
@@ -62,6 +101,10 @@ export async function updateQrCode(input: {
   folderId?: string | null;
   tagIds?: string[];
 }) {
+  const userId = await getAuthUserId();
+  const orgId = await getOrgIdForQr(input.id);
+  await requireOrgPermission(userId, orgId, 'qr:edit');
+
   const destinationUrl = input.isDynamic
     ? resolveDestination(input.type, input.payload)
     : null;
@@ -85,9 +128,18 @@ export async function updateQrCode(input: {
 }
 
 export async function deleteQrCode(id: string) {
+  const userId = await getAuthUserId();
+  const orgId = await getOrgIdForQr(id);
+  await requireOrgPermission(userId, orgId, 'qr:delete');
   await prisma.qrCode.delete({ where: { id } });
 }
 
-export async function updateQrStatus(id: string, status: 'active' | 'paused' | 'archived') {
+export async function updateQrStatus(
+  id: string,
+  status: 'active' | 'paused' | 'archived'
+) {
+  const userId = await getAuthUserId();
+  const orgId = await getOrgIdForQr(id);
+  await requireOrgPermission(userId, orgId, 'qr:edit');
   await prisma.qrCode.update({ where: { id }, data: { status } });
 }
