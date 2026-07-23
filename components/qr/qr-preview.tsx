@@ -54,7 +54,7 @@ export function QRPreview({
 
   const frameClass =
     frame === 'rounded'
-      ? 'rounded-2xl p-4'
+      ? 'rounded-2xl border-4 p-4'
       : frame === 'border'
       ? 'rounded-lg border-4 p-4'
       : frame === 'caption'
