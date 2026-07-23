@@ -24,10 +24,8 @@ export function QRPreview({
   size = 220,
 }: QRPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const qrRef = useRef<QRCodeStyling | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Mount detection prevents hydration mismatch between server and client
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -42,37 +40,32 @@ export function QRPreview({
   useEffect(() => {
     if (!isMounted || !containerRef.current) return;
 
-    // Clear old elements to prevent canvas duplication in Strict Mode
+    // Clear container to prevent canvas duplication
     containerRef.current.innerHTML = '';
 
-    if (!qrRef.current) {
-      qrRef.current = new QRCodeStyling(options);
-    } else {
-      qrRef.current.update(options);
-    }
-
-    qrRef.current.append(containerRef.current);
+    // Always instantiate a fresh copy to prevent internal canvas state/gradient pollution
+    const qrCode = new QRCodeStyling(options);
+    qrCode.append(containerRef.current);
   }, [options, isMounted]);
 
   const frame = style?.frame || 'none';
   const frameColor = style?.frameColor || '#000000';
   const caption = style?.caption || 'Scan me';
-
   const frameClass =
     frame === 'rounded'
       ? 'rounded-2xl p-4'
       : frame === 'border'
-        ? 'rounded-lg border-4 p-4'
-        : frame === 'caption'
-          ? 'rounded-xl border-2 p-4 pb-2'
-          : '';
+      ? 'rounded-lg border-4 p-4'
+      : frame === 'caption'
+      ? 'rounded-xl border-2 p-4 pb-2'
+      : '';
 
   const frameStyle =
     frame === 'none'
       ? {}
       : frame === 'caption'
-        ? { borderColor: frameColor, color: frameColor }
-        : { borderColor: frameColor };
+      ? { borderColor: frameColor, color: frameColor }
+      : { borderColor: frameColor };
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -114,7 +107,7 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
 
   if (isGradient) {
     const gradientRotation = getGradientRotation(gradientType);
-    dotsOptions.gradient = {
+    const gradientObj = {
       type: gradientType === 'radial' ? 'radial' : 'linear',
       rotation: gradientRotation,
       colorStops: [
@@ -122,12 +115,23 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
         { offset: 1, color: style?.gradientColor2 || '#1e3a8a' },
       ],
     };
-    cornersSquareOptions.gradient = dotsOptions.gradient;
-    cornersDotOptions.gradient = dotsOptions.gradient;
+    dotsOptions.gradient = gradientObj;
+    cornersSquareOptions.gradient = gradientObj;
+    cornersDotOptions.gradient = gradientObj;
+
+    // Explicitly delete standard color to avoid merge collision
+    delete dotsOptions.color;
+    delete cornersSquareOptions.color;
+    delete cornersDotOptions.color;
   } else {
     dotsOptions.color = style?.fgColor || '#000000';
     cornersSquareOptions.color = style?.fgColor || '#000000';
     cornersDotOptions.color = style?.fgColor || '#000000';
+
+    // Explicitly delete old gradient configurations so the library builds solid colors properly
+    delete dotsOptions.gradient;
+    delete cornersSquareOptions.gradient;
+    delete cornersDotOptions.gradient;
   }
 
   const qrBgColor = style?.bgColor || '#ffffff';
