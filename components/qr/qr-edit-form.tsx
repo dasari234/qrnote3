@@ -271,10 +271,11 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
         <div className="lg:col-span-1">
           <div className="sticky top-20 space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-0">
                 <CardTitle className="text-lg">Preview</CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col items-center gap-4 py-4">
+
+              <CardContent className="flex flex-col items-center gap-4 pt-1 pb-4">
                 <div ref={canvasWrapperRef}>
                   <QRPreview
                     type={type}
