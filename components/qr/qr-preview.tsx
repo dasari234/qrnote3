@@ -52,14 +52,14 @@ export function QRPreview({
   const frameColor = style?.frameColor || '#000000';
   const caption = style?.caption || 'Scan me';
 
-  const frameClass =
-    frame === 'rounded'
-      ? 'rounded-2xl border-4 p-4'
-      : frame === 'border'
-      ? 'rounded-lg border-4 p-4'
-      : frame === 'caption'
-      ? 'rounded-xl border-2 p-4 pb-2'
-      : '';
+const frameClass =
+  frame === 'rounded'
+    ? 'rounded-2xl border-4 border-solid p-4 overflow-hidden'
+    : frame === 'border'
+    ? 'rounded-none border-4 border-solid p-4'
+    : frame === 'caption'
+    ? 'rounded-none border-2 border-solid p-4 pb-2'
+    : '';
 
   const frameStyle =
     frame === 'none'
