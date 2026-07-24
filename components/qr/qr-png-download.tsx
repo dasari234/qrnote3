@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils'; // Imported class merge utility
 import { FileDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -41,20 +42,26 @@ export function QrPngDownload({ canvasWrapperRef, name, className }: QrPngDownlo
 
   return (
     <Button
+      type="button"
       variant="outline"
-      className={className ?? 'w-full'}
+      // Fix: Merge classes using cn to guarantee clean visual changes during theme and status switches
+      className={cn(
+        "w-full shadow-sm transition-all duration-200 active:scale-[0.99] select-none text-foreground border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50",
+        generating && "bg-muted text-muted-foreground cursor-not-allowed",
+        className
+      )}
       onClick={handleDownloadPng}
       disabled={generating}
     >
       {generating ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating PNG…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+          <span>Generating PNG…</span>
         </>
       ) : (
         <>
-          <FileDown className="mr-2 h-4 w-4" />
-          Download PNG
+          <FileDown className="mr-2 h-4 w-4 text-muted-foreground/80 group-hover:text-foreground" />
+          <span>Download PNG</span>
         </>
       )}
     </Button>

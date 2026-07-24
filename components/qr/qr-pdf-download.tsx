@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
 import { FileDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-
+import { cn } from '@/lib/utils';
 interface QrPdfDownloadProps {
   /** ref to the container that holds the <canvas> element */
   canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
@@ -52,20 +52,26 @@ export function QrPdfDownload({
 
   return (
     <Button
+      type="button"
       variant="outline"
-      className={className ?? 'w-full'}
+      // Fix: Merge classes using cn to guarantee clean visual changes during theme and status switches
+      className={cn(
+        "w-full shadow-sm transition-all duration-200 active:scale-[0.99] select-none text-foreground border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50",
+        generating && "bg-muted text-muted-foreground cursor-not-allowed",
+        className
+      )}
       onClick={handleDownloadPdf}
       disabled={generating}
     >
       {generating ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Generating PDF…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+          <span>Generating PDF…</span>
         </>
       ) : (
         <>
-          <FileDown className="mr-2 h-4 w-4" />
-          Download PDF
+          <FileDown className="mr-2 h-4 w-4 text-muted-foreground/80 group-hover:text-foreground" />
+          <span>Download PDF</span>
         </>
       )}
     </Button>

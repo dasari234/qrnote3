@@ -5,6 +5,8 @@ import { QRStyle, QRType } from '@/lib/types';
 import type { Options } from 'qr-code-styling';
 import QRCodeStyling from 'qr-code-styling';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 
 interface QRPreviewProps {
   type: QRType;
@@ -25,6 +27,7 @@ export function QRPreview({
 }: QRPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const { resolvedTheme } = useTheme(); // Detect absolute dark/light state safely
 
   useEffect(() => {
     setIsMounted(true);
@@ -49,41 +52,55 @@ export function QRPreview({
   }, [options, isMounted]);
 
   const frame = style?.frame || 'none';
-  const frameColor = style?.frameColor || '#000000';
+  const rawFrameColor = style?.frameColor || '#000000';
   const caption = style?.caption || 'Scan me';
 
-const frameClass =
-  frame === 'rounded'
-    ? 'rounded-2xl border-4 border-solid p-4 overflow-hidden'
-    : frame === 'border'
-    ? 'rounded-none border-4 border-solid p-4'
-    : frame === 'caption'
-    ? 'rounded-lg border-2 border-solid p-4 pb-2'
-    : '';
+  // Fix: Intercept raw #000000 settings in dark mode to inject theme lines, otherwise respect custom colors
+  const isDarkMode = resolvedTheme === 'dark';
+  const useThemeFallback = isDarkMode && (rawFrameColor === '#000000' || rawFrameColor.toLowerCase() === '#ffffff');
+
+  const activeFrameColor = useThemeFallback ? 'var(--border)' : rawFrameColor;
+  const activeTextColor = useThemeFallback ? 'var(--foreground)' : rawFrameColor;
+
+  const frameClass =
+    frame === 'rounded'
+      ? 'rounded-2xl border-4 border-solid p-4 overflow-hidden bg-white dark:bg-card'
+      : frame === 'border'
+        ? 'rounded-none border-4 border-solid p-4 bg-white dark:bg-card'
+        : frame === 'caption'
+          ? 'rounded-lg border-2 border-solid p-4 pb-3 bg-white dark:bg-card'
+          : 'bg-white p-2 rounded-xl border border-border/40 shadow-sm';
 
   const frameStyle =
     frame === 'none'
       ? {}
-      : frame === 'caption'
-      ? { borderStyle: 'solid', borderColor: frameColor, color: frameColor }
-      : { borderStyle: 'solid', borderColor: frameColor };
+      : { borderStyle: 'solid', borderColor: activeFrameColor };
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className={`inline-flex flex-col items-center ${frameClass}`} style={frameStyle}>
-        <div>
-          <div ref={containerRef} />
+    <div className="flex flex-col items-center gap-3 select-none pt-10 pb-4">
+      <div
+        className={cn(
+          // Fix: Added isolate, forced overflow-hidden, and cleaned up padding properties to lock in the rounded corners
+          "flex w-fit flex-col items-center p-3 rounded-xl border border-border/40 bg-white shadow-sm transition-all duration-200 dark:bg-card overflow-hidden isolate",
+          frameClass
+        )}
+        style={frameStyle}
+      >
+        {/* Fix: Added an absolute white canvas base plate wrapper to ensure standard optical contrast boundaries clip cleanly */}
+        <div className="overflow-hidden rounded-lg bg-white p-1">
+          <div ref={containerRef} className="flex items-center justify-center" />
         </div>
         {frame === 'caption' && (
           <p
-            className="mt-2 text-sm font-semibold uppercase tracking-wide"
-            style={{ color: frameColor }}
+            className="mt-2.5 text-[10px] font-black uppercase tracking-widest text-center leading-none max-w-[180px] truncate"
+            style={{ color: activeTextColor }}
           >
             {caption}
           </p>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">
+
+      <p className="text-xs text-muted-foreground font-medium font-mono text-center max-w-[240px] truncate">
         {isMounted && isDynamic && shortLinkUrl
           ? `Dynamic · ${shortLinkUrl.replace(/^https?:\/\//, '')}`
           : 'Static QR'}
@@ -135,6 +152,7 @@ export function buildOptions(value: string, style: QRStyle | undefined, size: nu
     delete cornersDotOptions.gradient;
   }
 
+  // Preserve clear scanner contrast definitions
   const qrBgColor = style?.bgColor || '#ffffff';
 
   return {

@@ -41,7 +41,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { QrPdfDownload } from './qr-pdf-download';
 import { QrPngDownload } from './qr-png-download';
-
+import { cn } from '@/lib/utils';
 interface Props {
   qr: any;
   folders: { id: string; name: string }[];
@@ -179,45 +179,47 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-4 mb-6 text-foreground">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{qr.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {qr.type} · {qr.isDynamic ? 'Dynamic' : 'Static'} · {qr.scanCount} scans
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{qr.name}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            <span className="capitalize">{qr.type.replace('_', ' ')}</span> · {qr.isDynamic ? 'Dynamic' : 'Static'} · {qr.scanCount} scans
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleToggleStatus} disabled={loading}>
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button variant="outline" onClick={handleToggleStatus} disabled={loading} className="hover:bg-accent hover:text-accent-foreground shadow-sm">
             {status === 'active' ? (
               <>
-                <Pause className="mr-2 h-4 w-4" /> Pause
+                <Pause className="mr-2 h-4 w-4 text-muted-foreground/80" /> Pause
               </>
             ) : (
               <>
-                <Play className="mr-2 h-4 w-4" /> Activate
+                <Play className="mr-2 h-4 w-4 text-primary" /> Activate
               </>
             )}
           </Button>
-          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating || loading}>
-            <Copy className="mr-2 h-4 w-4" /> Duplicate
+
+          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating || loading} className="hover:bg-accent hover:text-accent-foreground shadow-sm">
+            <Copy className="mr-2 h-4 w-4 text-muted-foreground/80" /> Duplicate
           </Button>
 
+          {/* Radix Dialog Confirmation Modal */}
           <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" disabled={loading || isDeleting}>
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
+              <Button variant="outline" disabled={loading || isDeleting} className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 shadow-sm">
+                <Trash2 className="mr-2 h-4 w-4 text-destructive/80" /> Delete
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-popover text-popover-foreground border-border shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
               <DialogHeader>
-                <DialogTitle>Delete this QR code?</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-foreground font-bold">Delete this QR code?</DialogTitle>
+                <DialogDescription className="text-muted-foreground text-sm mt-1 leading-relaxed">
                   This action cannot be undone. This will permanently delete your QR code and completely stop all traffic redirects.
                 </DialogDescription>
               </DialogHeader>
-              <DialogFooter className="mt-4 gap-2 sm:gap-0">
+              <DialogFooter className="mt-6 gap-2 sm:gap-0">
                 <DialogClose asChild>
-                  <Button type="button" variant="outline" disabled={isDeleting}>
+                  <Button type="button" variant="outline" disabled={isDeleting} className="hover:bg-accent hover:text-accent-foreground">
                     Cancel
                   </Button>
                 </DialogClose>
@@ -226,6 +228,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                   variant="destructive"
                   disabled={isDeleting}
                   onClick={handleConfirmDelete}
+                  className="shadow-sm transition-transform active:scale-[0.99]"
                 >
                   {isDeleting ? 'Deleting…' : 'Delete'}
                 </Button>
@@ -233,37 +236,49 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             </DialogContent>
           </Dialog>
 
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading} className="shadow-sm transition-transform active:scale-[0.99]">
             <Save className="mr-2 h-4 w-4" />
             {loading ? 'Saving…' : 'Save'}
           </Button>
         </div>
       </div>
 
+
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: form */}
         <div className="space-y-6 lg:col-span-2">
-          <Card>
+          <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
             <CardHeader>
-              <CardTitle className="text-lg">Details</CardTitle>
-              <CardDescription>Edit your QR code content</CardDescription>
+              <CardTitle className="text-lg text-foreground font-bold">Details</CardTitle>
+              <CardDescription className="text-muted-foreground">Edit your QR code content</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 bg-card">
+              {/* QR Name Field */}
               <div className="space-y-2">
-                <Label htmlFor="name">QR Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                <Label htmlFor="name" className="text-foreground font-medium">QR Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-background text-foreground border-input placeholder:text-muted-foreground/50 focus-visible:ring-ring font-medium text-sm"
+                />
               </div>
 
+              {/* QR Type Selector Menu Dropdown */}
               <div className="space-y-2">
-                <Label>QR Type</Label>
+                <Label className="text-foreground font-medium">QR Type</Label>
                 <Select value={type} onValueChange={(v) => setType(v as QRType)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full bg-background text-foreground border-input focus:ring-ring font-medium text-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-popover text-popover-foreground border-border shadow-md">
                     {QR_TYPES.map((t) => (
-                      <SelectItem key={t.type} value={t.type}>
-                        {t.label} — {t.description}
+                      <SelectItem
+                        key={t.type}
+                        value={t.type}
+                        className="focus:bg-accent focus:text-accent-foreground cursor-pointer font-medium text-sm py-2"
+                      >
+                        {t.label} — <span className="text-muted-foreground font-normal text-xs">{t.description}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -272,28 +287,28 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
               <QrFormFields typeDef={typeDef} payload={payload} onChange={handleFieldChange} />
 
-              {/* Folder */}
+              {/* Folder Selector Dropdown */}
               <div className="space-y-2">
-                <Label htmlFor="folder">Folder</Label>
+                <Label htmlFor="folder" className="text-foreground font-medium">Folder</Label>
                 <select
                   id="folder"
                   value={folderId}
                   onChange={(e) => setFolderId(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring focus:border-ring font-medium transition-all dark:bg-card cursor-pointer"
                 >
-                  <option value="">No folder</option>
+                  <option value="" className="bg-popover text-popover-foreground">No folder</option>
                   {folders.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name}
+                    <option key={f.id} value={f.id} className="bg-popover text-popover-foreground py-2">
+                      📁 {f.name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Tags */}
+              {/* Tags Selector Matrix */}
               {tags.length > 0 && (
                 <div className="space-y-2">
-                  <Label>Tags</Label>
+                  <Label className="text-foreground font-medium">Tags</Label>
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag) => {
                       const active = selectedTags.includes(tag.id);
@@ -306,16 +321,16 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                               active ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
                             );
                           }}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${active
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background hover:bg-accent'
-                            }`}
+                          className={cn(
+                            "rounded-full border px-3 py-1 text-xs font-semibold transition-all select-none shadow-xs border-border bg-background text-foreground hover:bg-accent hover:border-muted-foreground/30",
+                            active && "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary"
+                          )}
                         >
                           <span
-                            className="mr-1.5 inline-block h-2 w-2 rounded-full"
+                            className="mr-1.5 inline-block h-2 w-2 rounded-full border border-black/10 dark:border-white/10 shrink-0"
                             style={{ backgroundColor: tag.color }}
                           />
-                          {tag.name}
+                          <span>{tag.name}</span>
                         </button>
                       );
                     })}
@@ -323,10 +338,11 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                 </div>
               )}
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label htmlFor="dynamic">Dynamic QR</Label>
-                  <p className="text-xs text-muted-foreground">
+              {/* Dynamic Action Switch Tray Container */}
+              <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-muted/10 dark:bg-transparent shadow-inner">
+                <div className="space-y-0.5 pr-4">
+                  <Label htmlFor="dynamic" className="text-foreground font-semibold leading-none">Dynamic QR</Label>
+                  <p className="text-xs text-muted-foreground leading-normal mt-1">
                     Dynamic QRs can be edited without reprinting and track scans.
                   </p>
                 </div>
@@ -339,6 +355,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
               </div>
             </CardContent>
           </Card>
+
 
           {/* Extended fields: Vanity Slug, Expiry, A/B Testing */}
           <QrFormFieldsExtended
@@ -355,26 +372,27 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             onTestNameChange={setTestName}
           />
 
-          <Card>
+          <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
             <CardHeader>
-              <CardTitle className="text-lg">Branding & Style</CardTitle>
+              <CardTitle className="text-lg text-foreground font-bold">Branding & Style</CardTitle>
             </CardHeader>
             <CardContent>
               <QrStyleEditor style={style} onChange={setStyle} />
             </CardContent>
           </Card>
+
         </div>
 
         {/* Right: preview */}
         <div className="lg:col-span-1">
           <div className="sticky top-20 space-y-4">
-            <Card>
+            <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
               <CardHeader className="pb-0">
-                <CardTitle className="text-lg">Preview</CardTitle>
+                <CardTitle className="text-lg text-foreground font-bold">Preview</CardTitle>
               </CardHeader>
 
-              <CardContent className="flex flex-col items-center gap-4 pt-1 pb-4">
-                <div ref={canvasWrapperRef}>
+              <CardContent className="flex flex-col items-center gap-4 pt-1 pb-4 bg-card">
+                <div ref={canvasWrapperRef} className="p-1 rounded-lg bg-transparent">
                   <QRPreview
                     type={type}
                     payload={payload}
@@ -398,19 +416,22 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                 />
 
                 {isMounted && qr.isDynamic && qr.shortCode && (
-                  <div className="w-full space-y-2">
-                    <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2 text-xs">
-                      <span className="truncate text-muted-foreground">
+                  <div className="w-full space-y-3 pt-2 border-t border-border/40 mt-1">
+                    {/* Short Link URL Pill Container */}
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 dark:bg-muted/10 p-2.5 text-xs shadow-inner">
+                      <span className="truncate text-foreground/80 font-mono font-medium">
                         {shortLinkUrl.replace(/^https?:\/\//, '')}
                       </span>
                     </div>
+
+                    {/* Action Button Grid */}
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyLink}>
-                        <Copy className="mr-2 h-3 w-3" /> Copy
+                      <Button variant="outline" size="sm" className="flex-1 hover:bg-accent hover:text-accent-foreground transition-all shadow-sm" onClick={handleCopyLink}>
+                        <Copy className="mr-1.5 h-3.5 w-3.5 text-muted-foreground/80" /> Copy
                       </Button>
-                      <Button asChild variant="outline" size="sm" className="flex-1">
+                      <Button asChild variant="outline" size="sm" className="flex-1 hover:bg-accent hover:text-accent-foreground transition-all shadow-sm">
                         <a href={shortLinkUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-2 h-3 w-3" /> Open
+                          <ExternalLink className="mr-1.5 h-3.5 w-3.5 text-muted-foreground/80" /> Open
                         </a>
                       </Button>
                     </div>
@@ -420,6 +441,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             </Card>
           </div>
         </div>
+
       </div>
     </div>
   );
