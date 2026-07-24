@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import {
   BarChart3,
@@ -30,7 +31,6 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useState } from 'react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface DashboardShellProps {
   children: ReactNode;
@@ -93,7 +93,7 @@ export function DashboardShell({
             onClick={() => setMobileOpen(false)}
           />
           <aside className="absolute inset-y-0 left-0 w-64 border-r bg-background">
-            <div className="flex h-14 items-center justify-between border-b px-4">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
               <span className="font-semibold">Menu</span>
               <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
                 <X className="h-5 w-5" />
@@ -114,7 +114,7 @@ export function DashboardShell({
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur lg:px-6">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6">
           <Button
             variant="ghost"
             size="icon"
@@ -126,42 +126,41 @@ export function DashboardShell({
 
           <div className="flex-1" />
 
-          <div className="mr-2">
+          <div className="flex flex-1 items-center justify-end gap-2">
             <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-9 gap-2 px-2 hover:bg-accent">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                  {/* <span className="hidden text-sm font-medium sm:inline">
+                    {profile.fullName || profile.email}
+                  </span> */}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{profile.fullName || 'User'}</span>
+                    <span className="text-xs text-muted-foreground">{profile.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="text-destructive focus:text-destructive"
+                >
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-                {/* <span className="hidden text-sm font-medium sm:inline">
-                  {profile.fullName || profile.email}
-                </span> */}
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{profile.fullName || 'User'}</span>
-                  <span className="text-xs text-muted-foreground">{profile.email}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => signOut()}
-                className="text-destructive focus:text-destructive"
-              >
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </header>
 
         <main className="p-4 lg:p-6">{children}</main>
@@ -188,11 +187,18 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center gap-2 border-b px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <QrCode className="h-5 w-5" />
-        </div>
-        <span className="text-lg font-bold tracking-tight">QRNote</span>
+      <div className="flex h-14 shrink-0 items-center border-b px-4">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+            <QrCode className="h-5 w-5 text-primary-foreground" />
+          </div>
+
+          <div className="flex flex-col justify-center leading-none">
+            <span className="text-lg font-semibold tracking-tight">
+              QRNote
+            </span>
+          </div>
+        </Link>
       </div>
 
       {/* Org / workspace switcher */}
