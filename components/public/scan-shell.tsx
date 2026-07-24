@@ -1,6 +1,7 @@
 import { QrCode } from 'lucide-react';
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 /**
  * Full-screen, mobile-first wrapper for public scan landing pages.
@@ -16,6 +17,9 @@ export function ScanShell({
 }) {
   return (
     <div className="min-h-screen bg-muted/40 px-4 py-8 sm:py-12">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className={cn('mx-auto w-full max-w-md', className)}>
         {children}
         <div className="mt-8 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
