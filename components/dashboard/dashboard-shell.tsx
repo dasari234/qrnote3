@@ -30,6 +30,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useState } from 'react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface DashboardShellProps {
   children: ReactNode;
@@ -124,6 +125,10 @@ export function DashboardShell({
           </Button>
 
           <div className="flex-1" />
+
+          <div className="mr-2">
+            <ThemeToggle />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
