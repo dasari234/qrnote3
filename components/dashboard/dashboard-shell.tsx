@@ -168,10 +168,11 @@ export function DashboardShell({
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem
                   onClick={() => signOut()}
-                  className="text-destructive focus:text-destructive-foreground focus:bg-destructive/10 dark:focus:bg-destructive/20 cursor-pointer"
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20 hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 cursor-pointer"
                 >
                   Sign out
                 </DropdownMenuItem>
+
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
