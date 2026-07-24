@@ -219,6 +219,33 @@ export function resolveDestination(
   }
 }
 
+/**
+ * QR types that are always rendered as a styled public landing page
+ * (they never redirect straight to an external URL).
+ */
+export const LANDING_TYPES: QRType[] = [
+  'vcard',
+  'wifi',
+  'text',
+  'event',
+  'medical_emergency',
+  'pet_id',
+  'gift_memories',
+  'doorbell',
+  'memorial',
+  'lost_found',
+  'rsvp',
+];
+
+export function isLandingType(type: QRType): boolean {
+  return LANDING_TYPES.includes(type);
+}
+
+/** Whether a dynamic QR of this type redirects to an external destination. */
+export function isRedirectType(type: QRType): boolean {
+  return !isLandingType(type);
+}
+
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 export function generateShortCode(length = 8): string {
