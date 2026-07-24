@@ -185,7 +185,7 @@ function SidebarContent({
   onNavigate?: () => void;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Logo */}
       <div className="flex h-14 shrink-0 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-3">
@@ -193,16 +193,14 @@ function SidebarContent({
             <QrCode className="h-5 w-5 text-primary-foreground" />
           </div>
 
-          <div className="flex flex-col justify-center leading-none">
-            <span className="text-lg font-semibold tracking-tight">
-              QRNote
-            </span>
-          </div>
+          <span className="text-lg font-semibold tracking-tight">
+            QRNote
+          </span>
         </Link>
       </div>
 
-      {/* Org / workspace switcher */}
-      <div className="border-b p-3">
+      {/* Organization */}
+      <div className="shrink-0 border-b p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between">
@@ -212,16 +210,24 @@ function SidebarContent({
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent className="w-56" align="start">
             <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+
             {organizations.map((org) => (
-              <DropdownMenuItem key={org.id} className="flex items-center justify-between">
+              <DropdownMenuItem
+                key={org.id}
+                className="flex items-center justify-between"
+              >
                 <span className="truncate">{org.name}</span>
-                <span className="text-xs text-muted-foreground">{org.role}</span>
+                <span className="text-xs text-muted-foreground">
+                  {org.role}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
         {currentWorkspace && (
           <p className="mt-2 px-1 text-xs text-muted-foreground">
             Workspace: {currentWorkspace.name}
@@ -229,13 +235,15 @@ function SidebarContent({
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarGutter: 'stable' }}>
-        <div className="space-y-1">
+      {/* Scrollable area */}
+      <div className="flex-1 overflow-y-auto">
+        <nav className="space-y-1 p-3">
           {navItems.map((item) => {
             const active =
               pathname === item.href ||
-              (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              (item.href !== '/dashboard' &&
+                pathname.startsWith(item.href));
+
             return (
               <Link
                 key={item.href}
@@ -248,37 +256,36 @@ function SidebarContent({
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+                <item.icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
-        </div>
-      </nav>
+        </nav>
 
-       {/* Super admin link */}
-      {isSuperAdmin && (
-        <div className="border-t p-3">
-          <Link
-            href="/dashboard/admin"
-            onClick={onNavigate}
-            className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/dashboard/admin')
-                ? 'bg-destructive text-destructive-foreground'
-                : 'text-destructive hover:bg-destructive/10'
-            )}
-          >
-            <ShieldAlert className="h-4 w-4" />
-            Admin Panel
-          </Link>
-        </div>
-      )}
+        {isSuperAdmin && (
+          <div className="border-t p-3">
+            <Link
+              href="/dashboard/admin"
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                pathname.startsWith('/dashboard/admin')
+                  ? 'bg-destructive text-destructive-foreground'
+                  : 'text-destructive hover:bg-destructive/10'
+              )}
+            >
+              <ShieldAlert className="h-4 w-4" />
+              Admin Panel
+            </Link>
+          </div>
+        )}
+      </div>
 
-      {/* Create button */}
-      <div className="border-t p-3">
-        <Button asChild className="w-full" onClick={onNavigate}>
-          <Link href="/dashboard/qr/new">
+      {/* Fixed bottom action */}
+      <div className="shrink-0 border-t bg-background p-3">
+        <Button asChild className="w-full">
+          <Link href="/dashboard/qr/new" onClick={onNavigate}>
             <Plus className="mr-2 h-4 w-4" />
             Create QR Code
           </Link>
