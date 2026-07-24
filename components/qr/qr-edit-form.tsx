@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
@@ -64,6 +74,9 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   const [variant, setVariant] = useState<string | null>(qr.variant || null);
   const [testName, setTestName] = useState(qr.testName || '');
 
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const typeDef = QR_TYPES.find((t) => t.type === type)!;
   const shortLinkUrl = useMemo(() => {
     if (isMounted && typeof window !== 'undefined' && qr.shortCode) {
@@ -102,6 +115,18 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
     setLoading(false);
   };
 
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await handleDelete(); // Executes your original delete block safely
+      setIsDeleteDialogOpen(false);
+    } catch (err) {
+      // Errors handled gracefully inside your original handleDelete block
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleDuplicate = async () => {
     setDuplicating(true);
     try {
@@ -116,7 +141,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this QR code? This cannot be undone.')) return;
     try {
       await deleteQrCode(qr.id);
       toast.success('QR code deleted');
@@ -177,9 +201,38 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
           <Button variant="outline" onClick={handleDuplicate} disabled={duplicating || loading}>
             <Copy className="mr-2 h-4 w-4" /> Duplicate
           </Button>
-          <Button variant="outline" onClick={handleDelete} disabled={loading}>
-            <Trash2 className="mr-2 h-4 w-4" /> Delete
-          </Button>
+
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={loading || isDeleting}>
+                <Trash2 className="mr-2 h-4 w-4" /> Delete
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete this QR code?</DialogTitle>
+                <DialogDescription>
+                  This action cannot be undone. This will permanently delete your QR code and completely stop all traffic redirects.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-4 gap-2 sm:gap-0">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline" disabled={isDeleting}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                >
+                  {isDeleting ? 'Deleting…' : 'Delete'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Button onClick={handleSave} disabled={loading}>
             <Save className="mr-2 h-4 w-4" />
             {loading ? 'Saving…' : 'Save'}
@@ -292,7 +345,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             typeDef={typeDef}
             payload={payload}
             onChange={handleFieldChange}
-            expiresAt={expiresAt}
+            expiresAt={expiresAt ?? undefined}
             onExpiryChange={setExpiresAt}
             shortCode={shortCode}
             onShortCodeChange={setShortCode}

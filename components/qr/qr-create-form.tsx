@@ -276,8 +276,8 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
               <CardDescription>Choose what your QR code will do</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="link" value={activeCategory}  onValueChange={setActiveCategory}>
-               <div className="relative flex items-center">
+              <Tabs defaultValue="link" value={activeCategory} onValueChange={setActiveCategory}>
+                <div className="relative flex items-center">
 
                   <Button
                     type="button"
@@ -322,7 +322,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
 
-               </div>
+                </div>
                 {QR_TYPE_CATEGORIES.map((cat) => (
                   <TabsContent key={cat.id} value={cat.id} className="mt-4">
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -337,9 +337,8 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                               setType(t.type);
                               setPayload({});
                             }}
-                            className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-all hover:border-primary/50 hover:bg-accent/50 ${
-                              active ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''
-                            }`}
+                            className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-all hover:border-primary/50 hover:bg-accent/50 ${active ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''
+                              }`}
                           >
                             <Icon
                               className={`h-6 w-6 ${active ? 'text-primary' : 'text-muted-foreground'}`}
@@ -413,11 +412,10 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                               active ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
                             );
                           }}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                            active
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${active
                               ? 'border-primary bg-primary text-primary-foreground'
                               : 'border-border bg-background hover:bg-accent'
-                          }`}
+                            }`}
                         >
                           <span
                             className="mr-1.5 inline-block h-2 w-2 rounded-full"
@@ -449,7 +447,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
             typeDef={typeDef}
             payload={payload}
             onChange={handleFieldChange}
-            expiresAt={expiresAt}
+            expiresAt={expiresAt ?? undefined}
             onExpiryChange={setExpiresAt}
             shortCode={shortCode}
             onShortCodeChange={setShortCode}

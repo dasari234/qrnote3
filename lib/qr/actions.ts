@@ -230,11 +230,7 @@ export async function duplicateQrCode(id: string) {
       payload,
       style: source.style as any,
       status: 'active',
-      expiresAt: source.expiresAt,
-      // Do NOT copy test metadata to avoid test conflicts
-      variant: null,
-      testName: null,
-      testId: null,
+      ...(source.expiresAt ? { expiresAt: source.expiresAt } : {}),
       ...(source.tags.length > 0
         ? { tags: { connect: source.tags.map((t) => ({ id: t.id })) } }
         : {}),
