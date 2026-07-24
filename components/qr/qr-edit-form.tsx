@@ -3,6 +3,7 @@
 import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
+import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { deleteQrCode, updateQrCode, updateQrStatus } from '@/lib/qr/actions';
+import { deleteQrCode, updateQrCode, updateQrStatus, duplicateQrCode } from '@/lib/qr/actions';
 import { QR_TYPES } from '@/lib/qr/types';
 import { QRStyle, QRType } from '@/lib/types';
 import { Copy, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
@@ -53,6 +54,15 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   const [folderId, setFolderId] = useState<string>(qr.folderId || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(selectedTagIds);
   const [loading, setLoading] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+
+  // New state for A/B testing, expiry, vanity slug
+  const [expiresAt, setExpiresAt] = useState<string | null>(
+    qr.expiresAt ? new Date(qr.expiresAt).toISOString().split('T')[0] : null
+  );
+  const [shortCode, setShortCode] = useState(qr.shortCode || '');
+  const [variant, setVariant] = useState<string | null>(qr.variant || null);
+  const [testName, setTestName] = useState(qr.testName || '');
 
   const typeDef = QR_TYPES.find((t) => t.type === type)!;
   const shortLinkUrl = useMemo(() => {
@@ -79,6 +89,10 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
         status,
         folderId: folderId || null,
         tagIds: selectedTags,
+        customShortCode: shortCode || undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        variant: variant || null,
+        testName: testName || undefined,
       });
       toast.success('QR code updated');
       router.refresh();
@@ -86,6 +100,19 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
       toast.error(err.message);
     }
     setLoading(false);
+  };
+
+  const handleDuplicate = async () => {
+    setDuplicating(true);
+    try {
+      const result = await duplicateQrCode(qr.id);
+      toast.success('QR code duplicated!');
+      router.push(`/dashboard/qr/${result.id}`);
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to duplicate QR code');
+    }
+    setDuplicating(false);
   };
 
   const handleDelete = async () => {
@@ -136,7 +163,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleToggleStatus}>
+          <Button variant="outline" onClick={handleToggleStatus} disabled={loading}>
             {status === 'active' ? (
               <>
                 <Pause className="mr-2 h-4 w-4" /> Pause
@@ -147,7 +174,10 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
               </>
             )}
           </Button>
-          <Button variant="outline" onClick={handleDelete}>
+          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating || loading}>
+            <Copy className="mr-2 h-4 w-4" /> Duplicate
+          </Button>
+          <Button variant="outline" onClick={handleDelete} disabled={loading}>
             <Trash2 className="mr-2 h-4 w-4" /> Delete
           </Button>
           <Button onClick={handleSave} disabled={loading}>
@@ -256,6 +286,21 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Extended fields: Vanity Slug, Expiry, A/B Testing */}
+          <QrFormFieldsExtended
+            typeDef={typeDef}
+            payload={payload}
+            onChange={handleFieldChange}
+            expiresAt={expiresAt}
+            onExpiryChange={setExpiresAt}
+            shortCode={shortCode}
+            onShortCodeChange={setShortCode}
+            variant={variant}
+            onVariantChange={setVariant}
+            testName={testName}
+            onTestNameChange={setTestName}
+          />
 
           <Card>
             <CardHeader>
