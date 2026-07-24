@@ -27,24 +27,32 @@ export function GenericTemplate({
 
   return (
     <ScanShell>
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div className="flex items-center gap-3 bg-primary px-5 py-5 text-primary-foreground">
-          <Info className="h-6 w-6" />
-          <h1 className="text-lg font-bold">{name}</h1>
+      <div className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-colors">
+        {/* Banner Section - Maintains high visual consistency via primary color token mapping */}
+        <div className="flex items-center gap-3 bg-primary px-5 py-5 text-primary-foreground shadow-inner">
+          <Info className="h-5 w-5 text-primary-foreground shrink-0" />
+          <h1 className="text-lg font-bold tracking-tight text-balance">{name}</h1>
         </div>
-        <div className="p-5">
+
+        <div className="p-5 bg-card">
           {primaryUrl && (
-            <Button asChild className="mb-4 w-full">
+            <Button asChild className="mb-4 w-full shadow-sm transition-transform active:scale-[0.99]">
               <a href={primaryUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Open Link
               </a>
             </Button>
           )}
+
           <Section>
-            <div className="divide-y">
+            <div className="divide-y divide-border border-t border-b border-border/40">
               {entries.map(([key, value]) => (
-                <InfoRow key={key} label={humanize(key)} value={String(value)} />
+                <div
+                  key={key}
+                  className="py-1 px-1 transition-colors hover:bg-muted/30 dark:hover:bg-muted/10 text-foreground"
+                >
+                  <InfoRow label={humanize(key)} value={String(value)} />
+                </div>
               ))}
             </div>
           </Section>

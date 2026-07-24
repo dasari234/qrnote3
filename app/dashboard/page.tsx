@@ -51,8 +51,13 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       take: 5,
     });
-    totalScans = qrCodes.reduce((sum, q) => sum + (q.scanCount || 0), 0);
-    activeCount = qrCodes.filter((q) => q.status === 'active').length;
+    // Fix: Aggregate scan calculations across full workspace set
+    const allQrForScans = await prisma.qrCode.findMany({
+      where: { workspaceId: { in: wsIds } },
+      select: { scanCount: true, status: true }
+    });
+    totalScans = allQrForScans.reduce((sum, q) => sum + (q.scanCount || 0), 0);
+    activeCount = allQrForScans.filter((q) => q.status === 'active').length;
     folderCount = await prisma.folder.count({ where: { workspaceId: { in: wsIds } } });
   }
 
@@ -67,7 +72,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Overview</h1>
           <p className="text-sm text-muted-foreground">
             Welcome back, {user.user_metadata?.full_name || user.email}
           </p>
@@ -82,7 +87,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label}>
+          <Card key={stat.label} className="bg-card text-card-foreground border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.label}
@@ -90,18 +95,18 @@ export default async function DashboardPage() {
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
               <p className="text-xs text-muted-foreground">{stat.hint}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card>
+      <Card className="bg-card text-card-foreground border-border">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Recent QR Codes</CardTitle>
+          <CardTitle className="text-lg text-foreground">Recent QR Codes</CardTitle>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/dashboard/qr">
+            <Link href="/dashboard/qr" className="hover:bg-accent hover:text-accent-foreground">
               View all
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -110,10 +115,10 @@ export default async function DashboardPage() {
         <CardContent>
           {qrCodes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted dark:bg-muted/50">
                 <QrCode className="h-6 w-6 text-muted-foreground" />
               </div>
-              <h3 className="text-sm font-medium">No QR codes yet</h3>
+              <h3 className="text-sm font-medium text-foreground">No QR codes yet</h3>
               <p className="mb-4 mt-1 text-sm text-muted-foreground">
                 Create your first QR code to get started.
               </p>
@@ -130,14 +135,14 @@ export default async function DashboardPage() {
                 <Link
                   key={qr.id}
                   href={`/dashboard/qr/${qr.id}`}
-                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent"
+                  className="flex items-center justify-between rounded-lg border border-border p-3 transition-colors hover:bg-accent dark:hover:bg-muted/40"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/20">
                       <QrCode className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{qr.name}</p>
+                      <p className="text-sm font-medium text-foreground">{qr.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {qr.type} · {qr.isDynamic ? 'Dynamic' : 'Static'}
                       </p>
@@ -149,7 +154,7 @@ export default async function DashboardPage() {
                       className={
                         qr.status === 'active'
                           ? 'rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                          : 'rounded-full bg-muted px-2 py-0.5 text-xs font-medium'
+                          : 'rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground dark:bg-muted/50'
                       }
                     >
                       {qr.status}

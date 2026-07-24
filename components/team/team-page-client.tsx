@@ -263,7 +263,7 @@ export function TeamPageClient({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Team</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Team</h1>
           <p className="text-sm text-muted-foreground">
             Manage members and invitations for{' '}
             <span className="font-medium text-foreground">{orgName}</span>.
@@ -278,10 +278,10 @@ export function TeamPageClient({
       </div>
 
       {/* Members table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4" />
+      <Card className="bg-card text-card-foreground border-border">
+        <CardHeader className="pb-3 border-b border-border/50">
+          <CardTitle className="flex items-center gap-2 text-base text-foreground">
+            <Users className="h-4 w-4 text-primary" />
             Members
             <span className="ml-auto text-sm font-normal text-muted-foreground">
               {members.length} total
@@ -294,7 +294,7 @@ export function TeamPageClient({
               No members found.
             </p>
           ) : (
-            <div className="divide-y">
+            <div className="divide-y divide-border">
               {members.map((member) => {
                 const isCurrentUser = member.userId === currentUserId;
                 const isOwner = member.role === 'owner';
@@ -306,24 +306,24 @@ export function TeamPageClient({
                 return (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 px-6 py-4"
+                    className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-muted/30 dark:hover:bg-muted/10"
                   >
-                    <Avatar className="h-9 w-9 shrink-0">
-                      <AvatarFallback className="text-xs font-medium">
+                    <Avatar className="h-9 w-9 shrink-0 border border-border">
+                      <AvatarFallback className="text-xs font-medium bg-muted text-muted-foreground">
                         {getInitials(member.fullName, member.email)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-medium">
+                      <p className="truncate text-sm font-medium text-foreground">
                         {member.fullName ?? member.email}
                         {isCurrentUser && (
-                          <span className="ml-1 text-xs text-muted-foreground">
+                          <span className="ml-1 text-xs text-muted-foreground font-normal">
                             (you)
                           </span>
                         )}
                       </p>
                       {member.fullName && (
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-xs text-muted-foreground mt-0.5">
                           {member.email}
                         </p>
                       )}
@@ -331,7 +331,7 @@ export function TeamPageClient({
                     <Badge
                       variant="outline"
                       className={cn(
-                        'shrink-0 text-xs font-medium capitalize',
+                        'shrink-0 text-xs font-medium capitalize border-border text-foreground',
                         ROLE_COLORS[member.role]
                       )}
                     >
@@ -343,14 +343,14 @@ export function TeamPageClient({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 shrink-0"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                             disabled={isPending}
                           >
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Member actions</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border-border">
                           {canChangeRole && (
                             <>
                               <DropdownMenuLabel className="text-xs text-muted-foreground">
@@ -364,17 +364,18 @@ export function TeamPageClient({
                                     onClick={() =>
                                       handleChangeRole(member.userId, r)
                                     }
+                                    className="focus:bg-accent focus:text-accent-foreground cursor-pointer"
                                   >
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    Set as {ROLE_LABELS[r]}
+                                    <Shield className="mr-2 h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                                    <span>Set as {ROLE_LABELS[r]}</span>
                                   </DropdownMenuItem>
                                 ))}
-                              <DropdownMenuSeparator />
+                              <DropdownMenuSeparator className="bg-border" />
                             </>
                           )}
                           {canRemove && (
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
+                              className="text-destructive focus:text-destructive-foreground focus:bg-destructive/10 dark:focus:bg-destructive/20 cursor-pointer"
                               onClick={() =>
                                 handleRemoveMember(member.userId, member.email)
                               }
@@ -396,32 +397,32 @@ export function TeamPageClient({
 
       {/* Pending invites */}
       {invites.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4" />
+        <Card className="bg-card text-card-foreground border-border">
+          <CardHeader className="pb-3 border-b border-border/50">
+            <CardTitle className="flex items-center gap-2 text-base text-foreground">
+              <Clock className="h-4 w-4 text-primary" />
               Pending Invitations
               <span className="ml-auto text-sm font-normal text-muted-foreground">
                 {invites.length}
               </span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground">
               Invitations expire 7 days after being sent.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y">
+            <div className="divide-y divide-border">
               {invites.map((invite) => (
                 <div
                   key={invite.id}
-                  className="flex items-center gap-3 px-6 py-4"
+                  className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-muted/30 dark:hover:bg-muted/10"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted border border-border">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium">{invite.email}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-sm font-medium text-foreground">{invite.email}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Expires{' '}
                       {new Date(invite.expiresAt).toLocaleDateString(undefined, {
                         month: 'short',
@@ -433,7 +434,7 @@ export function TeamPageClient({
                   <Badge
                     variant="outline"
                     className={cn(
-                      'shrink-0 text-xs font-medium capitalize',
+                      'shrink-0 text-xs font-medium capitalize border-border text-foreground',
                       ROLE_COLORS[invite.role]
                     )}
                   >
@@ -443,7 +444,7 @@ export function TeamPageClient({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       disabled={isPending}
                       onClick={() =>
                         handleRevokeInvite(invite.id, invite.email)
@@ -459,112 +460,7 @@ export function TeamPageClient({
           </CardContent>
         </Card>
       )}
-
-      {/* Invite dialog */}
-      <Dialog open={showInviteDialog} onOpenChange={handleCloseInviteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invite a team member</DialogTitle>
-            <DialogDescription>
-              Send an email invite to add someone to{' '}
-              <span className="font-medium">{orgName}</span>.
-            </DialogDescription>
-          </DialogHeader>
-
-          {!inviteLink ? (
-            <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-email">Email address</Label>
-                <Input
-                  id="invite-email"
-                  type="email"
-                  placeholder="colleague@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                      handleInvite();
-                    }
-                  }}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-role">Role</Label>
-                <Select
-                  value={inviteRole}
-                  onValueChange={(v) => setInviteRole(v as Role)}
-                >
-                  <SelectTrigger id="invite-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assignableRoles.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        <span className="font-medium capitalize">{ROLE_LABELS[r]}</span>
-                        {r === 'admin' && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            — manage members, all QR ops
-                          </span>
-                        )}
-                        {r === 'editor' && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            — create &amp; edit QR codes
-                          </span>
-                        )}
-                        {r === 'viewer' && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            — read-only access
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3 py-2">
-              <p className="text-sm text-muted-foreground">
-                An email has been sent to{' '}
-                <span className="font-medium text-foreground">{inviteEmail}</span>. You
-                can also copy the link below to share manually.
-              </p>
-              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
-                <span className="flex-1 text-xs font-mono text-muted-foreground break-all">
-                  {inviteLink}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 shrink-0"
-                  onClick={handleCopyLink}
-                >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-green-600" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            {!inviteLink ? (
-              <>
-                <Button variant="outline" onClick={handleCloseInviteDialog}>
-                  Cancel
-                </Button>
-                <Button onClick={handleInvite} disabled={isPending}>
-                  {isPending ? 'Sending…' : 'Send Invite'}
-                </Button>
-              </>
-            ) : (
-              <Button onClick={handleCloseInviteDialog}>Done</Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
+
 }

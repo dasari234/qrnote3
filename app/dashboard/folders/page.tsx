@@ -28,33 +28,33 @@ export default async function FoldersPage() {
   const [folders, tags] = await Promise.all([
     wsIds.length > 0
       ? prisma.folder.findMany({
-          where: { workspaceId: { in: wsIds } },
-          include: { _count: { select: { qrCodes: true } } },
-          orderBy: { createdAt: 'desc' },
-        })
+        where: { workspaceId: { in: wsIds } },
+        include: { _count: { select: { qrCodes: true } } },
+        orderBy: { createdAt: 'desc' },
+      })
       : [],
     wsIds.length > 0
       ? prisma.tag.findMany({
-          where: { workspaceId: { in: wsIds } },
-          include: { _count: { select: { qrCodes: true } } },
-          orderBy: { createdAt: 'desc' },
-        })
+        where: { workspaceId: { in: wsIds } },
+        include: { _count: { select: { qrCodes: true } } },
+        orderBy: { createdAt: 'desc' },
+      })
       : [],
   ]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Folders & Tags</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Folders & Tags</h1>
         <p className="text-sm text-muted-foreground">
           Organize and label your QR codes
         </p>
       </div>
 
-      <Card>
+      <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FolderIcon className="h-5 w-5" /> Folders
+          <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+            <FolderIcon className="h-5 w-5 text-primary" /> Folders
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -62,10 +62,10 @@ export default async function FoldersPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Tag className="h-5 w-5" /> Tags
+          <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+            <Tag className="h-5 w-5 text-primary" /> Tags
           </CardTitle>
         </CardHeader>
         <CardContent>

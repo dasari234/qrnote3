@@ -83,23 +83,26 @@ export function FolderManager({ workspaceId, folders: initialFolders }: FolderMa
               New Folder
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-card text-card-foreground border-border max-w-md">
             <DialogHeader>
-              <DialogTitle>Create new folder</DialogTitle>
-              <DialogDescription>Organize your QR codes into folders</DialogDescription>
+              <DialogTitle className="text-foreground">Create new folder</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Organize your QR codes into folders
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="folderName">Folder name</Label>
+            <div className="space-y-2 py-2">
+              <Label htmlFor="folderName" className="text-foreground">Folder name</Label>
               <Input
                 id="folderName"
                 placeholder="e.g. Summer Campaign"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                className="bg-background text-foreground border-input placeholder:text-muted-foreground/60 focus-visible:ring-ring"
               />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setOpen(false)} className="hover:bg-accent hover:text-accent-foreground">
                 Cancel
               </Button>
               <Button onClick={handleCreate} disabled={pending || !name.trim()}>
@@ -119,7 +122,7 @@ export function FolderManager({ workspaceId, folders: initialFolders }: FolderMa
           {initialFolders.map((folder) => (
             <div
               key={folder.id}
-              className="flex items-center justify-between rounded-lg border p-4"
+              className="flex items-center justify-between rounded-lg border border-border bg-card/50 dark:bg-muted/10 p-4 transition-all hover:border-muted-foreground/20 hover:shadow-sm"
             >
               {editingId === folder.id ? (
                 <div className="flex flex-1 items-center gap-2">
@@ -127,43 +130,45 @@ export function FolderManager({ workspaceId, folders: initialFolders }: FolderMa
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleRename(folder.id)}
-                    className="h-8"
+                    className="h-8 bg-background text-foreground border-input focus-visible:ring-ring"
                     autoFocus
                   />
                   <Button size="sm" onClick={() => handleRename(folder.id)} disabled={pending}>
                     Save
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="hover:bg-accent hover:text-accent-foreground">
                     Cancel
                   </Button>
                 </div>
               ) : (
                 <>
-                  <div>
-                    <h3 className="text-sm font-semibold">{folder.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {folder._count?.qrCodes ?? 0} QR codes
+                  <div className="min-w-0 flex-1 pr-2">
+                    <h3 className="text-sm font-semibold text-foreground truncate">{folder.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                      📁 {folder._count?.qrCodes ?? 0} QR codes
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-accent"
                       onClick={() => {
                         setEditingId(folder.id);
                         setEditName(folder.name);
                       }}
                     >
                       <Pencil className="h-3.5 w-3.5" />
+                      <span className="sr-only">Rename folder</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       onClick={() => handleDelete(folder.id, folder.name)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
+                      <span className="sr-only">Delete folder</span>
                     </Button>
                   </div>
                 </>

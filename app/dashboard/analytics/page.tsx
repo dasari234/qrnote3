@@ -33,8 +33,8 @@ export default async function AnalyticsPage({
   if (!overview) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-        <Card>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h1>
+        <Card className="bg-card text-card-foreground border-border">
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
             No data available. Create QR codes and start scanning to see analytics.
           </CardContent>
@@ -54,14 +54,14 @@ export default async function AnalyticsPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h1>
           <p className="text-sm text-muted-foreground">
             Track scans across all your QR codes
           </p>
         </div>
         <div className="flex items-center gap-3">
           <DateRangeFilter current={range} />
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="hover:bg-accent hover:text-accent-foreground">
             <Link href={`/dashboard/analytics/export?range=${range}`}>
               <Download className="mr-2 h-4 w-4" />
               Export CSV
@@ -73,7 +73,7 @@ export default async function AnalyticsPage({
       {/* Stats grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label}>
+          <Card key={stat.label} className="bg-card text-card-foreground border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.label}
@@ -81,7 +81,7 @@ export default async function AnalyticsPage({
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
               <p className="text-xs text-muted-foreground">{stat.hint}</p>
             </CardContent>
           </Card>
@@ -89,10 +89,10 @@ export default async function AnalyticsPage({
       </div>
 
       {/* Daily scans chart */}
-      <Card>
+      <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+          <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+            <TrendingUp className="h-5 w-5 text-primary" />
             Daily Scans
           </CardTitle>
         </CardHeader>
@@ -109,25 +109,25 @@ export default async function AnalyticsPage({
 
       {/* Breakdowns row */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-base">Devices</CardTitle>
+            <CardTitle className="text-base text-foreground">Devices</CardTitle>
           </CardHeader>
           <CardContent>
             <DonutChart data={overview.deviceBreakdown} />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-base">Browsers</CardTitle>
+            <CardTitle className="text-base text-foreground">Browsers</CardTitle>
           </CardHeader>
           <CardContent>
             <BreakdownChart data={overview.browserBreakdown} title="Browsers" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-base">Operating Systems</CardTitle>
+            <CardTitle className="text-base text-foreground">Operating Systems</CardTitle>
           </CardHeader>
           <CardContent>
             <BreakdownChart data={overview.osBreakdown} title="OS" />
@@ -137,9 +137,9 @@ export default async function AnalyticsPage({
 
       {/* Top QR codes + Geo */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-lg">Top QR Codes</CardTitle>
+            <CardTitle className="text-lg text-foreground">Top QR Codes</CardTitle>
           </CardHeader>
           <CardContent>
             {topQrs.length === 0 ? (
@@ -150,14 +150,16 @@ export default async function AnalyticsPage({
                   <Link
                     key={qr.id}
                     href={`/dashboard/qr/${qr.id}`}
-                    className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent transition-colors"
+                    className="flex items-center justify-between rounded-lg border border-border p-3 text-foreground hover:bg-accent hover:text-accent-foreground transition-colors dark:hover:bg-muted/30"
                   >
-                    <span className="text-sm">
-                      <span className="mr-2 text-muted-foreground">#{i + 1}</span>
+                    <span className="text-sm truncate pr-2">
+                      <span className="mr-2 text-muted-foreground font-mono">#{i + 1}</span>
                       {qr.name}
-                      <span className="ml-2 text-xs text-muted-foreground capitalize">{qr.type}</span>
+                      <span className="ml-2 text-xs text-muted-foreground bg-muted dark:bg-muted/50 px-1.5 py-0.5 rounded capitalize font-medium">
+                        {qr.type}
+                      </span>
                     </span>
-                    <span className="text-sm font-medium">{qr.scans}</span>
+                    <span className="text-sm font-semibold flex-shrink-0">{qr.scans} scans</span>
                   </Link>
                 ))}
               </div>
@@ -165,9 +167,9 @@ export default async function AnalyticsPage({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-lg">Top Countries</CardTitle>
+            <CardTitle className="text-lg text-foreground">Top Countries</CardTitle>
           </CardHeader>
           <CardContent>
             {geo.countries.length === 0 ? (
@@ -181,9 +183,9 @@ export default async function AnalyticsPage({
 
       {/* Geo details */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-lg">Top Cities</CardTitle>
+            <CardTitle className="text-lg text-foreground">Top Cities</CardTitle>
           </CardHeader>
           <CardContent>
             {geo.cities.length === 0 ? (
@@ -193,9 +195,9 @@ export default async function AnalyticsPage({
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-lg">Top Regions</CardTitle>
+            <CardTitle className="text-lg text-foreground">Top Regions</CardTitle>
           </CardHeader>
           <CardContent>
             {geo.regions.length === 0 ? (
@@ -209,72 +211,31 @@ export default async function AnalyticsPage({
 
       {/* UTM Attribution */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-base">UTM Sources</CardTitle>
+            <CardTitle className="text-base text-foreground">UTM Sources</CardTitle>
           </CardHeader>
           <CardContent>
             <BreakdownChart data={utm.sources} title="Source" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-base">UTM Mediums</CardTitle>
+            <CardTitle className="text-base text-foreground">UTM Mediums</CardTitle>
           </CardHeader>
           <CardContent>
             <BreakdownChart data={utm.mediums} title="Medium" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-card text-card-foreground border-border">
           <CardHeader>
-            <CardTitle className="text-base">UTM Campaigns</CardTitle>
+            <CardTitle className="text-base text-foreground">UTM Campaigns</CardTitle>
           </CardHeader>
           <CardContent>
             <BreakdownChart data={utm.campaigns} title="Campaign" />
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent scans table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Scans</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentScans.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No scans yet</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs text-muted-foreground">
-                    <th className="pb-2 pr-4 font-medium">QR Code</th>
-                    <th className="pb-2 pr-4 font-medium">Device</th>
-                    <th className="pb-2 pr-4 font-medium">Browser</th>
-                    <th className="pb-2 pr-4 font-medium">Location</th>
-                    <th className="pb-2 pr-4 font-medium">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentScans.map((scan) => (
-                    <tr key={scan.id} className="border-b last:border-0">
-                      <td className="py-2 pr-4 font-medium">{scan.qr.name}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{scan.device || '—'}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{scan.browser || '—'}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">
-                        {[scan.city, scan.country].filter(Boolean).join(', ') || '—'}
-                      </td>
-                      <td className="py-2 pr-4 text-muted-foreground">
-                        {new Date(scan.scannedAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

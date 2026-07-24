@@ -125,21 +125,21 @@ export function QrAdvancedSettings({
   }
 
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground border-border shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg">Advanced</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-lg text-foreground font-bold">Advanced</CardTitle>
+        <CardDescription className="text-muted-foreground">
           Custom short link, expiry scheduling and destination rotation.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Vanity slug */}
+        {/* Vanity slug link builder frame */}
         <div className="space-y-2">
-          <Label htmlFor="slug" className="flex items-center gap-2">
-            <Link2 className="h-4 w-4" /> Custom short link
+          <Label htmlFor="slug" className="flex items-center gap-2 text-foreground font-medium">
+            <Link2 className="h-4 w-4 text-primary" /> Custom short link
           </Label>
-          <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring">
-            <span className="whitespace-nowrap border-r px-3 py-2 text-sm text-muted-foreground">
+          <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring transition-all">
+            <span className="whitespace-nowrap border-r border-input px-3 py-2 text-sm text-muted-foreground bg-muted/40 dark:bg-muted/10 font-mono select-none rounded-l-md">
               {origin.replace(/^https?:\/\//, '')}/q/
             </span>
             <input
@@ -147,7 +147,7 @@ export function QrAdvancedSettings({
               value={slug}
               onChange={(e) => onSlugChange(e.target.value)}
               placeholder="my-campaign"
-              className="h-10 flex-1 rounded-r-md bg-transparent px-3 py-2 text-sm outline-none"
+              className="h-10 flex-1 rounded-r-md bg-transparent px-3 py-2 text-sm outline-none text-foreground placeholder:text-muted-foreground/50 font-mono"
             />
           </div>
           <p className="text-xs text-muted-foreground">
@@ -156,10 +156,10 @@ export function QrAdvancedSettings({
           </p>
         </div>
 
-        {/* Scheduled expiry */}
+        {/* Scheduled expiry configuration frame */}
         <div className="space-y-2">
-          <Label htmlFor="expiresAt" className="flex items-center gap-2">
-            <CalendarClock className="h-4 w-4" /> Expiry date
+          <Label htmlFor="expiresAt" className="flex items-center gap-2 text-foreground font-medium">
+            <CalendarClock className="h-4 w-4 text-primary" /> Expiry date
           </Label>
           <div className="flex gap-2">
             <Input
@@ -167,10 +167,10 @@ export function QrAdvancedSettings({
               type="datetime-local"
               value={expiresInput}
               onChange={(e) => setExpiry(e.target.value)}
-              className="flex-1"
+              className="flex-1 bg-background text-foreground border-input focus-visible:ring-ring"
             />
             {expiresInput && (
-              <Button type="button" variant="outline" onClick={() => setExpiry('')}>
+              <Button type="button" variant="outline" onClick={() => setExpiry('')} className="hover:bg-accent hover:text-accent-foreground">
                 Clear
               </Button>
             )}
@@ -181,15 +181,15 @@ export function QrAdvancedSettings({
           </p>
         </div>
 
-        {/* A/B testing */}
+        {/* A/B Testing distribution panel */}
         {showAb && (
-          <div className="space-y-3 rounded-lg border p-4">
+          <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/10 dark:bg-transparent">
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="flex items-center gap-2">
-                  <Split className="h-4 w-4" /> A/B testing &amp; rotation
+              <div className="space-y-0.5 pr-2">
+                <Label className="flex items-center gap-2 text-foreground font-semibold">
+                  <Split className="h-4 w-4 text-primary" /> A/B testing &amp; rotation
                 </Label>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground leading-normal">
                   Split scans across multiple destinations by weight.
                 </p>
               </div>
@@ -197,7 +197,7 @@ export function QrAdvancedSettings({
             </div>
 
             {ab.enabled && (
-              <div className="space-y-3">
+              <div className="space-y-3 pt-2 border-t border-border/40">
                 {ab.variants.map((v) => {
                   const pct =
                     totalWeight > 0
@@ -208,35 +208,36 @@ export function QrAdvancedSettings({
                       ? Math.round((v.scans / totalScans) * 100)
                       : 0;
                   return (
-                    <div key={v.id} className="space-y-2 rounded-md border bg-muted/30 p-3">
+                    <div key={v.id} className="space-y-3 rounded-lg border border-border bg-muted/30 dark:bg-muted/10 p-3 shadow-inner">
                       <div className="flex items-center gap-2">
                         <Input
                           value={v.label}
                           onChange={(e) => updateVariant(v.id, { label: e.target.value })}
                           placeholder="Label"
-                          className="h-9 max-w-[9rem]"
+                          className="h-9 max-w-[9rem] bg-background text-foreground border-input focus-visible:ring-ring"
                         />
-                        <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <span className="ml-auto rounded-full bg-primary/10 dark:bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
                           {pct}% split
                         </span>
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           onClick={() => removeVariant(v.id)}
                         >
                           <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Remove variant</span>
                         </Button>
                       </div>
                       <Input
                         value={v.url}
                         onChange={(e) => updateVariant(v.id, { url: e.target.value })}
                         placeholder="https://example.com/landing-a"
-                        className="h-9"
+                        className="h-9 bg-background text-foreground border-input focus-visible:ring-ring font-mono text-xs"
                       />
-                      <div className="flex items-center gap-3">
-                        <Label className="text-xs text-muted-foreground">Weight</Label>
+                      <div className="flex items-center gap-3 border-t border-border/40 pt-2 mt-1">
+                        <Label className="text-xs text-muted-foreground font-medium shrink-0">Weight</Label>
                         <Input
                           type="number"
                           min={0}
@@ -244,9 +245,9 @@ export function QrAdvancedSettings({
                           onChange={(e) =>
                             updateVariant(v.id, { weight: Number(e.target.value) || 0 })
                           }
-                          className="h-9 w-20"
+                          className="h-9 w-20 bg-background text-foreground border-input focus-visible:ring-ring"
                         />
-                        <span className="ml-auto text-xs text-muted-foreground">
+                        <span className="ml-auto text-xs text-muted-foreground font-mono bg-background/50 dark:bg-muted/40 px-2 py-0.5 rounded border border-border/20">
                           {v.scans} scans{totalScans > 0 ? ` · ${scanPct}%` : ''}
                         </span>
                       </div>
@@ -258,7 +259,7 @@ export function QrAdvancedSettings({
                   variant="outline"
                   size="sm"
                   onClick={addVariant}
-                  className="w-full"
+                  className="w-full hover:bg-accent hover:text-accent-foreground"
                 >
                   <Plus className="mr-2 h-4 w-4" /> Add variant
                 </Button>
@@ -269,4 +270,5 @@ export function QrAdvancedSettings({
       </CardContent>
     </Card>
   );
+
 }

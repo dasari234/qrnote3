@@ -14,7 +14,6 @@ const DEFAULT_COLORS = [
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
   'hsl(var(--primary))',
-  'hsl(var(--muted-foreground))',
 ];
 
 export function DonutChart({ data, colors = DEFAULT_COLORS }: DonutChartProps) {
@@ -40,19 +39,23 @@ export function DonutChart({ data, colors = DEFAULT_COLORS }: DonutChartProps) {
           innerRadius={50}
           outerRadius={80}
           paddingAngle={2}
+          // Fix: Ensure the pie segments stroke border blends smoothly into the card surface
+          stroke="var(--card)"
+          strokeWidth={2}
         >
           {filtered.map((_, i) => (
-            <Cell key={i} fill={colors[i % colors.length]} />
+            <Cell key={i} fill={colors[i % colors.length]} className="focus:outline-none" />
           ))}
         </Pie>
         <Tooltip
           contentStyle={{
-            backgroundColor: 'hsl(var(--card))',
+            backgroundColor: 'hsl(var(--popover))',
             border: '1px solid hsl(var(--border))',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius, 8px)',
             fontSize: '12px',
           }}
-          labelStyle={{ color: 'hsl(var(--foreground))' }}
+          labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
+          itemStyle={{ color: 'hsl(var(--foreground))' }}
         />
       </PieChart>
     </ResponsiveContainer>

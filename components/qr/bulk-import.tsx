@@ -99,59 +99,61 @@ export function BulkImport({ workspaceId }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-card text-card-foreground border-border">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5" />
+          <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+            <FileSpreadsheet className="h-5 w-5 text-primary" />
             Bulk Import QR Codes
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground">
             Upload a CSV file or paste CSV data to create multiple QR codes at once.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-3">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed px-4 py-2 text-sm hover:bg-accent/50">
-              <Upload className="h-4 w-4" />
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-input px-4 py-2 text-sm text-foreground bg-background hover:bg-accent hover:text-accent-foreground transition-colors">
+              <Upload className="h-4 w-4 text-muted-foreground" />
               Upload CSV
               <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileUpload} />
             </label>
-            <Button variant="outline" onClick={handleDownloadTemplate}>
+            <Button variant="outline" onClick={handleDownloadTemplate} className="hover:bg-accent hover:text-accent-foreground">
               <Download className="mr-2 h-4 w-4" />
               Download Template
             </Button>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="csv">CSV Data</Label>
+            <Label htmlFor="csv" className="text-foreground">CSV Data</Label>
             <Textarea
               id="csv"
               rows={10}
               placeholder={TEMPLATE}
               value={csv}
               onChange={(e) => setCsv(e.target.value)}
-              className="font-mono text-xs"
+              className="font-mono text-xs bg-background text-foreground border-input placeholder:text-muted-foreground/60 focus-visible:ring-ring"
             />
           </div>
 
-          <Button onClick={handleImport} disabled={pending || !csv.trim()}>
+          <Button onClick={handleImport} disabled={pending || !csv.trim()} className="w-full sm:w-auto">
             {pending ? 'Importing…' : 'Import QR Codes'}
           </Button>
 
           {results && (
-            <div className="space-y-2 rounded-lg border p-4">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <div className="space-y-2 rounded-lg border border-border p-4 bg-muted/30 dark:bg-muted/10">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                 Created {results.created} QR codes
               </div>
               {results.errors.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs font-medium text-destructive">Errors:</p>
-                  {results.errors.map((err, i) => (
-                    <p key={i} className="text-xs text-muted-foreground">
-                      {err}
-                    </p>
-                  ))}
+                <div className="mt-3 space-y-1.5 border-t border-border/60 pt-2">
+                  <p className="text-xs font-semibold text-destructive dark:text-red-400">Errors:</p>
+                  <div className="max-h-40 overflow-y-auto space-y-1 pr-2">
+                    {results.errors.map((err, i) => (
+                      <p key={i} className="text-xs text-muted-foreground font-mono bg-destructive/5 dark:bg-destructive/10 px-2 py-1 rounded border border-destructive/10">
+                        {err}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

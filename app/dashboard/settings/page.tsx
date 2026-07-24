@@ -35,29 +35,36 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground">Manage your account preferences</p>
       </div>
 
-      <Card className="max-w-lg">
+      <Card className="max-w-lg bg-card text-card-foreground border-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Profile</CardTitle>
-          <CardDescription>Update your personal information</CardDescription>
+          <CardTitle className="text-lg text-foreground">Profile</CardTitle>
+          <CardDescription className="text-muted-foreground">Update your personal information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input value={user?.email || ''} disabled />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full name</Label>
+            <Label htmlFor="email" className="text-foreground font-medium">Email</Label>
             <Input
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              id="email"
+              value={user?.email || ''}
+              disabled
+              className="bg-muted text-muted-foreground border-input opacity-70 cursor-not-allowed dark:bg-muted/40"
             />
           </div>
-          <Button onClick={handleSave} disabled={loading}>
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="text-foreground font-medium">Full name</Label>
+            <Input
+              id="fullName"
+              placeholder="e.g. John Doe"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="bg-background text-foreground border-input focus-visible:ring-ring placeholder:text-muted-foreground/50"
+            />
+          </div>
+          <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto transition-colors">
             {loading ? 'Saving…' : 'Save changes'}
           </Button>
         </CardContent>

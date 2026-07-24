@@ -60,34 +60,36 @@ export function TagManager({ workspaceId, tags: initialTags }: TagManagerProps) 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end bg-muted/20 dark:bg-muted/5 p-4 rounded-xl border border-border">
         <div className="flex-1 space-y-2">
-          <Label htmlFor="tagName">Tag name</Label>
+          <Label htmlFor="tagName" className="text-foreground">Tag name</Label>
           <Input
             id="tagName"
             placeholder="e.g. Marketing"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            className="bg-background text-foreground border-input focus-visible:ring-ring"
           />
         </div>
         <div className="space-y-2">
-          <Label>Color</Label>
-          <div className="flex flex-wrap gap-1">
+          <Label className="text-foreground">Color</Label>
+          <div className="flex flex-wrap gap-1.5 h-10 items-center">
             {TAG_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-8 w-8 rounded-full border-2 transition ${
-                  color === c ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'
-                }`}
+                className={`h-7 w-7 rounded-full border-2 transition-all hover:scale-110 active:scale-95 ${color === c
+                    ? 'border-primary ring-2 ring-primary/40 scale-105'
+                    : 'border-background dark:border-muted/50 hover:border-muted-foreground'
+                  }`}
                 style={{ backgroundColor: c }}
               />
             ))}
           </div>
         </div>
-        <Button onClick={handleCreate} disabled={pending || !name.trim()}>
+        <Button onClick={handleCreate} disabled={pending || !name.trim()} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Add Tag
         </Button>
@@ -102,19 +104,22 @@ export function TagManager({ workspaceId, tags: initialTags }: TagManagerProps) 
           {initialTags.map((tag) => (
             <div
               key={tag.id}
-              className="flex items-center gap-2 rounded-full border px-3 py-1.5"
+              className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 transition-all text-foreground hover:border-muted-foreground/30 dark:bg-muted/10"
+              style={{
+                borderColor: `${tag.color}40`,
+              }}
             >
               <span
-                className="inline-block h-3 w-3 rounded-full"
+                className="inline-block h-3 w-3 rounded-full flex-shrink-0 shadow-sm"
                 style={{ backgroundColor: tag.color }}
               />
               <span className="text-sm font-medium">{tag.name}</span>
               {tag._count && (
-                <span className="text-xs text-muted-foreground">({tag._count.qrCodes})</span>
+                <span className="text-xs text-muted-foreground font-mono">({tag._count.qrCodes})</span>
               )}
               <button
                 onClick={() => handleDelete(tag.id, tag.name)}
-                className="ml-1 text-muted-foreground hover:text-destructive"
+                className="ml-1 text-muted-foreground hover:text-destructive transition-colors focus:outline-none focus:ring-1 focus:ring-ring rounded-full p-0.5"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

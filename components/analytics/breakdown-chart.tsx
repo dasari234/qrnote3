@@ -24,7 +24,6 @@ const DEFAULT_COLORS = [
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
   'hsl(var(--primary))',
-  'hsl(var(--muted-foreground))',
 ];
 
 export function BreakdownChart({ data, title, colors = DEFAULT_COLORS }: BreakdownChartProps) {
@@ -43,7 +42,8 @@ export function BreakdownChart({ data, title, colors = DEFAULT_COLORS }: Breakdo
         layout="vertical"
         margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
+        {/* Replace className with direct color variable evaluation for cross-theme stroke lines */}
+        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
         <XAxis
           type="number"
           tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -61,12 +61,14 @@ export function BreakdownChart({ data, title, colors = DEFAULT_COLORS }: Breakdo
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'hsl(var(--card))',
+            backgroundColor: 'hsl(var(--popover))',
             border: '1px solid hsl(var(--border))',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius, 8px)',
             fontSize: '12px',
           }}
-          labelStyle={{ color: 'hsl(var(--foreground))' }}
+          labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
+          itemStyle={{ color: 'hsl(var(--foreground))' }}
+          cursor={false}
         />
         <Bar dataKey="count" name={title} radius={[0, 4, 4, 0]}>
           {data.slice(0, 8).map((_, i) => (

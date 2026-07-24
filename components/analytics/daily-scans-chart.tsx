@@ -29,7 +29,8 @@ export function DailyScansChart({ data }: DailyScansChartProps) {
             <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+        {/* Fix: Explicit color variable evaluation for cross-theme grid lines */}
+        <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
         <XAxis
           dataKey="label"
           tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -46,12 +47,13 @@ export function DailyScansChart({ data }: DailyScansChartProps) {
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'hsl(var(--card))',
+            backgroundColor: 'hsl(var(--popover))',
             border: '1px solid hsl(var(--border))',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius, 8px)',
             fontSize: '12px',
           }}
-          labelStyle={{ color: 'hsl(var(--foreground))' }}
+          labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 600 }}
+          itemStyle={{ color: 'hsl(var(--foreground))' }}
         />
         <Area
           type="monotone"

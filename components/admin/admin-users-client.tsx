@@ -80,19 +80,20 @@ export function AdminUsersClient({ currentUserId, users: initialUsers }: Props) 
     <TooltipProvider>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Users</h1>
           <p className="text-sm text-muted-foreground">
             {users.length} user{users.length !== 1 ? 's' : ''} on the platform. Toggle super admin access here.
           </p>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="bg-card text-card-foreground border-border shadow-sm">
+          <CardHeader className="pb-3 border-b border-border/50">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                id="userSearch"
                 placeholder="Search by name or email…"
-                className="pl-9"
+                className="pl-9 bg-background text-foreground border-input placeholder:text-muted-foreground/60 focus-visible:ring-ring"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -104,27 +105,27 @@ export function AdminUsersClient({ currentUserId, users: initialUsers }: Props) 
                 No users found.
               </p>
             ) : (
-              <div className="divide-y">
+              <div className="divide-y divide-border">
                 {filtered.map((u) => {
                   const isCurrentUser = u.id === currentUserId;
                   return (
-                    <div key={u.id} className="flex items-center gap-3 px-6 py-4">
-                      <Avatar className="h-9 w-9 shrink-0">
-                        <AvatarFallback className="text-xs font-medium">
+                    <div key={u.id} className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-muted/30 dark:hover:bg-muted/10">
+                      <Avatar className="h-9 w-9 shrink-0 border border-border">
+                        <AvatarFallback className="text-xs font-medium bg-muted text-muted-foreground">
                           {getInitials(u.fullName, u.email)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className="truncate text-sm font-medium">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {u.fullName ?? u.email}
                           </p>
                           {isCurrentUser && (
-                            <span className="text-xs text-muted-foreground">(you)</span>
+                            <span className="text-xs text-muted-foreground font-normal">(you)</span>
                           )}
                         </div>
                         {u.fullName && (
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="truncate text-xs text-muted-foreground mt-0.5">
                             {u.email}
                           </p>
                         )}
@@ -132,30 +133,30 @@ export function AdminUsersClient({ currentUserId, users: initialUsers }: Props) 
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                            <Building2 className="h-3.5 w-3.5" />
-                            <span>{u.orgCount}</span>
+                          <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-help bg-muted/40 dark:bg-muted/30 px-2 py-1 rounded-md border border-border/30">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground/80" />
+                            <span className="font-mono font-medium">{u.orgCount}</span>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="top">
+                        <TooltipContent side="top" className="bg-popover text-popover-foreground border-border shadow-md">
                           <p>{u.orgCount} organization{u.orgCount !== 1 ? 's' : ''}</p>
                         </TooltipContent>
                       </Tooltip>
 
                       {u.isSuperAdmin ? (
-                        <Badge variant="destructive" className="shrink-0 gap-1 text-xs">
+                        <Badge variant="destructive" className="shrink-0 gap-1 text-xs font-semibold">
                           <ShieldAlert className="h-3 w-3" />
                           Super Admin
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="shrink-0 text-xs text-muted-foreground">
+                        <Badge variant="outline" className="shrink-0 text-xs border-border text-muted-foreground bg-muted/20 dark:bg-muted/5">
                           User
                         </Badge>
                       )}
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div>
+                          <div className="flex items-center">
                             <Switch
                               checked={u.isSuperAdmin}
                               onCheckedChange={() =>
@@ -163,15 +164,16 @@ export function AdminUsersClient({ currentUserId, users: initialUsers }: Props) 
                               }
                               disabled={isPending || isCurrentUser}
                               aria-label={`Toggle super admin for ${u.email}`}
+                              className="data-[state=checked]:bg-destructive dark:data-[state=checked]:bg-destructive/80"
                             />
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="top">
+                        <TooltipContent side="top" className="bg-popover text-popover-foreground border-border shadow-md max-w-xs text-center">
                           {isCurrentUser
                             ? 'You cannot change your own super admin status.'
                             : u.isSuperAdmin
-                            ? 'Revoke super admin access'
-                            : 'Grant super admin access'}
+                              ? 'Revoke super admin access'
+                              : 'Grant super admin access'}
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -184,4 +186,5 @@ export function AdminUsersClient({ currentUserId, users: initialUsers }: Props) 
       </div>
     </TooltipProvider>
   );
+
 }

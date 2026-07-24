@@ -152,11 +152,11 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
 
             {/* Org header */}
             <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base font-bold text-primary">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/20 text-base font-bold text-primary">
                     {org.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{org.name}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">{org.name}</h1>
                     <p className="text-sm text-muted-foreground">
                         /{org.slug} &nbsp;·&nbsp; Created{' '}
                         {new Date(org.createdAt).toLocaleDateString(undefined, {
@@ -175,13 +175,13 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
                     { label: 'Workspaces', value: workspaces.length, icon: FolderOpen },
                     { label: 'QR Codes', value: qrCount, icon: QrCode },
                 ].map((s) => (
-                    <Card key={s.label}>
+                    <Card key={s.label} className="bg-card text-card-foreground border-border shadow-sm">
                         <CardContent className="flex items-center gap-3 pt-5 pb-5">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted dark:bg-muted/50 border border-border/30">
                                 <s.icon className="h-4 w-4 text-muted-foreground" />
                             </div>
                             <div>
-                                <p className="text-xl font-bold">{s.value}</p>
+                                <p className="text-xl font-bold text-foreground">{s.value}</p>
                                 <p className="text-xs text-muted-foreground">{s.label}</p>
                             </div>
                         </CardContent>
@@ -190,38 +190,38 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
             </div>
 
             {/* Members table */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                        <Users className="h-4 w-4" />
+            <Card className="bg-card text-card-foreground border-border shadow-sm">
+                <CardHeader className="pb-3 border-b border-border/50">
+                    <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                        <Users className="h-4 w-4 text-primary" />
                         Members
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-muted-foreground">
                         As a super admin you can change roles and remove members from any organization.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="divide-y">
+                    <div className="divide-y divide-border">
                         {members.map((member) => {
                             const isOwner = member.role === 'owner';
                             return (
-                                <div key={member.id} className="flex items-center gap-3 px-6 py-4">
-                                    <Avatar className="h-9 w-9 shrink-0">
-                                        <AvatarFallback className="text-xs font-medium">
+                                <div key={member.id} className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-muted/30 dark:hover:bg-muted/10">
+                                    <Avatar className="h-9 w-9 shrink-0 border border-border">
+                                        <AvatarFallback className="text-xs font-medium bg-muted text-muted-foreground">
                                             {getInitials(member.fullName, member.email)}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-1.5">
-                                            <p className="truncate text-sm font-medium">
+                                            <p className="truncate text-sm font-medium text-foreground">
                                                 {member.fullName ?? member.email}
                                             </p>
                                             {member.isSuperAdmin && (
-                                                <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-destructive" />
+                                                <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-destructive dark:text-red-400" />
                                             )}
                                         </div>
                                         {member.fullName && (
-                                            <p className="truncate text-xs text-muted-foreground">
+                                            <p className="truncate text-xs text-muted-foreground mt-0.5">
                                                 {member.email}
                                             </p>
                                         )}
@@ -229,7 +229,7 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
                                     <Badge
                                         variant="outline"
                                         className={cn(
-                                            'shrink-0 text-xs font-medium capitalize',
+                                            'shrink-0 text-xs font-medium capitalize border-border text-foreground',
                                             ROLE_COLORS[member.role]
                                         )}
                                     >
@@ -240,14 +240,14 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-8 w-8 shrink-0"
+                                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                                                 disabled={isPending}
                                             >
                                                 <MoreHorizontal className="h-4 w-4" />
                                                 <span className="sr-only">Actions</span>
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
+                                        <DropdownMenuContent align="end" className="w-48 bg-popover text-popover-foreground border-border shadow-md">
                                             <DropdownMenuLabel className="text-xs text-muted-foreground">
                                                 Change role
                                             </DropdownMenuLabel>
@@ -255,16 +255,17 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
                                                 <DropdownMenuItem
                                                     key={r}
                                                     onClick={() => handleChangeRole(member.userId, r)}
+                                                    className="focus:bg-accent focus:text-accent-foreground cursor-pointer"
                                                 >
-                                                    <Shield className="mr-2 h-4 w-4" />
-                                                    Set as {ROLE_LABELS[r]}
+                                                    <Shield className="mr-2 h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                                                    <span>Set as {ROLE_LABELS[r]}</span>
                                                 </DropdownMenuItem>
                                             ))}
                                             {!isOwner && (
                                                 <>
-                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuSeparator className="bg-border" />
                                                     <DropdownMenuItem
-                                                        className="text-destructive focus:text-destructive"
+                                                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive/10 dark:focus:bg-destructive/20 cursor-pointer"
                                                         onClick={() =>
                                                             handleRemoveMember(member.userId, member.email)
                                                         }
@@ -282,39 +283,7 @@ export function AdminOrgDetailClient({ org, members: initialMembers, workspaces,
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Workspaces table */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                        <FolderOpen className="h-4 w-4" />
-                        Workspaces
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {workspaces.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-muted-foreground">
-                            No workspaces in this organization.
-                        </p>
-                    ) : (
-                        <div className="divide-y">
-                            {workspaces.map((ws) => (
-                                <div key={ws.id} className="flex items-center gap-3 px-6 py-3">
-                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="truncate text-sm font-medium">{ws.name}</p>
-                                    </div>
-                                    <Badge variant="outline" className="text-xs">
-                                        {ws.qrCount} QR code{ws.qrCount !== 1 ? 's' : ''}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
         </div>
     );
+
 }
