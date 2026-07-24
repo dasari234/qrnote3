@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { generateUniqueShortCode, resolveDestination } from '@/lib/qr/factory';
+import { AB_KEY, getAbConfig, validateSlug } from '@/lib/qr/meta';
 import { QRStyle, QRType } from '@/lib/types';
 
 import { requireOrgPermission } from '@/lib/rbac';
@@ -37,6 +38,27 @@ async function getAuthUserId(): Promise<string> {
   return user.id;
 }
 
+/**
+ * Validate a custom vanity slug and confirm it is not already in use.
+ * `excludeQrId` lets an update keep its own current slug.
+ */
+async function ensureUniqueSlug(
+  slug: string,
+  excludeQrId?: string
+): Promise<string> {
+  const trimmed = slug.trim();
+  const err = validateSlug(trimmed);
+  if (err) throw new Error(err);
+  const existing = await prisma.qrCode.findUnique({
+    where: { shortCode: trimmed },
+    select: { id: true },
+  });
+  if (existing && existing.id !== excludeQrId) {
+    throw new Error('That short code is already taken. Please choose another.');
+  }
+  return trimmed;
+}
+
 // ---------------------------------------------------------------------------
 
 export async function createQrCode(input: {
@@ -49,6 +71,7 @@ export async function createQrCode(input: {
   createdBy: string;
   folderId?: string;
   tagIds?: string[];
+  customShortCode?: string;
 }) {
   const userId = await getAuthUserId();
   const orgId = await getOrgIdForWorkspace(input.workspaceId);
@@ -58,13 +81,17 @@ export async function createQrCode(input: {
   let destinationUrl: string | null = null;
 
   if (input.isDynamic) {
-    shortCode = await generateUniqueShortCode(async (code) => {
-      const existing = await prisma.qrCode.findUnique({
-        where: { shortCode: code },
-        select: { id: true },
+    if (input.customShortCode && input.customShortCode.trim()) {
+      shortCode = await ensureUniqueSlug(input.customShortCode);
+    } else {
+      shortCode = await generateUniqueShortCode(async (code) => {
+        const existing = await prisma.qrCode.findUnique({
+          where: { shortCode: code },
+          select: { id: true },
+        });
+        return !!existing;
       });
-      return !!existing;
-    });
+    }
     destinationUrl = resolveDestination(input.type, input.payload);
   }
 
@@ -100,6 +127,7 @@ export async function updateQrCode(input: {
   status: string;
   folderId?: string | null;
   tagIds?: string[];
+  customShortCode?: string;
 }) {
   const userId = await getAuthUserId();
   const orgId = await getOrgIdForQr(input.id);
@@ -108,6 +136,13 @@ export async function updateQrCode(input: {
   const destinationUrl = input.isDynamic
     ? resolveDestination(input.type, input.payload)
     : null;
+
+  // Allow changing the vanity slug on dynamic QRs.
+  let shortCodeUpdate: string | undefined;
+  if (input.isDynamic && input.customShortCode !== undefined) {
+    const desired = input.customShortCode.trim();
+    if (desired) shortCodeUpdate = await ensureUniqueSlug(desired, input.id);
+  }
 
   await prisma.qrCode.update({
     where: { id: input.id },
@@ -120,11 +155,73 @@ export async function updateQrCode(input: {
       style: input.style as any,
       status: input.status as any,
       folderId: input.folderId || null,
+      ...(shortCodeUpdate ? { shortCode: shortCodeUpdate } : {}),
       ...(input.tagIds !== undefined
         ? { tags: { set: input.tagIds.map((id) => ({ id })) } }
         : {}),
     },
   });
+}
+
+/**
+ * Clone an existing QR code — copies its type, payload, style, folder and
+ * tags. Dynamic copies get a fresh short code and reset A/B scan counters.
+ */
+export async function duplicateQrCode(id: string) {
+  const userId = await getAuthUserId();
+  const orgId = await getOrgIdForQr(id);
+  await requireOrgPermission(userId, orgId, 'qr:create');
+
+  const source = await prisma.qrCode.findUnique({
+    where: { id },
+    include: { tags: { select: { id: true } } },
+  });
+  if (!source) throw new Error('QR code not found.');
+
+  let shortCode: string | null = null;
+  if (source.isDynamic) {
+    shortCode = await generateUniqueShortCode(async (code) => {
+      const existing = await prisma.qrCode.findUnique({
+        where: { shortCode: code },
+        select: { id: true },
+      });
+      return !!existing;
+    });
+  }
+
+  // Reset A/B variant scan counters on the copy so analytics start clean.
+  let payload = (source.payload as Record<string, any>) || {};
+  const ab = getAbConfig(payload);
+  if (ab) {
+    payload = {
+      ...payload,
+      [AB_KEY]: {
+        ...ab,
+        variants: ab.variants.map((v) => ({ ...v, scans: 0 })),
+      },
+    };
+  }
+
+  const copy = await prisma.qrCode.create({
+    data: {
+      workspaceId: source.workspaceId,
+      folderId: source.folderId,
+      createdBy: userId,
+      name: `${source.name} (copy)`,
+      type: source.type,
+      isDynamic: source.isDynamic,
+      shortCode,
+      destinationUrl: source.destinationUrl,
+      payload,
+      style: source.style as any,
+      status: 'active',
+      ...(source.tags.length > 0
+        ? { tags: { connect: source.tags.map((t) => ({ id: t.id })) } }
+        : {}),
+    },
+  });
+
+  return { id: copy.id };
 }
 
 export async function deleteQrCode(id: string) {
