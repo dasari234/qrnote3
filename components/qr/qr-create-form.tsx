@@ -3,6 +3,7 @@
 import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
+import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -114,6 +115,13 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // New state variables for A/B testing, expiry, vanity slug
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [shortCode, setShortCode] = useState('');
+  const [variant, setVariant] = useState<string | null>(null);
+  const [testName, setTestName] = useState('');
+  const [suggestedCode, setSuggestedCode] = useState('');
+
   const typeDef = useMemo(() => QR_TYPES.find((t) => t.type === type)!, [type]);
 
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -176,6 +184,16 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
     return '/q/preview';
   }, []);
 
+  // Generate a suggested short code from the name
+  const generateSuggestedCode = (nameStr: string) => {
+    const suggested = nameStr
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+      .slice(0, 20);
+    setSuggestedCode(suggested);
+  };
+
   const handleFieldChange = (key: string, value: string) => {
     setPayload((prev) => ({ ...prev, [key]: value }));
   };
@@ -219,6 +237,10 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
         createdBy: user.id,
         folderId: folderId || undefined,
         tagIds: selectedTags,
+        customShortCode: shortCode || undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+        variant: variant || undefined,
+        testName: testName || undefined,
       });
       toast.success('QR code created!');
       router.push(`/dashboard/qr`);
@@ -254,8 +276,8 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
               <CardDescription>Choose what your QR code will do</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="link" value={activeCategory}  onValueChange={setActiveCategory}>
-               <div className="relative flex items-center">
+              <Tabs defaultValue="link" value={activeCategory} onValueChange={setActiveCategory}>
+                <div className="relative flex items-center">
 
                   <Button
                     type="button"
@@ -281,7 +303,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                           ref={(el) => {
                             tabRefs.current[cat.id] = el;
                           }}
-                          className="min-w-[120px] transition-all duration-200 ease-in-out hover:bg-muted hover:text-foreground hover:shadow-sm hover:-translate-y-0.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:translate-y-0 data-[state=active]:font-semibold disabled:pointer-events-none"
+                          className="min-w-[120px] transition-all duration-200 ease-in-out hover:bg-muted hover:text-foreground hover:shadow-sm hover:-translate-y-0.5 data-[state=active]:bg-background"
                         >
                           {cat.label}
                         </TabsTrigger>
@@ -300,7 +322,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
 
-               </div>
+                </div>
                 {QR_TYPE_CATEGORIES.map((cat) => (
                   <TabsContent key={cat.id} value={cat.id} className="mt-4">
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -315,9 +337,8 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                               setType(t.type);
                               setPayload({});
                             }}
-                            className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-all hover:border-primary/50 hover:bg-accent/50 ${
-                              active ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''
-                            }`}
+                            className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-all hover:border-primary/50 hover:bg-accent/50 ${active ? 'border-primary bg-primary/5 ring-1 ring-primary' : ''
+                              }`}
                           >
                             <Icon
                               className={`h-6 w-6 ${active ? 'text-primary' : 'text-muted-foreground'}`}
@@ -346,7 +367,10 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                   id="name"
                   placeholder="e.g. Summer Campaign Link"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    generateSuggestedCode(e.target.value);
+                  }}
                 />
               </div>
 
@@ -388,11 +412,10 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                               active ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
                             );
                           }}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
-                            active
+                          className={`rounded-full border px-3 py-1 text-xs font-medium transition ${active
                               ? 'border-primary bg-primary text-primary-foreground'
                               : 'border-border bg-background hover:bg-accent'
-                          }`}
+                            }`}
                         >
                           <span
                             className="mr-1.5 inline-block h-2 w-2 rounded-full"
@@ -418,6 +441,22 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Extended fields: Vanity Slug, Expiry, A/B Testing */}
+          <QrFormFieldsExtended
+            typeDef={typeDef}
+            payload={payload}
+            onChange={handleFieldChange}
+            expiresAt={expiresAt ?? undefined}
+            onExpiryChange={setExpiresAt}
+            shortCode={shortCode}
+            onShortCodeChange={setShortCode}
+            suggestedShortCode={suggestedCode}
+            variant={variant}
+            onVariantChange={setVariant}
+            testName={testName}
+            onTestNameChange={setTestName}
+          />
 
           {/* Style */}
           <Card>

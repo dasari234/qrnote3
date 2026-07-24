@@ -15,7 +15,7 @@ datasource db {
 }
 
 model Profile {
-  id        String   @id @db.Uuid
+  id    String   @id @db.Uuid
   email     String   @unique
   fullName  String?  @map("full_name")
   avatarUrl String?  @map("avatar_url")
@@ -134,10 +134,19 @@ model QrCode {
   isDynamic      Boolean  @default(false) @map("is_dynamic")
   shortCode      String?  @unique @map("short_code")
   destinationUrl String?  @map("destination_url")
-  payload        Json     @default("{}")
+  payload        Json     @default("{}") 
   style          Json     @default("{}")
   status         QrStatus @default(active)
   scanCount      Int      @default(0) @map("scan_count")
+  
+  // New fields for expiry
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  
+  // New fields for A/B testing
+  variant        String?  // "A" or "B" or null for non-test QR codes
+  testName       String?  @map("test_name")
+  testId         String?  @map("test_id")
+  
   tags           Tag[]    @relation("QrCodeTags")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz

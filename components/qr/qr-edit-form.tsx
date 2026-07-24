@@ -1,8 +1,19 @@
 'use client';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
+import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -21,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { deleteQrCode, updateQrCode, updateQrStatus } from '@/lib/qr/actions';
+import { deleteQrCode, updateQrCode, updateQrStatus, duplicateQrCode } from '@/lib/qr/actions';
 import { QR_TYPES } from '@/lib/qr/types';
 import { QRStyle, QRType } from '@/lib/types';
 import { Copy, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
@@ -53,6 +64,18 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   const [folderId, setFolderId] = useState<string>(qr.folderId || '');
   const [selectedTags, setSelectedTags] = useState<string[]>(selectedTagIds);
   const [loading, setLoading] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+
+  // New state for A/B testing, expiry, vanity slug
+  const [expiresAt, setExpiresAt] = useState<string | null>(
+    qr.expiresAt ? new Date(qr.expiresAt).toISOString().split('T')[0] : null
+  );
+  const [shortCode, setShortCode] = useState(qr.shortCode || '');
+  const [variant, setVariant] = useState<string | null>(qr.variant || null);
+  const [testName, setTestName] = useState(qr.testName || '');
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const typeDef = QR_TYPES.find((t) => t.type === type)!;
   const shortLinkUrl = useMemo(() => {
@@ -79,6 +102,10 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
         status,
         folderId: folderId || null,
         tagIds: selectedTags,
+        customShortCode: shortCode || undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        variant: variant || null,
+        testName: testName || undefined,
       });
       toast.success('QR code updated');
       router.refresh();
@@ -88,8 +115,32 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
     setLoading(false);
   };
 
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await handleDelete(); // Executes your original delete block safely
+      setIsDeleteDialogOpen(false);
+    } catch (err) {
+      // Errors handled gracefully inside your original handleDelete block
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    setDuplicating(true);
+    try {
+      const result = await duplicateQrCode(qr.id);
+      toast.success('QR code duplicated!');
+      router.push(`/dashboard/qr/${result.id}`);
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to duplicate QR code');
+    }
+    setDuplicating(false);
+  };
+
   const handleDelete = async () => {
-    if (!confirm('Delete this QR code? This cannot be undone.')) return;
     try {
       await deleteQrCode(qr.id);
       toast.success('QR code deleted');
@@ -136,7 +187,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleToggleStatus}>
+          <Button variant="outline" onClick={handleToggleStatus} disabled={loading}>
             {status === 'active' ? (
               <>
                 <Pause className="mr-2 h-4 w-4" /> Pause
@@ -147,9 +198,41 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
               </>
             )}
           </Button>
-          <Button variant="outline" onClick={handleDelete}>
-            <Trash2 className="mr-2 h-4 w-4" /> Delete
+          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating || loading}>
+            <Copy className="mr-2 h-4 w-4" /> Duplicate
           </Button>
+
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={loading || isDeleting}>
+                <Trash2 className="mr-2 h-4 w-4" /> Delete
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete this QR code?</DialogTitle>
+                <DialogDescription>
+                  This action cannot be undone. This will permanently delete your QR code and completely stop all traffic redirects.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-4 gap-2 sm:gap-0">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline" disabled={isDeleting}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                >
+                  {isDeleting ? 'Deleting…' : 'Delete'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Button onClick={handleSave} disabled={loading}>
             <Save className="mr-2 h-4 w-4" />
             {loading ? 'Saving…' : 'Save'}
@@ -256,6 +339,21 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Extended fields: Vanity Slug, Expiry, A/B Testing */}
+          <QrFormFieldsExtended
+            typeDef={typeDef}
+            payload={payload}
+            onChange={handleFieldChange}
+            expiresAt={expiresAt ?? undefined}
+            onExpiryChange={setExpiresAt}
+            shortCode={shortCode}
+            onShortCodeChange={setShortCode}
+            variant={variant}
+            onVariantChange={setVariant}
+            testName={testName}
+            onTestNameChange={setTestName}
+          />
 
           <Card>
             <CardHeader>

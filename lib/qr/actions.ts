@@ -72,6 +72,9 @@ export async function createQrCode(input: {
   folderId?: string;
   tagIds?: string[];
   customShortCode?: string;
+  expiresAt?: Date;
+  variant?: string;
+  testName?: string;
 }) {
   const userId = await getAuthUserId();
   const orgId = await getOrgIdForWorkspace(input.workspaceId);
@@ -95,6 +98,8 @@ export async function createQrCode(input: {
     destinationUrl = resolveDestination(input.type, input.payload);
   }
 
+  const testId = input.variant ? `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : null;
+
   const qr = await prisma.qrCode.create({
     data: {
       workspaceId: input.workspaceId,
@@ -108,6 +113,10 @@ export async function createQrCode(input: {
       payload: input.payload,
       style: input.style as any,
       status: 'active',
+      expiresAt: input.expiresAt || null,
+      variant: input.variant || null,
+      testName: input.testName || null,
+      testId: testId,
       ...(input.tagIds && input.tagIds.length > 0
         ? { tags: { connect: input.tagIds.map((id) => ({ id })) } }
         : {}),
@@ -128,6 +137,9 @@ export async function updateQrCode(input: {
   folderId?: string | null;
   tagIds?: string[];
   customShortCode?: string;
+  expiresAt?: Date | null;
+  variant?: string | null;
+  testName?: string;
 }) {
   const userId = await getAuthUserId();
   const orgId = await getOrgIdForQr(input.id);
@@ -155,6 +167,9 @@ export async function updateQrCode(input: {
       style: input.style as any,
       status: input.status as any,
       folderId: input.folderId || null,
+      expiresAt: input.expiresAt ?? undefined,
+      variant: input.variant ?? undefined,
+      testName: input.testName ?? undefined,
       ...(shortCodeUpdate ? { shortCode: shortCodeUpdate } : {}),
       ...(input.tagIds !== undefined
         ? { tags: { set: input.tagIds.map((id) => ({ id })) } }
@@ -215,6 +230,7 @@ export async function duplicateQrCode(id: string) {
       payload,
       style: source.style as any,
       status: 'active',
+      ...(source.expiresAt ? { expiresAt: source.expiresAt } : {}),
       ...(source.tags.length > 0
         ? { tags: { connect: source.tags.map((t) => ({ id: t.id })) } }
         : {}),
