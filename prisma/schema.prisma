@@ -196,3 +196,63 @@ model ScanEvent {
   @@map("scan_events")
   @@schema("public")
 }
+
+// ------------------------- Payments Models -------------------------
+
+enum OrderStatus {
+  open
+  paid
+  failed
+  refunded
+
+  @@schema("public")
+}
+
+model Plan {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  price      Int      // price in paise (e.g., ₹100 => 10000)
+  currency   String   @default("INR")
+  description String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  orders     Order[]
+
+  @@map("plans")
+  @@schema("public")
+}
+
+model Order {
+  id               String      @id @default(uuid()) @db.Uuid
+  planId           String?     @map("plan_id") @db.Uuid
+  plan             Plan?       @relation(fields: [planId], references: [id], onDelete: SetNull)
+  userId           String?     @map("user_id") @db.Uuid
+  user             Profile?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  razorpayOrderId  String?     @unique @map("razorpay_order_id")
+  amount           Int
+  currency         String      @default("INR")
+  receipt          String?
+  status           OrderStatus @default(open)
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime    @default(now()) @map("updated_at") @db.Timestamptz
+
+  payments         Payment[]
+
+  @@map("orders")
+  @@schema("public")
+}
+
+model Payment {
+  id                 String   @id @default(uuid()) @db.Uuid
+  orderId            String   @map("order_id") @db.Uuid
+  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  razorpayPaymentId  String   @unique @map("razorpay_payment_id")
+  razorpaySignature  String?  @map("razorpay_signature")
+  status             String
+  method             String?
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("payments")
+  @@schema("public")
+}
