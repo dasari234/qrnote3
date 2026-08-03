@@ -19,6 +19,25 @@ function loadRazorpayScript(): Promise<void> {
 export default function CartPage() {
   const { items, remove, clear, total } = useCart();
   const [loading, setLoading] = useState(false);
+  const [coupon, setCoupon] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null);
+
+  async function applyCoupon() {
+    if (!coupon) return toast.error("Enter coupon code");
+    try {
+      const resp = await fetch('/api/coupons/validate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: coupon, amount: total() }) });
+      const data = await resp.json();
+      if (data.valid) {
+        setAppliedDiscount(data.discount);
+        toast.success(`Coupon applied: -₹${(data.discount/100).toFixed(2)}`);
+      } else {
+        toast.error(data.reason || 'Invalid coupon');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Coupon check failed');
+    }
+  }
 
   async function checkout() {
     if (items.length === 0) {
@@ -32,6 +51,7 @@ export default function CartPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: items.map((i) => ({ planId: i.id, qty: i.qty })),
+          couponCode: coupon || undefined,
         }),
       });
 
@@ -52,7 +72,6 @@ export default function CartPage() {
         description: "Purchase",
         order_id: data.order.id,
         handler: async (response: any) => {
-          // Verify on server
           const v = await fetch("/api/razorpay/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -62,7 +81,6 @@ export default function CartPage() {
           if (vr.ok) {
             toast.success("Payment successful");
             clear();
-            // navigate to orders page
             window.location.href = "/dashboard/orders";
           } else {
             toast.error("Payment verification failed");
@@ -106,8 +124,14 @@ export default function CartPage() {
         ))}
       </div>
 
+      <div className="flex items-center gap-2">
+        <input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="Coupon code" className="input input-bordered" />
+        <button onClick={applyCoupon} className="btn">Apply</button>
+        {appliedDiscount !== null && <div className="ml-3 text-sm">Discount: -₹{(appliedDiscount/100).toFixed(2)}</div>}
+      </div>
+
       <div className="flex items-center justify-between">
-        <div className="text-lg font-bold">Total: ₹{(total() / 100).toFixed(2)}</div>
+        <div className="text-lg font-bold">Total: ₹{( (total() - (appliedDiscount||0)) / 100).toFixed(2)}</div>
         <div>
           <button onClick={clear} className="btn btn-outline mr-2">Clear</button>
           <button onClick={checkout} className="btn btn-primary" disabled={loading}>
