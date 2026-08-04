@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { createPlanAction, deletePlanAction, createCouponAction, deleteCouponAction } from '@/lib/admin/billing-actions';
 import Link from 'next/link';
+import DeleteConfirm from '@/components/admin/DeleteConfirm';
 
 export default async function AdminPlansPage() {
   const [plans, coupons] = await Promise.all([
@@ -90,9 +91,9 @@ export default async function AdminPlansPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link href={`/dashboard/admin/plans/edit/plan/${p.id}`} className="btn btn-sm">Edit</Link>
-                  <form action={deletePlanAction} method="post">
+                  <form id={`delete-plan-${p.id}`} action={deletePlanAction} method="post">
                     <input type="hidden" name="id" value={p.id} />
-                    <button type="submit" className="btn btn-ghost text-red-600">Delete</button>
+                    <DeleteConfirm formId={`delete-plan-${p.id}`} itemName={p.name} itemType="plan" />
                   </form>
                 </div>
               </div>
@@ -111,9 +112,9 @@ export default async function AdminPlansPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link href={`/dashboard/admin/plans/edit/coupon/${c.id}`} className="btn btn-sm">Edit</Link>
-                  <form action={deleteCouponAction} method="post">
+                  <form id={`delete-coupon-${c.id}`} action={deleteCouponAction} method="post">
                     <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" className="btn btn-ghost text-red-600">Delete</button>
+                    <DeleteConfirm formId={`delete-coupon-${c.id}`} itemName={c.code} itemType="coupon" />
                   </form>
                 </div>
               </div>
