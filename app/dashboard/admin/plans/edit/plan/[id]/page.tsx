@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default async function EditPlanPage({ params }: { params: { id: string } }) {
   const id = params.id;
-  const plan = await prisma.plan.findUnique({ where: { id } });
+  const plan = await prisma.plan.findFirst({ where: { id, deletedAt: null } });
   if (!plan) return <div>Plan not found</div>;
 
   const priceRupees = (plan.price / 100).toFixed(2);

@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default async function AdminPlansPage() {
   const [plans, coupons] = await Promise.all([
-    prisma.plan.findMany({ orderBy: { price: 'asc' } }),
+    prisma.plan.findMany({ where: { deletedAt: null }, orderBy: { price: 'asc' } }),
     prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } }),
   ]);
 

@@ -64,7 +64,14 @@ export async function deletePlanAction(formData: FormData) {
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('id required');
 
-  await prisma.plan.delete({ where: { id } });
+  // Prevent deletion if there are any orders attached to this plan
+  const ordersCount = await prisma.order.count({ where: { planId: id } });
+  if (ordersCount > 0) {
+    throw new Error('Cannot delete plan with existing orders. Consider disabling or soft-deleting after migrating customers.');
+  }
+
+  // Soft-delete by setting deletedAt
+  await prisma.plan.update({ where: { id }, data: { deletedAt: new Date() } });
 }
 
 export async function createCouponAction(formData: FormData) {

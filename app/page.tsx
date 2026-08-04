@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
 export default async function LandingPage() {
-  const plans = await prisma.plan.findMany({ orderBy: { price: 'asc' } });
+  const plans = await prisma.plan.findMany({ where: { deletedAt: null }, orderBy: { price: 'asc' } });
 
   return (
     <main className="container mx-auto p-6">
