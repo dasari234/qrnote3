@@ -88,10 +88,13 @@ export default async function AdminPlansPage() {
                   <div className="font-semibold">{p.name}</div>
                   <div className="text-sm text-muted-foreground">₹{(p.price/100).toFixed(2)} • {p.currency}</div>
                 </div>
-                <form action={deletePlanAction} method="post">
-                  <input type="hidden" name="id" value={p.id} />
-                  <button type="submit" className="btn btn-ghost text-red-600">Delete</button>
-                </form>
+                <div className="flex items-center gap-2">
+                  <Link href={`/dashboard/admin/plans/edit/plan/${p.id}`} className="btn btn-sm">Edit</Link>
+                  <form action={deletePlanAction} method="post">
+                    <input type="hidden" name="id" value={p.id} />
+                    <button type="submit" className="btn btn-ghost text-red-600">Delete</button>
+                  </form>
+                </div>
               </div>
             ))}
           </div>
@@ -106,10 +109,13 @@ export default async function AdminPlansPage() {
                   <div className="font-semibold">{c.code}</div>
                   <div className="text-sm text-muted-foreground">{c.type} • {c.type === 'percentage' ? `${c.amount}%` : `₹${(c.amount/100).toFixed(2)}`}</div>
                 </div>
-                <form action={deleteCouponAction} method="post">
-                  <input type="hidden" name="id" value={c.id} />
-                  <button type="submit" className="btn btn-ghost text-red-600">Delete</button>
-                </form>
+                <div className="flex items-center gap-2">
+                  <Link href={`/dashboard/admin/plans/edit/coupon/${c.id}`} className="btn btn-sm">Edit</Link>
+                  <form action={deleteCouponAction} method="post">
+                    <input type="hidden" name="id" value={c.id} />
+                    <button type="submit" className="btn btn-ghost text-red-600">Delete</button>
+                  </form>
+                </div>
               </div>
             ))}
           </div>
