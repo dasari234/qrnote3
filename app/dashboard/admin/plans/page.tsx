@@ -24,8 +24,8 @@ export default async function AdminPlansPage() {
               <input name="name" className="input input-bordered w-full" />
             </div>
             <div>
-              <label className="block text-sm">Price (paise)</label>
-              <input name="price" type="number" className="input input-bordered w-full" />
+              <label className="block text-sm">Price (₹)</label>
+              <input name="price" type="number" step="0.01" placeholder="e.g., 149.99" className="input input-bordered w-full" />
             </div>
             <div>
               <label className="block text-sm">Currency</label>

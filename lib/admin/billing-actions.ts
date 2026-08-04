@@ -18,13 +18,21 @@ export async function createPlanAction(formData: FormData) {
   await requireSuperAdmin(actorId);
 
   const name = String(formData.get('name') || '');
-  const price = Number(formData.get('price') || 0);
+  // Price is entered in rupees on the form (e.g., 149.99). Convert to paise.
+  const priceRaw = String(formData.get('price') || '0');
   const currency = String(formData.get('currency') || 'INR');
   const description = String(formData.get('description') || '');
 
-  if (!name || !price) throw new Error('Name and price are required');
+  if (!name) throw new Error('Name is required');
 
-  await prisma.plan.create({ data: { name, price: Math.floor(price), currency, description } });
+  // Normalize comma separators and parse float
+  const normalized = priceRaw.replace(/[,\s]/g, '');
+  const priceFloat = parseFloat(normalized);
+  if (Number.isNaN(priceFloat) || priceFloat < 0) throw new Error('Invalid price');
+
+  const pricePaise = Math.round(priceFloat * 100);
+
+  await prisma.plan.create({ data: { name, price: pricePaise, currency, description } });
 }
 
 export async function deletePlanAction(formData: FormData) {
