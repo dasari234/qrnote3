@@ -13,10 +13,10 @@ export async function POST(req: Request) {
     params.append('secret', secret);
     params.append('response', token);
 
-    // Optionally pass remoteip for stricter verification
-    // const forwarded = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
-    // const ip = forwarded.split(',')[0].trim() || '';
-    // if (ip) params.append('remoteip', ip);
+    // Include remoteip for stricter verification if available (from reverse proxy / client)
+    const forwarded = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+    const ip = forwarded.split(',')[0].trim();
+    if (ip) params.append('remoteip', ip);
 
     const verify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
