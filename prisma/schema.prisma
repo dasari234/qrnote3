@@ -275,6 +275,19 @@ model Coupon {
   @@schema("public")
 }
 
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   // create | update | delete
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  changes    Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("audit_logs")
+  @@schema("public")
+}
+
 model WorkspaceBilling {
   id             String   @id @default(uuid()) @db.Uuid
   workspaceId    String   @unique @map("workspace_id") @db.Uuid

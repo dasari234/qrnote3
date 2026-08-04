@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { requireSuperAdmin } from '@/lib/rbac';
+import { logAudit } from '@/lib/audit';
 
 async function getAuthUserId(): Promise<string> {
   const supabase = await createServerSupabaseClient();
@@ -32,7 +33,9 @@ export async function createPlanAction(formData: FormData) {
 
   const pricePaise = Math.round(priceFloat * 100);
 
-  await prisma.plan.create({ data: { name, price: pricePaise, currency, description } });
+  const plan = await prisma.plan.create({ data: { name, price: pricePaise, currency, description } });
+
+  await logAudit(actorId, 'create', 'Plan', plan.id, { name, price: pricePaise, currency, description });
 }
 
 export async function updatePlanAction(formData: FormData) {
@@ -48,13 +51,18 @@ export async function updatePlanAction(formData: FormData) {
   if (!id) throw new Error('Plan id is required');
   if (!name) throw new Error('Name is required');
 
+  const existing = await prisma.plan.findUnique({ where: { id } });
+  if (!existing) throw new Error('Plan not found');
+
   const normalized = priceRaw.replace(/[,\s]/g, '');
   const priceFloat = parseFloat(normalized);
   if (Number.isNaN(priceFloat) || priceFloat < 0) throw new Error('Invalid price');
 
   const pricePaise = Math.round(priceFloat * 100);
 
-  await prisma.plan.update({ where: { id }, data: { name, price: pricePaise, currency, description } });
+  const updated = await prisma.plan.update({ where: { id }, data: { name, price: pricePaise, currency, description } });
+
+  await logAudit(actorId, 'update', 'Plan', id, { before: existing, after: updated });
 }
 
 export async function deletePlanAction(formData: FormData) {
@@ -71,7 +79,9 @@ export async function deletePlanAction(formData: FormData) {
   }
 
   // Soft-delete by setting deletedAt
-  await prisma.plan.update({ where: { id }, data: { deletedAt: new Date() } });
+  const deleted = await prisma.plan.update({ where: { id }, data: { deletedAt: new Date() } });
+
+  await logAudit(actorId, 'delete', 'Plan', id, { deletedAt: deleted.deletedAt });
 }
 
 export async function createCouponAction(formData: FormData) {
@@ -87,9 +97,11 @@ export async function createCouponAction(formData: FormData) {
 
   if (!code || !type) throw new Error('code and type required');
 
-  await prisma.coupon.create({
+  const coupon = await prisma.coupon.create({
     data: { code, type, amount: Math.floor(amount), usageLimit, validFrom, validUntil, active: true },
   });
+
+  await logAudit(actorId, 'create', 'Coupon', coupon.id, { code, type, amount: Math.floor(amount), usageLimit, validFrom, validUntil, active: true });
 }
 
 export async function updateCouponAction(formData: FormData) {
@@ -108,10 +120,15 @@ export async function updateCouponAction(formData: FormData) {
   if (!id) throw new Error('Coupon id required');
   if (!code || !type) throw new Error('code and type required');
 
-  await prisma.coupon.update({
+  const existing = await prisma.coupon.findUnique({ where: { id } });
+  if (!existing) throw new Error('Coupon not found');
+
+  const updated = await prisma.coupon.update({
     where: { id },
     data: { code, type, amount: Math.floor(amount), usageLimit, validFrom, validUntil, active },
   });
+
+  await logAudit(actorId, 'update', 'Coupon', id, { before: existing, after: updated });
 }
 
 export async function deleteCouponAction(formData: FormData) {
@@ -120,5 +137,8 @@ export async function deleteCouponAction(formData: FormData) {
 
   const id = String(formData.get('id') || '');
   if (!id) throw new Error('id required');
+  const existing = await prisma.coupon.findUnique({ where: { id } });
   await prisma.coupon.delete({ where: { id } });
+
+  await logAudit(actorId, 'delete', 'Coupon', id, { before: existing });
 }
