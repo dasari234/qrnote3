@@ -213,6 +213,9 @@ function SidebarContent({
           </div>
           <span className="text-lg font-bold tracking-tight text-foreground">
             QRNote
+            <span className="text-xs text-muted-foreground/80 font-normal ml-2">
+              Powered by Dasari
+            </span>
           </span>
         </Link>
       </div>
