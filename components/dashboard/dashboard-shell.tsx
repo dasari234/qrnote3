@@ -213,12 +213,14 @@ function SidebarContent({
             <QrCode className="h-5 w-5 text-primary-foreground" />
           </div>
 
-          {/* Text Container with Proper Vertical Alignment */}
-          <div className="flex flex-col justify-center leading-none">
-            <span className="text-lg font-bold tracking-tight text-foreground">
+          {/* Text Container split into two lanes */}
+          <div className="flex flex-col justify-center">
+            {/* Lane 1 */}
+            <span className="text-base font-bold tracking-tight text-foreground leading-none">
               QRNote
             </span>
-            <span className="text-[9px] tracking-normal text-muted-foreground/80 font-normal mt-0.5">
+            {/* Lane 2 */}
+            <span className="text-[10px] text-muted-foreground/80 font-normal tracking-wide leading-none mt-1">
               Powered by Dasari
             </span>
           </div>
