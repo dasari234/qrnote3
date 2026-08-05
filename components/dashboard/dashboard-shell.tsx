@@ -267,7 +267,7 @@ function SidebarContent({
       </div>
 
       {/* Scrollable navigation map */}
-      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.2)_transparent]">
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-sm hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.15)_transparent]">
         <nav className="space-y-1 p-3">
           {navItems.map((item) => {
             const active =
@@ -313,6 +313,7 @@ function SidebarContent({
           </div>
         )}
       </div>
+
 
 
       {/* Fixed bottom action launcher box */}
