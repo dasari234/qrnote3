@@ -206,7 +206,7 @@ function SidebarContent({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-card text-card-foreground">
       {/* Logo section */}
-      <div className="flex h-14 shrink-0 items-center border-b border-border px-4">
+      <div className="flex h-14 shrink-0 items-center px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
           {/* Icon Container */}
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-sm transition-transform group-hover:scale-105">
@@ -229,7 +229,7 @@ function SidebarContent({
 
 
       {/* Organization selector zone */}
-      <div className="shrink-0 border-b border-border p-3 bg-muted/20 dark:bg-transparent">
+      <div className="shrink-0 border-b border-border px-3 pb-3 bg-muted/20 dark:bg-transparent">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground">
@@ -267,52 +267,52 @@ function SidebarContent({
       </div>
 
       {/* Scrollable navigation map */}
-      <div className="flex-1 overflow-y-auto">
-        <nav className="space-y-1 p-3">
-          {navItems.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== '/dashboard' &&
-                pathname.startsWith(item.href));
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.2)_transparent]">
+          <nav className="space-y-1 p-3">
+            {navItems.map((item) => {
+              const active =
+                pathname === item.href ||
+                (item.href !== '/dashboard' &&
+                  pathname.startsWith(item.href));
 
-            return (
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
+                    active
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary-foreground" : "text-muted-foreground/80")} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Super Admin access link section */}
+          {isSuperAdmin && (
+            <div className="border-t border-border mt-2 p-3">
               <Link
-                key={item.href}
-                href={item.href}
+                href="/dashboard/admin"
                 onClick={onNavigate}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
-                  active
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold transition-all duration-200',
+                  pathname.startsWith('/dashboard/admin')
+                    ? 'bg-destructive text-destructive-foreground shadow-sm'
+                    : 'text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20'
                 )}
               >
-                <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary-foreground" : "text-muted-foreground/80")} />
-                <span className="truncate">{item.label}</span>
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                <span>Admin Panel</span>
               </Link>
-            );
-          })}
-        </nav>
-
-        {/* Super Admin access link section */}
-        {isSuperAdmin && (
-          <div className="border-t border-border mt-2 p-3">
-            <Link
-              href="/dashboard/admin"
-              onClick={onNavigate}
-              className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold transition-all duration-200',
-                pathname.startsWith('/dashboard/admin')
-                  ? 'bg-destructive text-destructive-foreground shadow-sm'
-                  : 'text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20'
-              )}
-            >
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              <span>Admin Panel</span>
-            </Link>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
 
       {/* Fixed bottom action launcher box */}
       <div className="shrink-0 border-t border-border bg-card p-3">
