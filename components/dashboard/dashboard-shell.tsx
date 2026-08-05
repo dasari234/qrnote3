@@ -208,17 +208,23 @@ function SidebarContent({
       {/* Logo section */}
       <div className="flex h-14 shrink-0 items-center border-b border-border px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
+          {/* Icon Container */}
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-sm transition-transform group-hover:scale-105">
             <QrCode className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            QRNote
-            <span className="text-xs text-muted-foreground/80 font-normal ml-2">
+
+          {/* Text Container with Proper Vertical Alignment */}
+          <div className="flex flex-col justify-center leading-none">
+            <span className="text-lg font-bold tracking-tight text-foreground">
+              QRNote
+            </span>
+            <span className="text-[9px] tracking-normal text-muted-foreground/80 font-normal mt-0.5">
               Powered by Dasari
             </span>
-          </span>
+          </div>
         </Link>
       </div>
+
 
       {/* Organization selector zone */}
       <div className="shrink-0 border-b border-border p-3 bg-muted/20 dark:bg-transparent">
