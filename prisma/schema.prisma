@@ -15,14 +15,15 @@ datasource db {
 }
 
 model Profile {
-  id    String   @id @db.Uuid
-  email     String   @unique
-  fullName  String?  @map("full_name")
-  avatarUrl String?  @map("avatar_url")
+  id           String   @id @db.Uuid
+  email        String   @unique
+  fullName     String?  @map("full_name")
+  avatarUrl    String?  @map("avatar_url")
   isSuperAdmin Boolean  @default(false) @map("is_super_admin")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  orders Order[]
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  orders       Order[]
+
   @@map("profiles")
   @@schema("public")
 }
@@ -51,7 +52,7 @@ model OrganizationMember {
   role      Role     @default(editor)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, userId])
   @@map("organization_members")
@@ -68,14 +69,14 @@ enum Role {
 }
 
 model OrgInvite {
-  id        String    @id @default(uuid()) @db.Uuid
-  orgId     String    @map("org_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
   email     String
-  role      Role      @default(editor)
-  token     String    @unique
-  accepted  Boolean   @default(false)
-  expiresAt DateTime  @map("expires_at") @db.Timestamptz
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  role      Role     @default(editor)
+  token     String   @unique
+  accepted  Boolean  @default(false)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
@@ -140,17 +141,16 @@ model QrCode {
   scanCount      Int      @default(0) @map("scan_count")
 
   // New fields for expiry
-  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
 
   // New fields for A/B testing
-  variant        String?  // "A" or "B" or null for non-test QR codes
-  testName       String?  @map("test_name")
-  testId         String?  @map("test_id")
+  variant  String? // "A" or "B" or null for non-test QR codes
+  testName String? @map("test_name")
+  testId   String? @map("test_id")
 
-  tags           Tag[]    @relation("QrCodeTags")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz
-
+  tags      Tag[]    @relation("QrCodeTags")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
   workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   folder    Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
   scans     ScanEvent[]
@@ -191,7 +191,8 @@ model ScanEvent {
   utmMedium   String?  @map("utm_medium")
   utmCampaign String?  @map("utm_campaign")
 
-  qr QrCode @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  qr    QrCode         @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  leads CustomerLead[]
 
   @@map("scan_events")
   @@schema("public")
@@ -209,50 +210,122 @@ enum OrderStatus {
 }
 
 model Plan {
-  id         String   @id @default(uuid()) @db.Uuid
-  name       String
-  price      Int      // price in paise (e.g., ₹100 => 10000)
-  currency   String   @default("INR")
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  price       Int // price in paise (e.g., ₹100 => 10000)
+  currency    String    @default("INR")
   description String?
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
 
-  orders     Order[]
+  orders Order[]
 
   @@map("plans")
   @@schema("public")
 }
 
 model Order {
-  id               String      @id @default(uuid()) @db.Uuid
-  planId           String?     @map("plan_id") @db.Uuid
-  plan             Plan?       @relation(fields: [planId], references: [id], onDelete: SetNull)
-  userId           String?     @map("user_id") @db.Uuid
-  user             Profile?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  razorpayOrderId  String?     @unique @map("razorpay_order_id")
-  amount           Int
-  currency         String      @default("INR")
-  receipt          String?
-  status           OrderStatus @default(open)
-  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime    @default(now()) @map("updated_at") @db.Timestamptz
+  id              String      @id @default(uuid()) @db.Uuid
+  planId          String?     @map("plan_id") @db.Uuid
+  plan            Plan?       @relation(fields: [planId], references: [id], onDelete: SetNull)
+  userId          String?     @map("user_id") @db.Uuid
+  user            Profile?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  razorpayOrderId String?     @unique @map("razorpay_order_id")
+  amount          Int
+  currency        String      @default("INR")
+  receipt         String?
+  status          OrderStatus @default(open)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime    @default(now()) @map("updated_at") @db.Timestamptz
 
-  payments         Payment[]
+  payments Payment[]
 
   @@map("orders")
   @@schema("public")
 }
 
 model Payment {
-  id                 String   @id @default(uuid()) @db.Uuid
-  orderId            String   @map("order_id") @db.Uuid
-  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  razorpayPaymentId  String   @unique @map("razorpay_payment_id")
-  razorpaySignature  String?  @map("razorpay_signature")
-  status             String
-  method             String?
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id                String   @id @default(uuid()) @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  razorpayPaymentId String   @unique @map("razorpay_payment_id")
+  razorpaySignature String?  @map("razorpay_signature")
+  status            String
+  method            String?
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@map("payments")
+  @@schema("public")
+}
+
+model Coupon {
+  id         String    @id @default(uuid()) @db.Uuid
+  code       String    @unique
+  type       String // 'percentage' | 'fixed'
+  amount     Int // for percentage store percent (e.g., 20), for fixed store paise
+  usageLimit Int?
+  usedCount  Int       @default(0)
+  validFrom  DateTime?
+  validUntil DateTime?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  @@map("coupons")
+  @@schema("public")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String // create | update | delete
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  changes    Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("audit_logs")
+  @@schema("public")
+}
+
+model CustomerLead {
+  id        String     @id @default(uuid()) @db.Uuid
+  scanId    String?    @map("scan_id") @db.Uuid
+  scan      ScanEvent? @relation(fields: [scanId], references: [id], onDelete: SetNull)
+  name      String?
+  email     String?    @unique
+  phone     String?
+  optedIn   Boolean    @default(false)
+  consentAt DateTime?  @map("consent_at") @db.Timestamptz
+  ipHash    String?    @map("ip_hash")
+  metadata  Json?
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("customer_leads")
+  @@schema("public")
+}
+
+model DataDeletionRequest {
+  id              String    @id @default(uuid()) @db.Uuid
+  requesterEmail  String    @map("requester_email")
+  requesterIpHash String?   @map("requester_ip_hash")
+  status          String    @default("pending")
+  requestedAt     DateTime  @default(now()) @map("requested_at") @db.Timestamptz
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz
+  processedBy     String?   @map("processed_by") @db.Uuid
+  note            String?
+
+  @@map("data_deletion_requests")
+  @@schema("public")
+}
+
+model WorkspaceBilling {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @unique @map("workspace_id") @db.Uuid
+  subscriptionId String?  @map("subscription_id") @db.Uuid
+  seats          Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  @@map("workspace_billing")
   @@schema("public")
 }

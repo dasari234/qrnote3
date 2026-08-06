@@ -1,7 +1,6 @@
 'use client';
-
+import { CartProvider } from "@/components/providers/cart/CartProvider";
 import { useAuth } from '@/components/providers/auth-provider';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 import { cn } from '@/lib/utils';
 import {
   BarChart3,
@@ -30,7 +29,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
+import { useCart } from '../providers/cart/CartProvider';
+import { DashboardHeader } from "./dashboard-header";
 
 interface DashboardShellProps {
   children: ReactNode;
@@ -64,6 +65,15 @@ export function DashboardShell({
 
   const currentOrg = organizations[0];
   const currentWorkspace = workspaces[0];
+  const { items } = useCart();
+  const [isMounted, setIsMounted] = useState(false);
+
+  const cartItemCount = items.reduce((total, item) => total + item.qty, 0);
+
+  // Avoid hydration mismatch by waiting until client mount to show the badge
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const initials = (profile.fullName || profile.email || '?')
     .split(' ')
@@ -73,117 +83,72 @@ export function DashboardShell({
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
-      {/* Sidebar (desktop) */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-card-foreground lg:flex">
-        <SidebarContent
-          organizations={organizations}
-          currentOrg={currentOrg}
-          currentWorkspace={currentWorkspace}
-          pathname={pathname}
-          isSuperAdmin={isSuperAdmin}
-        />
-      </aside>
-
-      {/* Mobile sidebar */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Mobile Backdrop Overlay */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-            onClick={() => setMobileOpen(false)}
+    <CartProvider>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+        {/* Sidebar (desktop) */}
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card text-card-foreground lg:flex">
+          <SidebarContent
+            organizations={organizations}
+            currentOrg={currentOrg}
+            currentWorkspace={currentWorkspace}
+            pathname={pathname}
+            isSuperAdmin={isSuperAdmin}
           />
-          <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card text-card-foreground shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4">
-              <span className="font-bold text-foreground">Menu</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileOpen(false)}
-                className="hover:bg-accent hover:text-accent-foreground rounded-md h-8 w-8"
-              >
-                <X className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                <span className="sr-only">Close sidebar</span>
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <SidebarContent
-                organizations={organizations}
-                currentOrg={currentOrg}
-                currentWorkspace={currentWorkspace}
-                pathname={pathname}
-                isSuperAdmin={isSuperAdmin}
-                onNavigate={() => setMobileOpen(false)}
-              />
-            </div>
-          </aside>
-        </div>
-      )}
+        </aside>
 
-      {/* Main content frame */}
-      <div className="lg:pl-64">
-        {/* Topbar navigation wrapper */}
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden hover:bg-accent text-muted-foreground hover:text-foreground"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Open sidebar</span>
-          </Button>
-
-          <div className="flex-1" />
-
-          {/* Action icons control panel */}
-          <div className="flex items-center justify-end gap-2">
-            <ThemeToggle />
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 gap-2 px-2 hover:bg-accent hover:text-accent-foreground transition-all">
-                  <Avatar className="h-7 w-7 border border-border">
-                    <AvatarFallback className="bg-muted text-muted-foreground font-semibold text-xs">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground/80" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end" className="w-56 bg-popover text-popover-foreground border-border shadow-md">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <span className="text-sm font-semibold text-foreground leading-none">{profile.fullName || 'User'}</span>
-                    <span className="text-xs text-muted-foreground font-mono leading-none truncate">{profile.email}</span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem asChild className="focus:bg-accent focus:text-accent-foreground cursor-pointer">
-                  <Link href="/dashboard/settings" className="w-full flex items-center">
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem
-                  onClick={() => signOut()}
-                  className="text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-destructive/20 hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 cursor-pointer"
+        {/* Mobile sidebar */}
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            {/* Mobile Backdrop Overlay */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+              onClick={() => setMobileOpen(false)}
+            />
+            <aside className="absolute inset-y-0 left-0 w-64 border-r border-border bg-card text-card-foreground shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+              <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4">
+                <span className="font-bold text-foreground">Menu</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileOpen(false)}
+                  className="hover:bg-accent hover:text-accent-foreground rounded-md h-8 w-8"
                 >
-                  Sign out
-                </DropdownMenuItem>
-
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <X className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                  <span className="sr-only">Close sidebar</span>
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                <SidebarContent
+                  organizations={organizations}
+                  currentOrg={currentOrg}
+                  currentWorkspace={currentWorkspace}
+                  pathname={pathname}
+                  isSuperAdmin={isSuperAdmin}
+                  onNavigate={() => setMobileOpen(false)}
+                />
+              </div>
+            </aside>
           </div>
-        </header>
+        )}
 
-        {/* Main page content insertion socket */}
-        <main className="p-4 lg:p-6 bg-muted/40 dark:bg-background/20 min-h-[calc(100vh-56px)]">
-          {children}
-        </main>
+        {/* Main content frame */}
+        <div className="lg:pl-64">
+          {/* Topbar navigation wrapper */}
+
+          <DashboardHeader
+            setMobileOpen={setMobileOpen}
+            profile={profile}
+            initials={initials}
+            signOut={signOut}
+          />
+
+          {/* Main page content insertion socket */}
+          <main className="p-4 lg:p-6 bg-muted/40 dark:bg-background/20 min-h-[calc(100vh-56px)]">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </CartProvider>
   );
 
 }
