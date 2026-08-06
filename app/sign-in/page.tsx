@@ -40,8 +40,8 @@ function SignInFormContent() {
       return;
     }
     toast.success('Welcome back!');
-    router.push(redirect);
-    router.refresh();
+    const targetRoute = decodeURIComponent(redirect);
+    router.push(targetRoute);
   };
 
   return (
