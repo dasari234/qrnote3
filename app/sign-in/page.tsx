@@ -32,7 +32,7 @@ function SignInFormContent() {
   useEffect(() => {
     const checkAuthHash = async () => {
       const hash = window.location.hash;
-      if (!hash) return; // No hash tokens present, let user use manual form
+      if (!hash) return;
 
       const params = new URLSearchParams(hash.substring(1));
       const accessToken = params.get('access_token');
@@ -41,8 +41,7 @@ function SignInFormContent() {
       if (accessToken && refreshToken) {
         setLoading(true);
 
-        // Directly feed the email link credentials into the local session instance
-        const { error } = await supabase.auth.setSession({
+        const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
@@ -55,15 +54,28 @@ function SignInFormContent() {
         }
 
         toast.success('Successfully authenticated via invitation!');
-
-        // Refresh and route safely
         router.refresh();
-        router.push(decodeURIComponent(redirect));
+
+        // --- NEW LOGIC: Extract token from the session metadata ---
+        let finalRedirect = decodeURIComponent(redirect);
+
+        // Supabase passes invitation metadata inside the user's user_metadata block
+        const inviteToken = data?.user?.user_metadata?.invite_token;
+
+        // If the path doesn't already have a token parameter, but we found one in metadata, append it
+        if (inviteToken && !finalRedirect.includes('token=')) {
+          const joinChar = finalRedirect.includes('?') ? '&' : '?';
+          finalRedirect = `${finalRedirect}${joinChar}token=${inviteToken}`;
+        }
+        // ---------------------------------------------------------
+
+        router.push(finalRedirect);
       }
     };
 
     checkAuthHash();
   }, [redirect, router, supabase]);
+
   // ------------------------------------------------------------------------
 
   const handleSubmit = async (e: React.FormEvent) => {

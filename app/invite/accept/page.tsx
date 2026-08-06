@@ -59,7 +59,6 @@ export default function InviteAcceptPage({ searchParams }: Props) {
       // 3. Fetch invite status and accept it via your API or server action
       try {
         // Call a custom API route or your server action via fetch
-        // (Tip: It's safest to wrap database mutations in a clean API route or fetch client-side wrapper)
         const response = await fetch(`/api/invite/accept?token=${token}`, { method: 'POST' });
         const resData = await response.json();
 
