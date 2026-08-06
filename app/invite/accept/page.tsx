@@ -44,7 +44,8 @@ export default async function InviteAcceptPage({ searchParams }: Props) {
 
   if (!user) {
     // Redirect to sign-in with a redirect back here
-    redirect(`/sign-in?redirect=/invite/accept?token=${encodeURIComponent(token)}`);
+    const destinationPath = `/invite/accept?token=${token}`;
+    redirect(`/sign-in?redirect=${encodeURIComponent(destinationPath)}`);
   }
 
   // User is signed in — auto-accept
