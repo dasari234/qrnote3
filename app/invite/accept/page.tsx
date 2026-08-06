@@ -66,7 +66,7 @@ export default async function InviteAcceptPage({ searchParams }: Props) {
           </CardHeader>
           <CardContent className="pt-4">
             <Button asChild className="w-full">
-              <Link href="/dashboard">Go to Dashboard</Link>
+              <Link href="/invite/set-password">Set Account Password</Link>
             </Button>
           </CardContent>
         </Card>
