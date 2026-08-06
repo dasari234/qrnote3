@@ -14,8 +14,13 @@ export default async function BillingPage() {
   return (
     <CartProvider>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Plans</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
+          <p className="text-sm text-muted-foreground">
+            Stripe subscription integration arrives in Phase 4.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((plan) => (
             <div key={plan.id}>
               {/* @ts-ignore server -> client prop */}

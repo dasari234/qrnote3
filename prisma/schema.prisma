@@ -192,7 +192,8 @@ model ScanEvent {
   utmMedium   String?  @map("utm_medium")
   utmCampaign String?  @map("utm_campaign")
 
-  qr QrCode @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  qr    QrCode         @relation(fields: [qrId], references: [id], onDelete: Cascade)
+  leads CustomerLead[]
 
   @@map("scan_events")
   @@schema("public")
@@ -210,13 +211,13 @@ enum OrderStatus {
 }
 
 model Plan {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
   price       Int // price in paise (e.g., ₹100 => 10000)
-  currency    String   @default("INR")
+  currency    String    @default("INR")
   description String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
 
   orders Order[]
@@ -260,16 +261,16 @@ model Payment {
 }
 
 model Coupon {
-  id         String   @id @default(uuid()) @db.Uuid
-  code       String   @unique
-  type       String   // 'percentage' | 'fixed'
-  amount     Int      // for percentage store percent (e.g., 20), for fixed store paise
+  id         String    @id @default(uuid()) @db.Uuid
+  code       String    @unique
+  type       String // 'percentage' | 'fixed'
+  amount     Int // for percentage store percent (e.g., 20), for fixed store paise
   usageLimit Int?
-  usedCount  Int      @default(0)
+  usedCount  Int       @default(0)
   validFrom  DateTime?
   validUntil DateTime?
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
 
   @@map("coupons")
   @@schema("public")
@@ -278,13 +279,44 @@ model Coupon {
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
   actorId    String?  @map("actor_id") @db.Uuid
-  action     String   // create | update | delete
+  action     String // create | update | delete
   entityType String   @map("entity_type")
   entityId   String?  @map("entity_id") @db.Uuid
   changes    Json?
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@map("audit_logs")
+  @@schema("public")
+}
+
+model CustomerLead {
+  id        String     @id @default(uuid()) @db.Uuid
+  scanId    String?    @map("scan_id") @db.Uuid
+  scan      ScanEvent? @relation(fields: [scanId], references: [id], onDelete: SetNull)
+  name      String?
+  email     String?    @unique
+  phone     String?
+  optedIn   Boolean    @default(false)
+  consentAt DateTime?  @map("consent_at") @db.Timestamptz
+  ipHash    String?    @map("ip_hash")
+  metadata  Json?
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("customer_leads")
+  @@schema("public")
+}
+
+model DataDeletionRequest {
+  id              String    @id @default(uuid()) @db.Uuid
+  requesterEmail  String    @map("requester_email")
+  requesterIpHash String?   @map("requester_ip_hash")
+  status          String    @default("pending")
+  requestedAt     DateTime  @default(now()) @map("requested_at") @db.Timestamptz
+  processedAt     DateTime? @map("processed_at") @db.Timestamptz
+  processedBy     String?   @map("processed_by") @db.Uuid
+  note            String?
+
+  @@map("data_deletion_requests")
   @@schema("public")
 }
 

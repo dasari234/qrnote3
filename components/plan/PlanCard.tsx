@@ -2,6 +2,9 @@
 
 import React from "react";
 import { useCart } from "@/components/providers/cart/CartProvider";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 
 export default function PlanCard({ plan }: { plan: any }) {
   const { add } = useCart();
@@ -10,21 +13,61 @@ export default function PlanCard({ plan }: { plan: any }) {
     add({
       id: plan.id,
       name: plan.name,
-      price: plan.price, // expecting price in paise
+      price: plan.price, // price in paise
       qty: 1,
     });
   }
 
   return (
-    <div className="border rounded p-4">
-      <h3 className="font-semibold">{plan.name}</h3>
-      <p className="text-sm text-muted-foreground">{plan.description}</p>
-      <div className="mt-3 flex items-center justify-between">
-        <div className="text-lg font-bold">₹{(plan.price / 100).toFixed(2)}</div>
-        <button onClick={addToCart} className="btn btn-primary">
-          Add to cart
-        </button>
-      </div>
-    </div>
+    <Card
+      className={`relative flex flex-col justify-between bg-card text-card-foreground border-border transition-all hover:shadow-md ${
+        plan.popular
+          ? "border-primary ring-1 ring-primary shadow-sm dark:bg-muted/5"
+          : "hover:border-muted-foreground/20"
+      }`}
+    >
+      {/* Popular badge toggle */}
+      {plan.popular && (
+        <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground shadow-sm">
+          Popular
+        </span>
+      )}
+
+      <CardHeader className="pt-6">
+        <CardTitle className="text-lg text-foreground font-bold">
+          {plan.name}
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+          {plan.description}
+        </p>
+        <div className="text-3xl font-bold text-foreground mt-2 flex items-baseline">
+          ₹{(plan.price / 100).toFixed(2)}
+          <span className="text-sm font-normal text-muted-foreground ml-1">
+            /mo
+          </span>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-3 pb-6 flex-1 flex flex-col justify-between">
+        {/* Dynamic list rendering if features array exists */}
+        <div className="space-y-2">
+          {plan.features?.map((f: string) => (
+            <div key={f} className="flex items-start gap-2 text-sm text-foreground/90">
+              <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+              <span className="leading-tight">{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Dynamic Action Trigger Button */}
+        <Button
+          variant={plan.popular ? "default" : "outline"}
+          className="w-full mt-6"
+          onClick={addToCart}
+        >
+          {plan.name === "Free" ? "Current Plan" : "Add to cart"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
