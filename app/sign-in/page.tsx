@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react'; // Added Suspense
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -29,6 +29,43 @@ function SignInFormContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const checkAuthHash = async () => {
+      const hash = window.location.hash;
+      if (!hash) return; // No hash tokens present, let user use manual form
+
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (accessToken && refreshToken) {
+        setLoading(true);
+
+        // Directly feed the email link credentials into the local session instance
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        setLoading(false);
+
+        if (error) {
+          toast.error(`Session configuration failed: ${error.message}`);
+          return;
+        }
+
+        toast.success('Successfully authenticated via invitation!');
+
+        // Refresh and route safely
+        router.refresh();
+        router.push(decodeURIComponent(redirect));
+      }
+    };
+
+    checkAuthHash();
+  }, [redirect, router, supabase]);
+  // ------------------------------------------------------------------------
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,8 +77,8 @@ function SignInFormContent() {
       return;
     }
     toast.success('Welcome back!');
-    const targetRoute = decodeURIComponent(redirect);
-    router.push(targetRoute);
+    router.refresh();
+    router.push(decodeURIComponent(redirect));
   };
 
   return (
