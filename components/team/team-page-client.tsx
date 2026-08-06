@@ -460,6 +460,112 @@ export function TeamPageClient({
           </CardContent>
         </Card>
       )}
+
+      {/* Invite dialog */}
+      <Dialog open={showInviteDialog} onOpenChange={handleCloseInviteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite a team member</DialogTitle>
+            <DialogDescription>
+              Send an email invite to add someone to{' '}
+              <span className="font-medium">{orgName}</span>.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!inviteLink ? (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-email">Email address</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="colleague@example.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                      handleInvite();
+                    }
+                  }}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-role">Role</Label>
+                <Select
+                  value={inviteRole}
+                  onValueChange={(v) => setInviteRole(v as Role)}
+                >
+                  <SelectTrigger id="invite-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assignableRoles.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        <span className="font-medium capitalize">{ROLE_LABELS[r]}</span>
+                        {r === 'admin' && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            — manage members, all QR ops
+                          </span>
+                        )}
+                        {r === 'editor' && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            — create &amp; edit QR codes
+                          </span>
+                        )}
+                        {r === 'viewer' && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            — read-only access
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 py-2">
+              <p className="text-sm text-muted-foreground">
+                An email has been sent to{' '}
+                <span className="font-medium text-foreground">{inviteEmail}</span>. You
+                can also copy the link below to share manually.
+              </p>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                <span className="flex-1 text-xs font-mono text-muted-foreground break-all">
+                  {inviteLink}
+                </span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 shrink-0"
+                  onClick={handleCopyLink}
+                >
+                  {copied ? (
+                    <Check className="h-3.5 w-3.5 text-green-600" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {!inviteLink ? (
+              <>
+                <Button variant="outline" onClick={handleCloseInviteDialog}>
+                  Cancel
+                </Button>
+                <Button onClick={handleInvite} disabled={isPending}>
+                  {isPending ? 'Sending…' : 'Send Invite'}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={handleCloseInviteDialog}>Done</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 

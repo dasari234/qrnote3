@@ -151,7 +151,6 @@ model QrCode {
   tags      Tag[]    @relation("QrCodeTags")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-
   workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   folder    Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
   scans     ScanEvent[]

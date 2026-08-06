@@ -206,19 +206,30 @@ function SidebarContent({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-card text-card-foreground">
       {/* Logo section */}
-      <div className="flex h-14 shrink-0 items-center border-b border-border px-4">
+      <div className="flex h-14 shrink-0 items-center px-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
+          {/* Icon Container */}
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-sm transition-transform group-hover:scale-105">
             <QrCode className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            QRNote
-          </span>
+
+          {/* Text Container split into two lanes */}
+          <div className="flex flex-col justify-center">
+            {/* Lane 1 */}
+            <span className="text-base font-bold tracking-tight text-foreground leading-none">
+              QRNote
+            </span>
+            {/* Lane 2 */}
+            <span className="text-[10px] text-muted-foreground/80 font-normal tracking-wide leading-none mt-1">
+              Powered by Dasari
+            </span>
+          </div>
         </Link>
       </div>
 
+
       {/* Organization selector zone */}
-      <div className="shrink-0 border-b border-border p-3 bg-muted/20 dark:bg-transparent">
+      <div className="shrink-0 border-b border-border px-3 pb-3 bg-muted/20 dark:bg-transparent">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground">
@@ -256,7 +267,7 @@ function SidebarContent({
       </div>
 
       {/* Scrollable navigation map */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-sm hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.15)_transparent]">
         <nav className="space-y-1 p-3">
           {navItems.map((item) => {
             const active =
@@ -302,6 +313,8 @@ function SidebarContent({
           </div>
         )}
       </div>
+
+
 
       {/* Fixed bottom action launcher box */}
       <div className="shrink-0 border-t border-border bg-card p-3">

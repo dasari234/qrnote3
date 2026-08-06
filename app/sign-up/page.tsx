@@ -17,7 +17,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { QrCode } from 'lucide-react';
-import Turnstile from '@/components/turnstile/Turnstile';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -27,60 +26,45 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!turnstileToken) {
-      toast.error('Please complete the captcha');
-      return;
-    }
-
     setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    });
+    setLoading(false);
 
-    // Verify turnstile token server-side before attempting to create the user
-    try {
-      const res = await fetch('/api/turnstile/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: turnstileToken }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        toast.error('Captcha verification failed. Please try again.');
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      console.error('turnstile verify', err);
-      toast.error('Captcha verification failed. Please try again.');
-      setLoading(false);
+    if (error) {
+      toast.error(error.message);
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } },
-      });
-      setLoading(false);
+    if (data.user) {
+      // If identities array is empty, the user already exists in the system
+      const userExists = data.user.identities && data.user.identities.length === 0;
 
-      if (error) {
-        toast.error(error.message);
+      if (userExists) {
+        toast.error('This email is already registered. Please sign in instead.');
+        router.push('/sign-in'); // Redirect them to your sign-in page
         return;
       }
-      if (data.user) {
-        toast.success('Account created! Welcome to QRNote.');
-        router.push('/dashboard');
-        router.refresh();
+
+      // Check if user needs to confirm email before logging in
+      if (!data.session) {
+        toast.success('Account created! Please check your email to verify.');
+        return;
       }
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Failed to create account');
-      setLoading(false);
+
+      // Fallback for auto-confirm configurations
+      toast.success('Account created! Welcome to QRNote.');
+      router.refresh();
+      router.push('/dashboard');
     }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 px-4">
@@ -136,10 +120,6 @@ export default function SignUpPage() {
                   minLength={8}
                   autoComplete="new-password"
                 />
-              </div>
-
-              <div className="pt-2">
-                <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''} onVerify={(token) => setTurnstileToken(token)} />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">

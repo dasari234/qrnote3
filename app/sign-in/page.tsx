@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react'; // Added Suspense
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -29,6 +29,55 @@ function SignInFormContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const checkAuthHash = async () => {
+      const hash = window.location.hash;
+      if (!hash) return;
+
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (accessToken && refreshToken) {
+        setLoading(true);
+
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        setLoading(false);
+
+        if (error) {
+          toast.error(`Session configuration failed: ${error.message}`);
+          return;
+        }
+
+        toast.success('Successfully authenticated via invitation!');
+        router.refresh();
+
+        // --- NEW LOGIC: Extract token from the session metadata ---
+        let finalRedirect = decodeURIComponent(redirect);
+
+        // Supabase passes invitation metadata inside the user's user_metadata block
+        const inviteToken = data?.user?.user_metadata?.invite_token;
+
+        // If the path doesn't already have a token parameter, but we found one in metadata, append it
+        if (inviteToken && !finalRedirect.includes('token=')) {
+          const joinChar = finalRedirect.includes('?') ? '&' : '?';
+          finalRedirect = `${finalRedirect}${joinChar}token=${inviteToken}`;
+        }
+        // ---------------------------------------------------------
+
+        router.push(finalRedirect);
+      }
+    };
+
+    checkAuthHash();
+  }, [redirect, router, supabase]);
+
+  // ------------------------------------------------------------------------
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -40,8 +89,8 @@ function SignInFormContent() {
       return;
     }
     toast.success('Welcome back!');
-    router.push(redirect);
     router.refresh();
+    router.push(decodeURIComponent(redirect));
   };
 
   return (

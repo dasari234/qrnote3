@@ -1,10 +1,10 @@
-import './globals.css';
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { CartProvider } from '@/components/providers/cart/CartProvider';
+import { ThemeProvider } from '@/components/providers/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { ThemeProvider } from '@/components/providers/theme-provider';
-import { AuthProvider } from '@/components/providers/auth-provider';
-import { Toaster } from '@/components/ui/sonner';
-import { CartProvider } from '@/components/providers/cart/CartProvider';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 

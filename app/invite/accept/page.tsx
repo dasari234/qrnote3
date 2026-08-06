@@ -1,55 +1,102 @@
+'use client';
+
+import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { prisma } from '@/lib/prisma';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { acceptInvite } from '@/lib/team/actions';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 interface Props {
   searchParams: Promise<{ token?: string }>;
 }
 
-export default async function InviteAcceptPage({ searchParams }: Props) {
-  const { token } = await searchParams;
+export default function InviteAcceptPage({ searchParams }: Props) {
+  // Unwrap searchParams using React.use() hook
+  const { token } = use(searchParams);
+  const router = useRouter();
+  const supabase = createBrowserSupabaseClient();
 
-  if (!token) {
-    return <ErrorState message="Invalid invite link — no token provided." />;
+  const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [orgName, setOrgName] = useState('');
+  const [role, setRole] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const processInvitation = async () => {
+      if (!token) {
+        setErrorStatus('Invalid invite link — no token provided.');
+        setLoading(false);
+        return;
+      }
+
+      // 1. Check for incoming URL hashes and let Supabase establish the browser session
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+      }
+
+      // 2. Check if user is now authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // Safe Client redirect to sign-in without losing data context
+        const destinationPath = `/invite/accept?token=${token}`;
+        router.push(`/sign-in?redirect=${encodeURIComponent(destinationPath)}`);
+        return;
+      }
+
+      // 3. Fetch invite status and accept it via your API or server action
+      try {
+        // Call a custom API route or your server action via fetch
+        const response = await fetch(`/api/invite/accept?token=${token}`, { method: 'POST' });
+        const resData = await response.json();
+
+        if (!response.ok) {
+          setErrorStatus(resData.message || 'Failed to accept the invite.');
+          setLoading(false);
+          return;
+        }
+
+        setOrgName(resData.orgName);
+        setRole(resData.role);
+        setSuccess(true);
+      } catch (err: any) {
+        setErrorStatus(err.message || 'An unexpected error occurred.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    processInvitation();
+  }, [token, router, supabase]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+        <div className="text-center space-y-2">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground text-sm">Processing invitation security tokens...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Look up the invite
-  const invite = await prisma.orgInvite.findUnique({
-    where: { token },
-    include: { org: { select: { name: true } } },
-  });
-
-  if (!invite) {
-    return <ErrorState message="This invite link is invalid or has already been used." />;
+  if (errorStatus) {
+    return <ErrorState message={errorStatus} />;
   }
 
-  if (invite.accepted) {
-    return <ErrorState message="This invite has already been accepted." />;
-  }
-
-  if (invite.expiresAt < new Date()) {
-    return <ErrorState message="This invite link has expired. Please ask for a new one." />;
-  }
-
-  // Check if the user is signed in
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    // Redirect to sign-in with a redirect back here
-    redirect(`/sign-in?redirect=/invite/accept?token=${encodeURIComponent(token)}`);
-  }
-
-  // User is signed in — auto-accept
-  try {
-    await acceptInvite(token);
+  if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
         <Card className="w-full max-w-md text-center shadow-sm">
@@ -60,21 +107,21 @@ export default async function InviteAcceptPage({ searchParams }: Props) {
             <CardTitle className="text-xl">You&apos;re in!</CardTitle>
             <CardDescription>
               You have successfully joined{' '}
-              <span className="font-medium text-foreground">{invite.org.name}</span> as a{' '}
-              <span className="font-medium text-foreground capitalize">{invite.role}</span>.
+              <span className="font-medium text-foreground">{orgName}</span> as a{' '}
+              <span className="font-medium text-foreground capitalize">{role}</span>.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <Button asChild className="w-full">
-              <Link href="/dashboard">Go to Dashboard</Link>
+              <Link href="/invite/set-password">Set Account Password</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
     );
-  } catch (err: any) {
-    return <ErrorState message={err.message ?? 'Failed to accept the invite.'} />;
   }
+
+  return null;
 }
 
 function ErrorState({ message }: { message: string }) {
@@ -90,7 +137,7 @@ function ErrorState({ message }: { message: string }) {
         </CardHeader>
         <CardContent className="pt-4">
           <Button asChild variant="outline" className="w-full">
-            <Link href="/dashboard">Back to Dashboard</Link>
+            <Link href="/sign-in">Go to Login</Link>
           </Button>
         </CardContent>
       </Card>
