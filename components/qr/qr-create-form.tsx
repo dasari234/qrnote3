@@ -245,8 +245,8 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
         testName: testName || undefined,
       });
       toast.success('QR code created!');
-      router.push(`/dashboard/qr`);
       router.refresh();
+      router.push(`/dashboard/qr`);
     } catch (err: any) {
       toast.error(err.message || 'Failed to create QR code');
     }

@@ -41,12 +41,30 @@ export default function SignUpPage() {
       toast.error(error.message);
       return;
     }
+
     if (data.user) {
+      // If identities array is empty, the user already exists in the system
+      const userExists = data.user.identities && data.user.identities.length === 0;
+
+      if (userExists) {
+        toast.error('This email is already registered. Please sign in instead.');
+        router.push('/sign-in'); // Redirect them to your sign-in page
+        return;
+      }
+
+      // Check if user needs to confirm email before logging in
+      if (!data.session) {
+        toast.success('Account created! Please check your email to verify.');
+        return;
+      }
+
+      // Fallback for auto-confirm configurations
       toast.success('Account created! Welcome to QRNote.');
-      router.push('/dashboard');
       router.refresh();
+      router.push('/dashboard');
     }
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 px-4">
