@@ -177,51 +177,45 @@ export default async function LandingPage() {
             <p className="mt-4 text-muted-foreground">Start free. Upgrade when you grow.</p>
           </div>
 
-          <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {plans?.map((plan: any) => {
+          <div className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-6">
+            {plans?.map((plan: any) => (
+              <Card
+                key={plan.id}
+                className="w-full sm:w-[300px] lg:w-[240px]"
+              >
+                <CardContent className="flex h-full flex-col justify-between p-6">
+                  <div>
+                    <h3 className="text-lg font-semibold">{plan.name}</h3>
 
-
-              return (
-                <Card
-                  key={plan.id}
-                >
-
-
-                  <CardContent className="p-6 flex flex-col h-full justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">{plan.name}</h3>
-                      <div className="mt-2 text-3xl font-bold flex items-baseline">
-                        ₹{(plan.price / 100).toFixed(2)}
-                        <span className="text-sm font-normal text-muted-foreground ml-1">/mo</span>
-                      </div>
-
-                      {plan.description && (
-                        <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
-                          {plan.description}
-                        </p>
-                      )}
-
-                      <ul className="mt-4 space-y-2">
-                        {plan?.features?.map((f: string) => (
-                          <li key={f} className="flex items-center gap-2 text-sm">
-                            <Check className="h-4 w-4 text-green-600 shrink-0" />
-                            <span className="leading-tight">{f}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="mt-2 flex items-baseline text-3xl font-bold">
+                      ₹{(plan.price / 100).toFixed(2)}
+                      <span className="ml-1 text-sm font-normal text-muted-foreground">
+                        /mo
+                      </span>
                     </div>
 
-                    <Button
-                      className="mt-6 w-full"
-                      variant='outline'
-                      asChild
-                    >
-                      <Link href="/dashboard/billing">Buy</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    {plan.description && (
+                      <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                        {plan.description}
+                      </p>
+                    )}
+
+                    <ul className="mt-4 space-y-2">
+                      {plan?.features?.map((f: string) => (
+                        <li key={f} className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 shrink-0 text-green-600" />
+                          <span className="leading-tight">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Button className="mt-6 w-full" variant="outline" asChild>
+                    <Link href="/dashboard/billing">Buy</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

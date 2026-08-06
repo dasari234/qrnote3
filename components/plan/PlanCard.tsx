@@ -1,30 +1,39 @@
 "use client";
 
-import React from "react";
 import { useCart } from "@/components/providers/cart/CartProvider";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { toast } from "sonner"; // Import your toast engine
 
 export default function PlanCard({ plan }: { plan: any }) {
   const { add } = useCart();
 
   function addToCart() {
+    // Prevent adding the Free plan to a shopping cart
+    if (plan.name === "Free") {
+      toast.info("You are already on the Free tier!");
+      return;
+    }
+
     add({
       id: plan.id,
       name: plan.name,
       price: plan.price, // price in paise
       qty: 1,
     });
+
+    // Success feedback so the user knows it worked
+    toast.success(`${plan.name} plan added to your cart!`);
   }
 
   return (
     <Card
-      className={`relative flex flex-col justify-between bg-card text-card-foreground border-border transition-all hover:shadow-md ${
-        plan.popular
+      // Added w-full h-full to auto-center and vertically stretch all cards evenly
+      className={`relative flex flex-col justify-between w-full h-full bg-card text-card-foreground border-border transition-all hover:shadow-md ${plan.popular
           ? "border-primary ring-1 ring-primary shadow-sm dark:bg-muted/5"
           : "hover:border-muted-foreground/20"
-      }`}
+        }`}
     >
       {/* Popular badge toggle */}
       {plan.popular && (
@@ -64,6 +73,7 @@ export default function PlanCard({ plan }: { plan: any }) {
           variant={plan.popular ? "default" : "outline"}
           className="w-full mt-6"
           onClick={addToCart}
+          disabled={plan.name === "Free"} // Disable the button for the Free tier
         >
           {plan.name === "Free" ? "Current Plan" : "Add to cart"}
         </Button>

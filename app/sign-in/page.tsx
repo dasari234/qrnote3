@@ -90,7 +90,9 @@ function SignInFormContent() {
     }
     toast.success('Welcome back!');
     router.refresh();
-    router.push(decodeURIComponent(redirect));
+    setTimeout(() => {
+      router.push(decodeURIComponent(redirect));
+    }, 100);
   };
 
   return (
