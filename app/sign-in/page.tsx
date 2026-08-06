@@ -89,8 +89,11 @@ function SignInFormContent() {
       return;
     }
     toast.success('Welcome back!');
+    const targetRoute = decodeURIComponent(redirect);
     router.refresh();
-    router.push(decodeURIComponent(redirect));
+    setTimeout(() => {
+      window.location.href = targetRoute;
+    }, 50)
   };
 
   return (
