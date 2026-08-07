@@ -1,5 +1,7 @@
 import { AdminOrgsClient } from '@/components/admin/admin-orgs-client';
+import { adminDeleteOrganization } from '@/lib/admin/actions';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export default async function AdminOrgsPage() {
   const orgs = await prisma.organization.findMany({
@@ -17,8 +19,16 @@ export default async function AdminOrgsPage() {
   });
   const ownerMap = Object.fromEntries(ownerProfiles.map((p) => [p.id, p]));
 
+  // Create an inline server function to trigger revalidation
+  async function handleDelete(id: string) {
+    'use server';
+    await adminDeleteOrganization(id);
+    revalidatePath('/dashboard/admin/orgs');
+  }
+
   return (
     <AdminOrgsClient
+      onDeleteOrg={handleDelete}
       orgs={orgs.map((o) => ({
         id: o.id,
         name: o.name,

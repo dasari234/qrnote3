@@ -61,3 +61,32 @@ export async function adminChangeMemberRole(
     data: { role: newRole as any },
   });
 }
+
+
+/** Delete an organization entirely (super admin override) */
+export async function adminDeleteOrganization(orgId: string) {
+  const actorId = await getAuthUserId();
+  await requireSuperAdmin(actorId);
+
+  // Optional: Check if organization exists first
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+  });
+
+  if (!org) {
+    throw new Error('Organization not found.');
+  }
+
+  // Execute deletion inside a transaction if you have related tables
+  // that do not have foreign key cascade actions configured in your database schema.
+  await prisma.$transaction([
+    // 1. Delete all workspaces associated with this organization
+    prisma.workspace.deleteMany({ where: { orgId } }),
+
+    // 2. Delete all membership allocations
+    prisma.organizationMember.deleteMany({ where: { orgId } }),
+
+    // 3. Delete the organization row itself
+    prisma.organization.delete({ where: { id: orgId } }),
+  ]);
+}
