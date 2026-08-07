@@ -1,9 +1,9 @@
 'use client';
 
 import { QrFormFields } from '@/components/qr/qr-form-fields';
+import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
-import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -25,6 +25,7 @@ import { createQrCode } from '@/lib/qr/actions';
 import { QR_TYPES, QR_TYPE_CATEGORIES } from '@/lib/qr/types';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { QRStyle, QRType } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import {
   ArrowLeft,
   Bitcoin,
@@ -63,7 +64,6 @@ import {
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 const ICONS: Record<string, any> = {
   Link,
@@ -112,7 +112,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
   const [type, setType] = useState<QRType>('url');
   const [payload, setPayload] = useState<Record<string, any>>({});
   const [isDynamic, setIsDynamic] = useState(true);
-  const [style, setStyle] = useState<QRStyle>({ fgColor: '#000000', bgColor: '#ffffff' });
+  const [style, setStyle] = useState<QRStyle>({ fgColor: '#000000', bgColor: '#ffffff', templateId:'classic-black' });
   const [folderId, setFolderId] = useState<string>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
