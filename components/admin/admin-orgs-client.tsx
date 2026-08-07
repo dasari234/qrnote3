@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { ArrowRight, Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
 interface OrgRow {
   id: string;
@@ -33,23 +34,30 @@ interface OrgRow {
 
 interface Props {
   orgs: OrgRow[];
-  // 1. Pass down a function to trigger server-side deletion (or trigger a local state refresh)
-  onDeleteOrg?: (id: string) => Promise<void>;
+  onDeleteOrg: (id: string) => Promise<{ success: boolean; message: string }>;
 }
 
 export function AdminOrgsClient({ orgs, onDeleteOrg }: Props) {
   const [search, setSearch] = useState('');
   const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDelete = (id: string) => {
-    if (!onDeleteOrg) return;
+const handleDelete = (id: string) => {
+    setDeletingId(id);
 
     startTransition(async () => {
       try {
-        await onDeleteOrg(id);
+        const result: any = await onDeleteOrg(id);
+
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.message);
+        }
       } catch (error) {
-        console.error("Failed to delete organization:", error);
-        alert("An error occurred while deleting the organization.");
+        toast.error("An unexpected error occurred.");
+      } finally {
+        setDeletingId(null);
       }
     });
   };

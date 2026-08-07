@@ -22,8 +22,13 @@ export default async function AdminOrgsPage() {
   // Create an inline server function to trigger revalidation
   async function handleDelete(id: string) {
     'use server';
-    await adminDeleteOrganization(id);
-    revalidatePath('/dashboard/admin/orgs');
+    try {
+      await adminDeleteOrganization(id);
+      revalidatePath('/dashboard/admin/orgs');
+      return { success: true, message: 'Organization deleted successfully.' };
+    } catch (error: any) {
+      return { success: false, message: error?.message || 'Failed to delete organization.' };
+    }
   }
 
   return (
