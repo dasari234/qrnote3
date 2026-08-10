@@ -221,7 +221,7 @@ function SidebarContent({
             </span>
             {/* Lane 2 */}
             <span className="text-[10px] text-muted-foreground/80 font-normal tracking-wide leading-none mt-1">
-              Powered by Dasari
+              Developed by Dasari
             </span>
           </div>
         </Link>

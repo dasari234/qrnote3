@@ -517,7 +517,6 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
               <QrStyleEditor style={style} onChange={setStyle} />
             </CardContent>
           </Card>
-
         </div>
 
         {/* Right: preview */}
@@ -537,7 +536,6 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                 />
               </CardContent>
             </Card>
-
           </div>
         </div>
       </div>
