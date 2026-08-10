@@ -217,7 +217,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
     setPayload((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 

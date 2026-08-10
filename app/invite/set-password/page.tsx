@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 export default function SetPasswordPage() {
@@ -15,7 +15,7 @@ export default function SetPasswordPage() {
     const router = useRouter();
     const supabase = createBrowserSupabaseClient();
 
-    const handleSetPassword = async (e: React.FormEvent) => {
+    const handleSetPassword = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (password.length < 6) {
             toast.error('Password must be at least 6 characters long.');
