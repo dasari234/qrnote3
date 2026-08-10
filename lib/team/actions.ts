@@ -35,12 +35,14 @@ export async function inviteMember(input: {
     );
   }
 
-  // Check if the email is already a member
+  // 1. Check if the user has an existing account/profile
   const existingProfile = await prisma.profile.findUnique({
     where: { email: input.email },
     select: { id: true },
   });
+
   if (existingProfile) {
+    // Check if they are already fully bound to this specific workspace
     const alreadyMember = await prisma.organizationMember.findUnique({
       where: {
         orgId_userId: { orgId: input.orgId, userId: existingProfile.id },
@@ -51,7 +53,7 @@ export async function inviteMember(input: {
     }
   }
 
-  // Upsert invite (replace any existing pending invite for the same email+org)
+  // 2. Upsert invite record inside Prisma (Matches your original workflow)
   const token = randomUUID();
   const expiresAt = addDays(new Date(), 7);
 
@@ -67,7 +69,7 @@ export async function inviteMember(input: {
     },
   });
 
-  // Send invite email via Supabase
+  // 3. Resolve organization metadata and routing URL parameters
   const org = await prisma.organization.findUnique({
     where: { id: input.orgId },
     select: { name: true },
@@ -75,17 +77,40 @@ export async function inviteMember(input: {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const inviteUrl = `${baseUrl}/invite/accept?token=${token}`;
 
-  const adminClient = createAdminSupabaseClient();
-  await adminClient.auth.admin.inviteUserByEmail(input.email, {
-    data: {
-      invite_token: token,
-      org_name: org?.name ?? 'an organization',
-      invite_url: inviteUrl,
-    },
-    redirectTo: inviteUrl,
-  });
+  if (existingProfile) {
+    /**
+     * CASE A: User already exists.
+     * Do NOT run admin.inviteUserByEmail() because Supabase will block the email trigger.
+     * Instead, you must use your own mailer (Resend, SendGrid, Nodemailer) to deliver the inviteUrl,
+     * or return the inviteUrl immediately so the admin can copy/paste it directly to them.
+     */
+    console.log(`User ${input.email} exists. Skipping Supabase register call. Link: ${inviteUrl}`);
 
-  return { inviteId: invite.id, inviteUrl };
+    // Optional: If you have an internal mail provider configured, trigger it here:
+    // await sendCustomEmail({ to: input.email, subject: "Join Workspace", html: `Click here: ${inviteUrl}` });
+
+  } else {
+    /**
+     * CASE B: Completely new user.
+     * Run standard Supabase logic safely since their email is completely unregistered.
+     */
+    const adminClient = createAdminSupabaseClient();
+    await adminClient.auth.admin.inviteUserByEmail(input.email, {
+      data: {
+        invite_token: token,
+        org_name: org?.name ?? 'an organization',
+        invite_url: inviteUrl,
+      },
+      redirectTo: inviteUrl,
+    });
+  }
+
+  // Always return the link so the UI can display a "Copy Invite Link" action button
+  return {
+    inviteId: invite.id,
+    inviteUrl,
+    isExistingUser: !!existingProfile
+  };
 }
 
 // ---------------------------------------------------------------------------

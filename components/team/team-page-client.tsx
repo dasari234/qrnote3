@@ -153,36 +153,47 @@ export function TeamPageClient({
   // Invite
   // ---------------------------------------------------------------------------
 
-  function handleInvite() {
-    if (!inviteEmail.trim()) {
-      toast.error('Please enter an email address.');
-      return;
-    }
-    startTransition(async () => {
-      try {
-        const result = await inviteMember({
-          orgId,
+function handleInvite() {
+  if (!inviteEmail.trim()) {
+    toast.error('Please enter an email address.');
+    return;
+  }
+
+  startTransition(async () => {
+    try {
+      const result = await inviteMember({
+        orgId,
+        email: inviteEmail.trim(),
+        role: inviteRole,
+      });
+
+      setInviteLink(result.inviteUrl);
+      toast.success('Invite sent! An email was delivered to the recipient.');
+
+      // Optimistically add to pending list
+      setInvites((prev) => [
+        {
+          id: result.inviteId,
           email: inviteEmail.trim(),
           role: inviteRole,
-        });
-        setInviteLink(result.inviteUrl);
-        toast.success('Invite sent! An email was delivered to the recipient.');
-        // Optimistically add to pending list
-        setInvites((prev) => [
-          {
-            id: result.inviteId,
-            email: inviteEmail.trim(),
-            role: inviteRole,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString(),
-          },
-          ...prev,
-        ]);
-      } catch (err: any) {
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+
+      // Reset input on success
+      setInviteEmail('');
+    } catch (err: any) {
+      if (err.code === 'USER_ALREADY_EXISTS' || err.message?.includes('already exists')) {
+        toast.error('This user is already registered in the system. Please add them directly or use a different email.');
+      } else {
         toast.error(err.message ?? 'Failed to send invite.');
       }
-    });
-  }
+    }
+  });
+}
+
 
   function handleCopyLink() {
     if (!inviteLink) return;
