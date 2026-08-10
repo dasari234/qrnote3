@@ -37,6 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const profile = {
       email: user.email ?? '',
       fullName: (user.user_metadata?.full_name as string) ?? '',
+      avatarUrl: (user.user_metadata?.avatar_url as string) ?? '',
     };
 
     return (

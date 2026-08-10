@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/components/providers/auth-provider';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,7 +36,7 @@ interface DashboardShellProps {
   children: ReactNode;
   organizations: { id: string; name: string; slug: string; role: string }[];
   workspaces: { id: string; org_id: string; name: string }[];
-  profile: { email: string; fullName: string };
+  profile: { email: string; fullName: string, avatarUrl: string };
   isSuperAdmin?: boolean;
 }
 
@@ -65,12 +65,19 @@ export function DashboardShell({
   const currentOrg = organizations[0];
   const currentWorkspace = workspaces[0];
 
-  const initials = (profile.fullName || profile.email || '?')
-    .split(' ')
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const initials = (() => {
+    if (profile.fullName?.trim()) {
+      return profile.fullName
+        .split(' ')
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+    }
+
+    const emailPrefix = profile.email?.split('@')[0] || '?';
+    return emailPrefix.slice(0, 2).toUpperCase();
+  })();
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
@@ -144,6 +151,17 @@ export function DashboardShell({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 px-2 hover:bg-accent hover:text-accent-foreground transition-all">
                   <Avatar className="h-7 w-7 border border-border">
+                    {/*
+                      FIX: Add the AvatarImage component. If profile.avatarUrl
+                      contains the Base64 data string, it will override the fallback instantly.
+                    */}
+                    {profile.avatarUrl && (
+                      <AvatarImage
+                        src={profile.avatarUrl}
+                        alt={profile.fullName || 'User Avatar'}
+                        className="object-cover"
+                      />
+                    )}
                     <AvatarFallback className="bg-muted text-muted-foreground font-semibold text-xs">
                       {initials}
                     </AvatarFallback>
