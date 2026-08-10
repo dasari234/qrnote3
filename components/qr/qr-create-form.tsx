@@ -175,6 +175,23 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
     };
   }, []);
 
+ useEffect(() => {
+    const categoryTypes = QR_TYPES.filter((t) => t.category === activeCategory);
+
+    if (categoryTypes.length > 0) {
+
+      const firstType = categoryTypes[0].type;
+
+      const currentTypeBelongsToCategory =
+        QR_TYPES.find((t) => t.type === type)?.category === activeCategory;
+
+      if (!currentTypeBelongsToCategory) {
+        setType(firstType);
+        setPayload({});
+      }
+    }
+  }, [activeCategory, type]);
+
   useEffect(() => {
     scrollActiveTabIntoView(activeCategory);
   }, [activeCategory]);
