@@ -12,13 +12,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
-import { QrCode } from 'lucide-react';
+import { Eye, EyeOff, QrCode } from 'lucide-react'; // Added Eye and EyeOff imports
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-// 1. Move the core form and hook logic into a separate inner component
 function SignInFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,6 +26,7 @@ function SignInFormContent() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -56,18 +56,14 @@ function SignInFormContent() {
         toast.success('Successfully authenticated via invitation!');
         router.refresh();
 
-        // --- NEW LOGIC: Extract token from the session metadata ---
         let finalRedirect = decodeURIComponent(redirect);
 
-        // Supabase passes invitation metadata inside the user's user_metadata block
         const inviteToken = data?.user?.user_metadata?.invite_token;
 
-        // If the path doesn't already have a token parameter, but we found one in metadata, append it
         if (inviteToken && !finalRedirect.includes('token=')) {
           const joinChar = finalRedirect.includes('?') ? '&' : '?';
           finalRedirect = `${finalRedirect}${joinChar}token=${inviteToken}`;
         }
-        // ---------------------------------------------------------
 
         router.push(finalRedirect);
       }
@@ -75,8 +71,6 @@ function SignInFormContent() {
 
     checkAuthHash();
   }, [redirect, router, supabase]);
-
-  // ------------------------------------------------------------------------
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -118,15 +112,30 @@ function SignInFormContent() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            {/* Added relative wrapper for proper absolute alignment */}
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                className="pr-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
@@ -145,7 +154,7 @@ function SignInFormContent() {
   );
 }
 
-// 2. The main default export handles the outer shell and wraps the form in Suspense
+// The main default export handles the outer shell and wraps the form in Suspense
 export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 px-4">
@@ -160,7 +169,7 @@ export default function SignInPage() {
         </div>
 
         {/* Wrap your dynamic content hook usage inside a Suspense boundary */}
-        <Suspense fallback={
+        <Suspense fallback = {
           <Card className="animate-pulse">
             <div className="h-[350px] rounded-lg bg-muted/40" />
           </Card>
