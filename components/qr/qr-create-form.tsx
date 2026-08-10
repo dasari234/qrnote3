@@ -319,6 +319,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
               <Tabs defaultValue="link" value={activeCategory} onValueChange={setActiveCategory}>
                 <div className="relative flex items-center">
 
+                  {/* Scroll Left Button */}
                   <Button
                     type="button"
                     variant="outline"
@@ -331,27 +332,28 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
                     <span className="sr-only">Scroll tabs left</span>
                   </Button>
 
-                  <div
-                    ref={tabsRef}
-                    className="mx-10 flex-1 overflow-x-auto scrollbar-hide"
-                  >
-                    {/* Update: Injected contextual tab background properties for clean segmentation */}
-                    <TabsList className="inline-flex w-max min-w-full bg-muted/60 dark:bg-muted/20 border border-border/40 p-1 rounded-lg">
-                      {QR_TYPE_CATEGORIES.map((cat) => (
-                        <TabsTrigger
-                          key={cat.id}
-                          value={cat.id}
-                          ref={(el) => {
-                            tabRefs.current[cat.id] = el;
-                          }}
-                          className="min-w-[120px] transition-all duration-200 ease-in-out hover:bg-background/80 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground"
-                        >
-                          {cat.label}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </div>
+                  <TabsList className="flex w-full bg-muted/60 dark:bg-muted/20 border border-border/40 p-1 rounded-lg items-center relative overflow-hidden">
 
+                      <div
+                        ref={tabsRef}
+                        className="mx-10 flex-1 flex overflow-x-auto scrollbar-hide items-center w-full gap-1"
+                      >
+                        {QR_TYPE_CATEGORIES.map((cat) => (
+                          <TabsTrigger
+                            key={cat.id}
+                            value={cat.id}
+                            ref={(el) => {
+                              tabRefs.current[cat.id] = el;
+                            }}
+                              className="flex-shrink-0 transition-all duration-200 ease-in-out hover:bg-background/80 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground rounded-md"
+                          >
+                            {cat.label}
+                          </TabsTrigger>
+                        ))}
+                      </div>
+                  </TabsList>
+
+                  {/* Scroll Right Button */}
                   <Button
                     type="button"
                     variant="outline"
@@ -489,7 +491,7 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
           </Card>
 
 
-          {/* Extended fields: Vanity Slug, Expiry, A/B Testing */}
+          {/* Extended fields */}
           <QrFormFieldsExtended
             typeDef={typeDef}
             payload={payload}
