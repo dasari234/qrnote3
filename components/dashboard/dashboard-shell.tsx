@@ -151,10 +151,6 @@ export function DashboardShell({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 px-2 hover:bg-accent hover:text-accent-foreground transition-all">
                   <Avatar className="h-7 w-7 border border-border">
-                    {/*
-                      FIX: Add the AvatarImage component. If profile.avatarUrl
-                      contains the Base64 data string, it will override the fallback instantly.
-                    */}
                     {profile.avatarUrl && (
                       <AvatarImage
                         src={profile.avatarUrl}

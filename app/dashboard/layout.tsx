@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   try {
     // Fetch memberships, workspaces, and super-admin flag in parallel
-    const [memberships, workspaces, isSuperAdmin] = await Promise.all([
+    const [memberships, workspaces, isSuperAdmin, dbProfile] = await Promise.all([
       prisma.organizationMember.findMany({
         where: { userId: user.id },
         include: {
@@ -32,12 +32,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
         select: { id: true, orgId: true, name: true },
       }),
       checkIsSuperAdmin(user.id),
+      prisma.profile.findUnique({
+        where: { id: user.id },
+        select: {
+          fullName: true,
+          avatarUrl: true
+        }
+      })
     ]);
 
     const profile = {
       email: user.email ?? '',
-      fullName: (user.user_metadata?.full_name as string) ?? '',
-      avatarUrl: (user.user_metadata?.avatar_url as string) ?? '',
+      fullName: dbProfile?.fullName || (user.user_metadata?.fullName as string) || '',
+      avatarUrl: dbProfile?.avatarUrl || (user.user_metadata?.avatarUrl as string) || '',
     };
 
     return (
