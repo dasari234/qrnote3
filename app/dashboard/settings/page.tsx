@@ -81,18 +81,18 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    if (!user?.id) {
-      toast.error('You must be signed in.');
+  if (!user?.id || !user?.email) {
+      toast.error('You must be signed in with a valid email.');
       return;
     }
 
     setLoading(true);
 
-    // FIX 3: Use upsert instead of update so that if a profile row does not exist yet, it creates it automatically
     const { error } = await supabase
       .from('profiles')
       .upsert({
-        id: user.id, // Primary Key match anchor
+        id: user.id,
+        email: user.email,
         full_name: fullName.trim(),
         avatar_url: avatarBase64 || null,
         updated_at: new Date().toISOString()
