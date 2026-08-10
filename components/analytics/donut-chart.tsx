@@ -1,6 +1,6 @@
 'use client';
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface DonutChartProps {
   data: { name: string; count: number }[];
@@ -39,7 +39,7 @@ export function DonutChart({ data, colors = DEFAULT_COLORS }: DonutChartProps) {
           innerRadius={50}
           outerRadius={80}
           paddingAngle={2}
-          // Fix: Ensure the pie segments stroke border blends smoothly into the card surface
+          //  Ensure the pie segments stroke border blends smoothly into the card surface
           stroke="var(--card)"
           strokeWidth={2}
         >

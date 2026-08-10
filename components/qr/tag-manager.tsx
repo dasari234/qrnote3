@@ -82,7 +82,7 @@ export function TagManager({ workspaceId, tags: initialTags }: TagManagerProps) 
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                // Fix: Modified swatch ring borders to remain crisp and distinct on pure dark backgrounds
+                //  Modified swatch ring borders to remain crisp and distinct on pure dark backgrounds
                 className={`h-7 w-7 rounded-full border-2 transition-all hover:scale-110 active:scale-95 ${color === c
                     ? 'border-primary ring-2 ring-primary/40 scale-105'
                     : 'border-background dark:border-muted-foreground/30 hover:border-muted-foreground'
@@ -109,7 +109,7 @@ export function TagManager({ workspaceId, tags: initialTags }: TagManagerProps) 
           {initialTags.map((tag) => (
             <div
               key={tag.id}
-              // Fix: Added explicit dark fallback layer parameters to prevent dark tags from fading into dark views
+              //  Added explicit dark fallback layer parameters to prevent dark tags from fading into dark views
               className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 transition-all text-foreground hover:border-muted-foreground/30 dark:bg-muted/20"
               style={{
                 borderColor: `${tag.color}40`,

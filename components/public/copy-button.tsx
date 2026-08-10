@@ -33,7 +33,7 @@ export function CopyButton({
     <Button
       type="button"
       variant="outline"
-      // Fix: Merge classes using cn to guarantee clean visual changes during theme and status switches
+      //  Merge classes using cn to guarantee clean visual changes during theme and status switches
       className={cn(
         "shadow-sm transition-all duration-200 active:scale-[0.99] select-none text-foreground border-input bg-background hover:bg-accent hover:text-accent-foreground",
         copied && "bg-green-500/10 text-green-600 border-green-500/30 hover:bg-green-500/15 hover:text-green-600 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/20 dark:hover:bg-green-500/25",

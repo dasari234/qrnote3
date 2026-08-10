@@ -39,7 +39,7 @@ export function DownloadFileButton({
   return (
     <Button
       type="button"
-      // Fix: Merge classes using cn to guarantee clean utility token updates across theme shifts
+      //  Merge classes using cn to guarantee clean utility token updates across theme shifts
       className={cn(
         "shadow-sm transition-all duration-200 active:scale-[0.99] hover:opacity-95 select-none",
         className

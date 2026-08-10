@@ -26,7 +26,7 @@ export default function SettingsPage() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  // FIX 1: Watch the full lifecycle of the user object so it re-triggers when auth resolves
+  // Watch the full lifecycle of the user object so it re-triggers when auth resolves
   useEffect(() => {
     if (!user?.id) return;
 
@@ -42,7 +42,7 @@ export default function SettingsPage() {
         return;
       }
 
-      // FIX 2: Gracefully fall back to user_metadata metadata if profiles record is empty
+      // Gracefully fall back to user_metadata metadata if profiles record is empty
       if (data) {
         setFullName(data.full_name || user?.user_metadata?.full_name || '');
         if (data.avatar_url) {
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     };
 
     fetchProfileData();
-  }, [user, user?.id, supabase]); // Added user to dependency matrix
+  }, [user, user?.id, supabase]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

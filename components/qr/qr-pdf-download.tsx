@@ -1,11 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { jsPDF } from 'jspdf';
 import { FileDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 interface QrPdfDownloadProps {
   /** ref to the container that holds the <canvas> element */
   canvasWrapperRef: React.RefObject<HTMLDivElement | null>;
@@ -54,7 +54,7 @@ export function QrPdfDownload({
     <Button
       type="button"
       variant="outline"
-      // Fix: Merge classes using cn to guarantee clean visual changes during theme and status switches
+      //  Merge classes using cn to guarantee clean visual changes during theme and status switches
       className={cn(
         "w-full shadow-sm transition-all duration-200 active:scale-[0.99] select-none text-foreground border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50",
         generating && "bg-muted text-muted-foreground cursor-not-allowed",

@@ -1,13 +1,13 @@
 'use client';
 
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+    Area,
+    AreaChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from 'recharts';
 
 interface DailyScansChartProps {
@@ -29,7 +29,7 @@ export function DailyScansChart({ data }: DailyScansChartProps) {
             <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
           </linearGradient>
         </defs>
-        {/* Fix: Explicit color variable evaluation for cross-theme grid lines */}
+        {/*  Explicit color variable evaluation for cross-theme grid lines */}
         <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
         <XAxis
           dataKey="label"

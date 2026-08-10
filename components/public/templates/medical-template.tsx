@@ -1,14 +1,13 @@
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
-  AlertTriangle,
-  Droplet,
-  HeartPulse,
-  Navigation,
-  Phone,
-  Pill,
-  Stethoscope,
-  User,
+    AlertTriangle,
+    Droplet,
+    HeartPulse,
+    Navigation,
+    Phone,
+    Pill,
+    Stethoscope,
+    User,
 } from 'lucide-react';
 import { InfoRow, ScanShell, Section } from '../scan-shell';
 
@@ -128,7 +127,7 @@ export function MedicalTemplate({
 
       <div className="mt-4 bg-card rounded-xl border border-border p-1 shadow-sm transition-colors">
         <Section title="Medical Information">
-          {/* Fix: Explicit color variable evaluation for data row division lines */}
+          {/*  Explicit color variable evaluation for data row division lines */}
           <div className="divide-y divide-border px-4">
             <InfoRow
               label="Current Medications"

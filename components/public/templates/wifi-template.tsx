@@ -33,7 +33,7 @@ export function WifiTemplate({
 
         <div className="p-5 bg-card">
           <Section>
-            {/* Fix: Explicit color variable evaluation for row items division lines, wrapped safely for type validation parameters */}
+            {/*  Explicit color variable evaluation for row items division lines, wrapped safely for type validation parameters */}
             <div className="divide-y divide-border border-t border-b border-border/40 text-foreground/90 font-medium">
               <div className="transition-colors hover:bg-muted/30 dark:hover:bg-muted/10">
                 <InfoRow label="Network Name" value={ssid} icon={<Wifi className="h-4 w-4 text-primary" />} />

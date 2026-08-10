@@ -44,7 +44,7 @@ export function QrPngDownload({ canvasWrapperRef, name, className }: QrPngDownlo
     <Button
       type="button"
       variant="outline"
-      // Fix: Merge classes using cn to guarantee clean visual changes during theme and status switches
+      //  Merge classes using cn to guarantee clean visual changes during theme and status switches
       className={cn(
         "w-full shadow-sm transition-all duration-200 active:scale-[0.99] select-none text-foreground border-input bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50",
         generating && "bg-muted text-muted-foreground cursor-not-allowed",

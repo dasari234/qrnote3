@@ -79,7 +79,7 @@ export function VCardTemplate({
       {/* Profile Metrics Matrix Container */}
       <div className="mt-4 bg-card rounded-xl border border-border p-1 shadow-sm transition-colors">
         <Section title="Details">
-          {/* Fix: Wrap items safely inside standard container definitions to bypass InfoRow type validation restrictions */}
+          {/*  Wrap items safely inside standard container definitions to bypass InfoRow type validation restrictions */}
           <div className="divide-y divide-border px-4 text-foreground/90 font-medium">
             <div className="transition-colors hover:bg-muted/30 dark:hover:bg-muted/10">
               <InfoRow label="Email" value={payload.email} icon={<Mail className="h-4 w-4 text-primary" />} />

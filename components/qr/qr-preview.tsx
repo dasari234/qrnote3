@@ -2,11 +2,11 @@
 
 import { buildQRValue } from '@/lib/qr/factory';
 import { QRStyle, QRType } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 import type { Options } from 'qr-code-styling';
 import QRCodeStyling from 'qr-code-styling';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTheme } from 'next-themes';
-import { cn } from '@/lib/utils';
 
 interface QRPreviewProps {
   type: QRType;
@@ -55,7 +55,7 @@ export function QRPreview({
   const rawFrameColor = style?.frameColor || '#000000';
   const caption = style?.caption || 'Scan me';
 
-  // Fix: Intercept raw #000000 settings in dark mode to inject theme lines, otherwise respect custom colors
+  //  Intercept raw #000000 settings in dark mode to inject theme lines, otherwise respect custom colors
   const isDarkMode = resolvedTheme === 'dark';
   const useThemeFallback = isDarkMode && (rawFrameColor === '#000000' || rawFrameColor.toLowerCase() === '#ffffff');
 
@@ -80,13 +80,13 @@ export function QRPreview({
     <div className="flex flex-col items-center gap-3 select-none pt-10 pb-4">
       <div
         className={cn(
-          // Fix: Added isolate, forced overflow-hidden, and cleaned up padding properties to lock in the rounded corners
+          //  Added isolate, forced overflow-hidden, and cleaned up padding properties to lock in the rounded corners
           "flex w-fit flex-col items-center p-3 rounded-xl border border-border/40 bg-white shadow-sm transition-all duration-200 dark:bg-card overflow-hidden isolate",
           frameClass
         )}
         style={frameStyle}
       >
-        {/* Fix: Added an absolute white canvas base plate wrapper to ensure standard optical contrast boundaries clip cleanly */}
+        {/*  Added an absolute white canvas base plate wrapper to ensure standard optical contrast boundaries clip cleanly */}
         <div className="overflow-hidden rounded-lg bg-white p-1">
           <div ref={containerRef} className="flex items-center justify-center" />
         </div>

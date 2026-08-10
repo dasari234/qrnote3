@@ -51,7 +51,7 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       take: 5,
     });
-    // Fix: Aggregate scan calculations across full workspace set
+    //  Aggregate scan calculations across full workspace set
     const allQrForScans = await prisma.qrCode.findMany({
       where: { workspaceId: { in: wsIds } },
       select: { scanCount: true, status: true }

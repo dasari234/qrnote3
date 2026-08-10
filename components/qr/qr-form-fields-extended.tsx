@@ -1,24 +1,24 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
@@ -267,7 +267,7 @@ function FieldInput({
           >
             <SelectValue placeholder="Select…" />
           </SelectTrigger>
-          {/* Fix: Set explicit popover token color overrides to prevent invisible black-on-black menus */}
+          {/*  Set explicit popover token color overrides to prevent invisible black-on-black menus */}
           <SelectContent className="bg-popover text-popover-foreground border-border shadow-md">
             {field.options?.map((opt: any) => (
               <SelectItem
@@ -283,7 +283,7 @@ function FieldInput({
       ) : (
         <Input
           id={field.key}
-          // Fix: Ensure password masks render securely by passing explicit password type
+          //  Ensure password masks render securely by passing explicit password type
           type={field.type === 'url' ? 'url' : field.type === 'password' ? 'password' : 'text'}
           placeholder={field.placeholder}
           value={value}
