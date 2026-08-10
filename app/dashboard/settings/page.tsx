@@ -21,12 +21,12 @@ export default function SettingsPage() {
   const supabase = createBrowserSupabaseClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
+  const [fullName, setFullName] = useState('');
   const [avatarBase64, setAvatarBase64] = useState<string>('');
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  // Fetch the existing avatar from the DB on component mount
+  // FIX 1: Watch the full lifecycle of the user object so it re-triggers when auth resolves
   useEffect(() => {
     if (!user?.id) return;
 
@@ -42,30 +42,30 @@ export default function SettingsPage() {
         return;
       }
 
+      // FIX 2: Gracefully fall back to user_metadata metadata if profiles record is empty
       if (data) {
-        if (data.full_name) setFullName(data.full_name);
+        setFullName(data.full_name || user?.user_metadata?.full_name || '');
         if (data.avatar_url) {
           setAvatarBase64(data.avatar_url);
-          setPreviewUrl(data.avatar_url); // Directly use Base64 string for image src
+          setPreviewUrl(data.avatar_url);
         }
+      } else {
+        setFullName(user?.user_metadata?.full_name || '');
       }
     };
 
     fetchProfileData();
-  }, [user?.id, supabase]);
+  }, [user, user?.id, supabase]); // Added user to dependency matrix
 
-  // Handle local file picking, client-side validation, and Base64 conversion
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size limit (Base64 strings expand by ~33%, limit to 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error('Image size must be less than 2MB');
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
@@ -88,22 +88,24 @@ export default function SettingsPage() {
 
     setLoading(true);
 
-    // Save both full name and base64 avatar directly to the profiles table
+    // FIX 3: Use upsert instead of update so that if a profile row does not exist yet, it creates it automatically
     const { error } = await supabase
       .from('profiles')
-      .update({
+      .upsert({
+        id: user.id, // Primary Key match anchor
         full_name: fullName.trim(),
-        avatar_url: avatarBase64
-      })
-      .eq('id', user.id);
+        avatar_url: avatarBase64 || null,
+        updated_at: new Date().toISOString()
+      });
 
-    setLoading(false);
+    setLoading(true);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(`Save failed: ${error.message}`);
     } else {
       toast.success('Profile updated successfully');
     }
+    setLoading(false);
   };
 
   return (
@@ -120,7 +122,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-5">
 
-          {/* Avatar upload section */}
+          {/* Avatar Section */}
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
             <div className="relative group flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted dark:bg-muted/30">
               {previewUrl ? (
