@@ -407,6 +407,7 @@ export function QrEditForm({
       );
 
       router.refresh();
+      router.push('/dashboard/qr');
     } catch (error: any) {
       console.error(
         'Failed to update QR code',
