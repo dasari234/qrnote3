@@ -15,13 +15,13 @@ export default function Icon() {
       <div
         style={{
           fontSize: 24,
-          background: '#3b82f6', // Bright Tailwind Blue background
+          background: '#000',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: '20%', // Slightly rounded square icon
+          borderRadius: '20%',
           color: 'white',
         }}
       >
@@ -51,7 +51,6 @@ export default function Icon() {
         </svg>
       </div>
     ),
-    // ImageResponse options
     {
       ...size,
     }
