@@ -4,6 +4,7 @@ import { QrFormFields } from '@/components/qr/qr-form-fields';
 import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 import { QRPreview } from '@/components/qr/qr-preview';
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,21 +16,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+
 import {
   Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
+  TabsTrigger
 } from '@/components/ui/tabs';
+
 import { createQrCode } from '@/lib/qr/actions';
 import { QR_TYPES, QR_TYPE_CATEGORIES } from '@/lib/qr/types';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { QRStyle, QRType } from '@/lib/types';
 import { cn } from '@/lib/utils';
+
 import {
   ArrowLeft,
   Bitcoin,
   Calendar,
+  Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Contact,
@@ -46,6 +51,7 @@ import {
   MapPin,
   MessageCircle,
   MessageSquare,
+  MoreHorizontal,
   PawPrint,
   Phone,
   Save,
@@ -61,6 +67,7 @@ import {
   Video,
   Wifi
 } from 'lucide-react';
+
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -95,7 +102,7 @@ const ICONS: Record<string, any> = {
   Gift,
   Users,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
 };
 
 interface Props {
@@ -104,149 +111,231 @@ interface Props {
   tags: { id: string; name: string; color: string }[];
 }
 
-export function QrCreateForm({ workspaceId, folders, tags }: Props) {
+export function QrCreateForm({
+  workspaceId,
+  folders,
+  tags,
+}: Props) {
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
+
+  /* -------------------------------------------------------------------------- */
+  /* State                                                                      */
+  /* -------------------------------------------------------------------------- */
 
   const [name, setName] = useState('');
   const [type, setType] = useState<QRType>('url');
   const [payload, setPayload] = useState<Record<string, any>>({});
+
   const [isDynamic, setIsDynamic] = useState(true);
-  const [style, setStyle] = useState<QRStyle>({ fgColor: '#000000', bgColor: '#ffffff', templateId:'classic-black' });
-  const [folderId, setFolderId] = useState<string>('');
+
+  const [style, setStyle] = useState<QRStyle>({
+    fgColor: '#000000',
+    bgColor: '#ffffff',
+    templateId: 'classic-black',
+  });
+
+  const [folderId, setFolderId] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
 
-  // New state variables for A/B testing, expiry, vanity slug
+  /* Advanced options */
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [shortCode, setShortCode] = useState('');
   const [variant, setVariant] = useState<string | null>(null);
   const [testName, setTestName] = useState('');
   const [suggestedCode, setSuggestedCode] = useState('');
 
-  const typeDef = useMemo(() => QR_TYPES.find((t) => t.type === type)!, [type]);
+  /* UI state */
+  const [activeCategory, setActiveCategory] = useState('link');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [brandingOpen, setBrandingOpen] = useState(false);
+
+  const typeDef = useMemo(
+    () => QR_TYPES.find((t) => t.type === type)!,
+    [type]
+  );
+
+  /* -------------------------------------------------------------------------- */
+  /* Category scrolling                                                        */
+  /* -------------------------------------------------------------------------- */
 
   const tabsRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("link");
 
   const updateScrollButtons = () => {
-    const el = tabsRef.current;
-    if (!el) return;
+    const element = tabsRef.current;
 
-    setCanScrollLeft(el.scrollLeft > 5);
+    if (!element) {
+      return;
+    }
+
+    setCanScrollLeft(element.scrollLeft > 5);
+
     setCanScrollRight(
-      el.scrollLeft + el.clientWidth < el.scrollWidth - 5
+      element.scrollLeft + element.clientWidth <
+        element.scrollWidth - 5
     );
+  };
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    tabsRef.current?.scrollBy({
+      left: direction === 'left' ? -240 : 240,
+      behavior: 'smooth',
+    });
   };
 
   const scrollActiveTabIntoView = (value: string) => {
     const tab = tabRefs.current[value];
 
     tab?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  };
-
-  const scrollTabs = (direction: "left" | "right") => {
-    tabsRef.current?.scrollBy({
-      left: direction === "left" ? -220 : 220,
-      behavior: "smooth",
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
     });
   };
 
   useEffect(() => {
     updateScrollButtons();
 
-    const el = tabsRef.current;
-    if (!el) return;
+    const element = tabsRef.current;
 
-    el.addEventListener("scroll", updateScrollButtons);
-    window.addEventListener("resize", updateScrollButtons);
+    if (!element) {
+      return;
+    }
+
+    element.addEventListener('scroll', updateScrollButtons);
+    window.addEventListener('resize', updateScrollButtons);
 
     return () => {
-      el.removeEventListener("scroll", updateScrollButtons);
-      window.removeEventListener("resize", updateScrollButtons);
+      element.removeEventListener('scroll', updateScrollButtons);
+      window.removeEventListener('resize', updateScrollButtons);
     };
   }, []);
-
- useEffect(() => {
-    const categoryTypes = QR_TYPES.filter((t) => t.category === activeCategory);
-
-    if (categoryTypes.length > 0) {
-
-      const firstType = categoryTypes[0].type;
-
-      const currentTypeBelongsToCategory =
-        QR_TYPES.find((t) => t.type === type)?.category === activeCategory;
-
-      if (!currentTypeBelongsToCategory) {
-        setType(firstType);
-        setPayload({});
-      }
-    }
-  }, [activeCategory, type]);
 
   useEffect(() => {
     scrollActiveTabIntoView(activeCategory);
   }, [activeCategory]);
 
+  useEffect(() => {
+    const categoryTypes = QR_TYPES.filter(
+      (item) => item.category === activeCategory
+    );
+
+    if (categoryTypes.length === 0) {
+      return;
+    }
+
+    const currentTypeBelongsToCategory =
+      QR_TYPES.find((item) => item.type === type)?.category ===
+      activeCategory;
+
+    if (!currentTypeBelongsToCategory) {
+      setType(categoryTypes[0].type);
+      setPayload({});
+    }
+  }, [activeCategory, type]);
+
+  /* -------------------------------------------------------------------------- */
+  /* Helpers                                                                    */
+  /* -------------------------------------------------------------------------- */
+
   const shortLinkUrl = useMemo(() => {
     if (typeof window !== 'undefined') {
       return `${window.location.origin}/q/preview`;
     }
+
     return '/q/preview';
   }, []);
 
-  // Generate a suggested short code from the name
-  const generateSuggestedCode = (nameStr: string) => {
-    const suggested = nameStr
+  const generateSuggestedCode = (value: string) => {
+    const suggested = value
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
       .slice(0, 20);
+
     setSuggestedCode(suggested);
   };
 
-  const handleFieldChange = (key: string, value: string) => {
-    setPayload((prev) => ({ ...prev, [key]: value }));
+  const handleFieldChange = (
+    key: string,
+    value: string
+  ) => {
+    setPayload((previous) => ({
+      ...previous,
+      [key]: value,
+    }));
   };
 
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
+  const handleTypeChange = (nextType: QRType) => {
+    setType(nextType);
+    setPayload({});
+  };
 
-    if (!name.trim()) {
-      toast.error('Please give your QR code a name');
-      setLoading(false);
+  const toggleTag = (tagId: string) => {
+    setSelectedTags((previous) => {
+      if (previous.includes(tagId)) {
+        return previous.filter((id) => id !== tagId);
+      }
+
+      return [...previous, tagId];
+    });
+  };
+
+  const selectedTagObjects = tags.filter((tag) =>
+    selectedTags.includes(tag.id)
+  );
+
+  /* -------------------------------------------------------------------------- */
+  /* Submit                                                                     */
+  /* -------------------------------------------------------------------------- */
+
+  const handleSubmit = async (
+    event: React.SyntheticEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (loading) {
       return;
     }
 
-    const requiredFields = typeDef.fields.filter((f) => f.required);
-    for (const field of requiredFields) {
-      if (!payload[field.key]?.trim()) {
-        toast.error(`${field.label} is required`);
+    setLoading(true);
+
+    try {
+      if (!name.trim()) {
+        toast.error('Please give your QR code a name');
         setLoading(false);
         return;
       }
-    }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error('You must be signed in');
-      setLoading(false);
-      return;
-    }
+      const requiredFields = typeDef.fields.filter(
+        (field) => field.required
+      );
 
-    try {
-      const result = await createQrCode({
+      for (const field of requiredFields) {
+        if (!payload[field.key]?.trim()) {
+          toast.error(`${field.label} is required`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error('You must be signed in');
+        setLoading(false);
+        return;
+      }
+
+      await createQrCode({
         workspaceId,
         name: name.trim(),
         type,
@@ -257,286 +346,797 @@ export function QrCreateForm({ workspaceId, folders, tags }: Props) {
         folderId: folderId || undefined,
         tagIds: selectedTags,
         customShortCode: shortCode || undefined,
-        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+        expiresAt: expiresAt
+          ? new Date(expiresAt)
+          : undefined,
         variant: variant || undefined,
         testName: testName || undefined,
       });
-      toast.success('QR code created!');
+
+      toast.success('QR code created successfully');
+
       router.refresh();
-      router.push(`/dashboard/qr`);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to create QR code');
+      router.push('/dashboard/qr');
+    } catch (error: any) {
+      toast.error(
+        error?.message || 'Failed to create QR code'
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
+  /* -------------------------------------------------------------------------- */
+  /* UI                                                                         */
+  /* -------------------------------------------------------------------------- */
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-4 mb-6">
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="hover:bg-accent text-muted-foreground hover:text-foreground shrink-0 rounded-md h-9 w-9"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">Go back</span>
-          </Button>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{/* Fixed contrast text variable placement */}Create QR Code</h1>
+    <form
+      onSubmit={handleSubmit}
+      className="min-h-screen bg-background"
+    >
+      {/* -------------------------------------------------------------------- */}
+      {/* Header                                                               */}
+      {/* -------------------------------------------------------------------- */}
+
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="h-9 w-9 shrink-0 rounded-lg"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">
+                Go back
+              </span>
+            </Button>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
+                  Create QR Code
+                </h1>
+
+                <span className="hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary sm:inline-flex">
+                  Builder
+                </span>
+              </div>
+
+              <p className="hidden text-xs text-muted-foreground sm:block">
+                Create, customize and manage your QR code
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="hidden sm:inline-flex"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="min-w-[145px] shadow-sm"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Create QR Code
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full sm:w-auto shadow-sm transition-all duration-200 active:scale-[0.99]"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary-foreground/80" />
-              <span>Saving…</span>
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4 text-primary-foreground/90" />
-              <span>Save QR Code</span>
-            </>
-          )}
-        </Button>
-      </div>
+      </header>
 
+      {/* -------------------------------------------------------------------- */}
+      {/* Main                                                                  */}
+      {/* -------------------------------------------------------------------- */}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left: form */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Type selector */}
-          <Card className="bg-card text-card-foreground border-border shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground font-bold">QR Type</CardTitle>
-              <CardDescription className="text-muted-foreground">Choose what your QR code will do</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="link" value={activeCategory} onValueChange={setActiveCategory}>
-                <div className="relative flex items-center">
+      <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:gap-8">
+          {/* ================================================================= */}
+          {/* LEFT                                                               */}
+          {/* ================================================================= */}
 
-                  {/* Scroll Left Button */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="absolute left-0 z-10 h-8 w-8 rounded-full disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:bg-accent hover:text-accent-foreground border-border"
-                    disabled={!canScrollLeft}
-                    onClick={() => scrollTabs("left")}
+          <main className="min-w-0 space-y-6">
+            {/* ---------------------------------------------------------------- */}
+            {/* Step 1 - QR Type                                                 */}
+            {/* ---------------------------------------------------------------- */}
+
+            <section>
+              <div className="mb-3 flex items-end justify-between gap-4">
+                <div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                      1
+                    </span>
+
+                    <h2 className="text-base font-semibold">
+                      Choose QR type
+                    </h2>
+                  </div>
+
+                  <p className="ml-8 text-sm text-muted-foreground">
+                    What do you want your QR code to do?
+                  </p>
+                </div>
+              </div>
+
+              <Card className="overflow-hidden border-border/70 shadow-sm">
+                <CardContent className="p-0">
+                  <Tabs
+                    value={activeCategory}
+                    onValueChange={setActiveCategory}
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="sr-only">Scroll tabs left</span>
-                  </Button>
-
-                  <TabsList className="flex w-full bg-muted/60 dark:bg-muted/20 border border-border/40 p-1 rounded-lg items-center relative overflow-hidden">
+                    {/* Category navigation */}
+                    <div className="relative border-b border-border/70 bg-muted/20">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={!canScrollLeft}
+                        onClick={() => scrollTabs('left')}
+                        className={cn(
+                          'absolute left-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm',
+                          !canScrollLeft &&
+                            'pointer-events-none opacity-0'
+                        )}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
 
                       <div
                         ref={tabsRef}
-                        className="mx-10 flex-1 flex overflow-x-auto scrollbar-hide items-center w-full gap-1"
+                        className="scrollbar-hide flex gap-1 overflow-x-auto px-11 py-2"
                       >
-                        {QR_TYPE_CATEGORIES.map((cat) => (
-                          <TabsTrigger
-                            key={cat.id}
-                            value={cat.id}
-                            ref={(el) => {
-                              tabRefs.current[cat.id] = el;
-                            }}
-                              className="flex-shrink-0 transition-all duration-200 ease-in-out hover:bg-background/80 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground rounded-md"
-                          >
-                            {cat.label}
-                          </TabsTrigger>
-                        ))}
+                        {QR_TYPE_CATEGORIES.map(
+                          (category) => (
+                            <TabsTrigger
+                              key={category.id}
+                              ref={(element) => {
+                                tabRefs.current[
+                                  category.id
+                                ] = element;
+                              }}
+                              value={category.id}
+                              className={cn(
+                                'shrink-0 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all',
+                                'text-muted-foreground',
+                                'hover:bg-background hover:text-foreground',
+                                'data-[state=active]:bg-background',
+                                'data-[state=active]:text-foreground',
+                                'data-[state=active]:shadow-sm'
+                              )}
+                            >
+                              {category.label}
+                            </TabsTrigger>
+                          )
+                        )}
                       </div>
-                  </TabsList>
 
-                  {/* Scroll Right Button */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="absolute right-0 z-10 h-8 w-8 rounded-full disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:bg-accent hover:text-accent-foreground border-border"
-                    disabled={!canScrollRight}
-                    onClick={() => scrollTabs("right")}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                    <span className="sr-only">Scroll tabs right</span>
-                  </Button>
-
-                </div>
-                {QR_TYPE_CATEGORIES.map((cat) => (
-                  <TabsContent key={cat.id} value={cat.id} className="mt-4 outline-none focus-visible:ring-0">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                      {QR_TYPES.filter((t) => t.category === cat.id).map((t) => {
-                        const Icon = ICONS[t.icon] || Link;
-                        const active = t.type === type;
-                        return (
-                          <button
-                            key={t.type}
-                            type="button"
-                            onClick={() => {
-                              setType(t.type);
-                              setPayload({});
-                            }}
-                            className={cn(
-                              "flex flex-col items-center gap-2.5 rounded-xl border border-border bg-card p-3.5 text-center transition-all duration-200 select-none hover:border-primary/40 hover:bg-muted/30 dark:hover:bg-muted/10",
-                              active && "border-primary bg-primary/5 ring-1 ring-primary dark:bg-primary/10"
-                            )}
-                          >
-                            <Icon
-                              className={cn("h-5 w-5 transition-transform duration-200 group-hover:scale-105", active ? "text-primary" : "text-muted-foreground/80")}
-                            />
-                            <span className="text-xs font-semibold text-foreground leading-none">{t.label}</span>
-                          </button>
-                        );
-                      })}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={!canScrollRight}
+                        onClick={() => scrollTabs('right')}
+                        className={cn(
+                          'absolute right-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm',
+                          !canScrollRight &&
+                            'pointer-events-none opacity-0'
+                        )}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
 
+                    {QR_TYPE_CATEGORIES.map(
+                      (category) => (
+                        <TabsContent
+                          key={category.id}
+                          value={category.id}
+                          className="m-0 p-4 sm:p-5"
+                        >
+                          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+                            {QR_TYPES.filter(
+                              (item) =>
+                                item.category ===
+                                category.id
+                            ).map((item) => {
+                              const Icon =
+                                ICONS[item.icon] ||
+                                Link;
 
-          {/* Details */}
-          <Card className="bg-card text-card-foreground border-border shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground font-bold">Details</CardTitle>
-              <CardDescription className="text-muted-foreground">Name your QR code and configure its content</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground font-medium">QR Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. Summer Campaign Link"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    generateSuggestedCode(e.target.value);
-                  }}
-                  className="bg-background text-foreground border-input placeholder:text-muted-foreground/50 focus-visible:ring-ring font-medium text-sm"
-                />
+                              const active =
+                                item.type === type;
+
+                              return (
+                                <button
+                                  key={item.type}
+                                  type="button"
+                                  onClick={() =>
+                                    handleTypeChange(
+                                      item.type
+                                    )
+                                  }
+                                  className={cn(
+                                    'group relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all',
+                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                                    active
+                                      ? 'border-primary bg-primary/[0.06] shadow-sm ring-1 ring-primary'
+                                      : 'border-border/70 bg-background hover:border-primary/40 hover:bg-muted/30'
+                                  )}
+                                >
+                                  {active && (
+                                    <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                      <Check className="h-3 w-3" />
+                                    </span>
+                                  )}
+
+                                  <span
+                                    className={cn(
+                                      'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                                      active
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'bg-muted text-muted-foreground group-hover:text-foreground'
+                                    )}
+                                  >
+                                    <Icon className="h-4.5 w-4.5" />
+                                  </span>
+
+                                  <span className="text-xs font-semibold leading-tight">
+                                    {item.label}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </TabsContent>
+                      )
+                    )}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* ---------------------------------------------------------------- */}
+            {/* Step 2 - QR Content                                              */}
+            {/* ---------------------------------------------------------------- */}
+
+            <section>
+              <div className="mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                    2
+                  </span>
+
+                  <h2 className="text-base font-semibold">
+                    QR content
+                  </h2>
+                </div>
+
+                <p className="ml-8 mt-1 text-sm text-muted-foreground">
+                  Configure the information your QR
+                  code will contain.
+                </p>
               </div>
 
-              <QrFormFields typeDef={typeDef} payload={payload} onChange={handleFieldChange} />
+              <Card className="border-border/70 shadow-sm">
+                <CardHeader className="border-b border-border/50 pb-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base">
+                        {typeDef?.label || 'QR Code'}
+                      </CardTitle>
 
-              {/* Folder Selector Menu Dropdown */}
-              {folders.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="folder" className="text-foreground font-medium">Folder (optional)</Label>
-                  <select
-                    id="folder"
-                    value={folderId}
-                    onChange={(e) => setFolderId(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring focus:border-ring font-medium transition-all dark:bg-card cursor-pointer"
+                      <CardDescription className="mt-1">
+                        Enter the content for your QR
+                        code.
+                      </CardDescription>
+                    </div>
+
+                    <div className="hidden rounded-lg bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary sm:block">
+                      {typeDef?.label || 'QR'}
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-6 p-5">
+                  {/* QR name */}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="name"
+                      className="text-sm font-semibold"
+                    >
+                      QR name
+                    </Label>
+
+                    <Input
+                      id="name"
+                      value={name}
+                      placeholder="e.g. Summer Campaign"
+                      onChange={(event) => {
+                        const value =
+                          event.target.value;
+
+                        setName(value);
+                        generateSuggestedCode(value);
+                      }}
+                      className="h-11"
+                    />
+
+                    <p className="text-xs text-muted-foreground">
+                      Give this QR code a name so you
+                      can easily find it later.
+                    </p>
+                  </div>
+
+                  {/* Dynamic QR content */}
+                  <div className="rounded-xl border border-border/70 bg-muted/[0.18] p-4">
+                    <QrFormFields
+                      typeDef={typeDef}
+                      payload={payload}
+                      onChange={handleFieldChange}
+                    />
+                  </div>
+
+                  {/* Dynamic QR */}
+                  <div
+                    className={cn(
+                      'flex items-center justify-between gap-4 rounded-xl border p-4 transition-colors',
+                      isDynamic
+                        ? 'border-primary/30 bg-primary/[0.04]'
+                        : 'border-border/70 bg-background'
+                    )}
                   >
-                    <option value="" className="bg-popover text-popover-foreground">No folder</option>
-                    {folders.map((f) => (
-                      <option key={f.id} value={f.id} className="bg-popover text-popover-foreground py-2">
-                        📁 {f.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div
+                        className={cn(
+                          'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                          isDynamic
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </div>
 
-              {/* Tags Management Loop Matrix */}
-              {tags.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-foreground font-medium">Tags</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => {
-                      const active = selectedTags.includes(tag.id);
-                      return (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedTags((prev) =>
-                              active ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
-                            );
-                          }}
-                          className={cn(
-                            "rounded-full border px-3 py-1 text-xs font-semibold transition-all select-none shadow-xs border-border bg-background text-foreground hover:bg-accent hover:border-muted-foreground/30",
-                            active && "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary"
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Label
+                            htmlFor="dynamic"
+                            className="cursor-pointer text-sm font-semibold"
+                          >
+                            Dynamic QR
+                          </Label>
+
+                          {isDynamic && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              Recommended
+                            </span>
                           )}
-                        >
-                          <span
-                            className="mr-1.5 inline-block h-2 w-2 rounded-full border border-black/10 dark:border-white/10 shrink-0"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          <span>{tag.name}</span>
-                        </button>
-                      );
-                    })}
+                        </div>
+
+                        <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">
+                          Change the destination later
+                          without reprinting the QR code
+                          and enable scan analytics.
+                        </p>
+                      </div>
+                    </div>
+
+                    <Switch
+                      id="dynamic"
+                      checked={isDynamic}
+                      onCheckedChange={setIsDynamic}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* ---------------------------------------------------------------- */}
+            {/* Step 3 - Organization                                           */}
+            {/* ---------------------------------------------------------------- */}
+
+            <section>
+              <div className="mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                    3
+                  </span>
+
+                  <h2 className="text-base font-semibold">
+                    Organization
+                  </h2>
+                </div>
+
+                <p className="ml-8 mt-1 text-sm text-muted-foreground">
+                  Keep your QR codes organized for
+                  easier management.
+                </p>
+              </div>
+
+              <Card className="border-border/70 shadow-sm">
+                <CardContent className="grid gap-6 p-5 md:grid-cols-2">
+                  {/* Folder */}
+                  {folders.length > 0 && (
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="folder"
+                        className="text-sm font-semibold"
+                      >
+                        Folder
+                      </Label>
+
+                      <select
+                        id="folder"
+                        value={folderId}
+                        onChange={(event) =>
+                          setFolderId(
+                            event.target.value
+                          )
+                        }
+                        className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      >
+                        <option value="">
+                          No folder
+                        </option>
+
+                        {folders.map((folder) => (
+                          <option
+                            key={folder.id}
+                            value={folder.id}
+                          >
+                            {folder.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {tags.length > 0 && (
+                    <div className="space-y-2 md:col-span-2">
+                      <Label className="text-sm font-semibold">
+                        Tags
+                      </Label>
+
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => {
+                          const active =
+                            selectedTags.includes(
+                              tag.id
+                            );
+
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() =>
+                                toggleTag(tag.id)
+                              }
+                              className={cn(
+                                'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                                active
+                                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                  : 'border-border bg-background hover:border-primary/40 hover:bg-muted'
+                              )}
+                            >
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    tag.color,
+                                }}
+                              />
+
+                              {tag.name}
+
+                              {active ? (
+                                <Check className="h-3 w-3" />
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedTagObjects.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {selectedTagObjects.length}{' '}
+                          tag
+                          {selectedTagObjects.length !==
+                          1
+                            ? 's'
+                            : ''}{' '}
+                          selected
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* ---------------------------------------------------------------- */}
+            {/* Step 4 - Advanced                                               */}
+            {/* ---------------------------------------------------------------- */}
+
+            <section>
+              <Card className="overflow-hidden border-border/70 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAdvancedOpen(
+                      (previous) => !previous
+                    )
+                  }
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-sm font-semibold">
+                        Advanced settings
+                      </h2>
+
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Expiration, custom URL and A/B
+                        testing
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 text-muted-foreground transition-transform',
+                      advancedOpen &&
+                        'rotate-180'
+                    )}
+                  />
+                </button>
+
+                {advancedOpen && (
+                  <div className="border-t border-border/70 p-5">
+                    <QrFormFieldsExtended
+                      typeDef={typeDef}
+                      payload={payload}
+                      onChange={handleFieldChange}
+                      expiresAt={
+                        expiresAt ?? undefined
+                      }
+                      onExpiryChange={setExpiresAt}
+                      shortCode={shortCode}
+                      onShortCodeChange={setShortCode}
+                      suggestedShortCode={
+                        suggestedCode
+                      }
+                      variant={variant}
+                      onVariantChange={setVariant}
+                      testName={testName}
+                      onTestNameChange={setTestName}
+                    />
+                  </div>
+                )}
+              </Card>
+            </section>
+
+            {/* ---------------------------------------------------------------- */}
+            {/* Step 5 - Branding                                               */}
+            {/* ---------------------------------------------------------------- */}
+
+            <section>
+              <Card className="overflow-hidden border-border/70 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setBrandingOpen(
+                      (previous) => !previous
+                    )
+                  }
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <ImageIcon className="h-4 w-4" />
+                    </div>
+
+                    <div>
+                      <h2 className="text-sm font-semibold">
+                        Branding & appearance
+                      </h2>
+
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Customize colors, templates and
+                        QR appearance
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 text-muted-foreground transition-transform',
+                      brandingOpen &&
+                        'rotate-180'
+                    )}
+                  />
+                </button>
+
+                {brandingOpen && (
+                  <div className="border-t border-border/70 p-5">
+                    <QrStyleEditor
+                      style={style}
+                      onChange={setStyle}
+                    />
+                  </div>
+                )}
+              </Card>
+            </section>
+
+            {/* ---------------------------------------------------------------- */}
+            {/* Mobile create CTA                                               */}
+            {/* ---------------------------------------------------------------- */}
+
+            <div className="pt-2 lg:hidden">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-12 w-full text-sm font-semibold shadow-sm"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating QR Code…
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Create QR Code
+                  </>
+                )}
+              </Button>
+            </div>
+          </main>
+
+          {/* ================================================================= */}
+          {/* RIGHT - PREVIEW                                                   */}
+          {/* ================================================================= */}
+
+          <aside className="lg:sticky lg:top-[88px]">
+            <Card className="overflow-hidden border-border/70 shadow-sm">
+              {/* Preview header */}
+              <CardHeader className="border-b border-border/60 bg-muted/[0.12] pb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">
+                      Live preview
+                    </CardTitle>
+
+                    <CardDescription className="mt-1">
+                      Your QR code updates as you edit.
+                    </CardDescription>
+                  </div>
+
+                  <div
+                    className={cn(
+                      'flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-semibold',
+                      isDynamic
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'h-1.5 w-1.5 rounded-full',
+                        isDynamic
+                          ? 'bg-primary'
+                          : 'bg-muted-foreground'
+                      )}
+                    />
+
+                    {isDynamic
+                      ? 'Dynamic'
+                      : 'Static'}
                   </div>
                 </div>
-              )}
+              </CardHeader>
 
-              {/* Dynamic Action Switch Toggle Container */}
-              <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-muted/10 dark:bg-transparent shadow-inner">
-                <div className="space-y-0.5 pr-4">
-                  <Label htmlFor="dynamic" className="text-foreground font-semibold leading-none">Dynamic QR</Label>
-                  <p className="text-xs text-muted-foreground leading-normal mt-1">
-                    Edit the destination later without reprinting. Enables scan analytics.
+              {/* QR */}
+              <CardContent className="p-0">
+                <div className="flex min-h-[390px] items-center justify-center bg-muted/[0.12] p-6 sm:p-8">
+                  <div className="w-full max-w-[300px] rounded-2xl border border-border/70 bg-background p-5 shadow-sm">
+                    <div className="flex min-h-[290px] items-center justify-center rounded-xl bg-white p-5">
+                      <QRPreview
+                        type={type}
+                        payload={payload}
+                        isDynamic={isDynamic}
+                        shortLinkUrl={
+                          shortLinkUrl
+                        }
+                        style={style}
+                      />
+                    </div>
+
+                    <div className="mt-4 text-center">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {name.trim() ||
+                          'Untitled QR Code'}
+                      </p>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {typeDef?.label ||
+                          'QR Code'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="border-t border-border/60 p-4">
+                  <div className="flex items-center gap-2 rounded-lg bg-primary/[0.06] px-3 py-2.5">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Check className="h-3.5 w-3.5" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold">
+                        Ready to create
+                      </p>
+
+                      <p className="text-[11px] text-muted-foreground">
+                        {isDynamic
+                          ? 'Dynamic QR with analytics enabled'
+                          : 'Static QR code'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop action */}
+                <div className="hidden border-t border-border/60 p-4 lg:block">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="h-11 w-full font-semibold shadow-sm"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating…
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Create QR Code
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                    You can edit your QR code later.
                   </p>
                 </div>
-                <Switch id="dynamic" checked={isDynamic} onCheckedChange={setIsDynamic} />
-              </div>
-            </CardContent>
-          </Card>
-
-
-          {/* Extended fields */}
-          <QrFormFieldsExtended
-            typeDef={typeDef}
-            payload={payload}
-            onChange={handleFieldChange}
-            expiresAt={expiresAt ?? undefined}
-            onExpiryChange={setExpiresAt}
-            shortCode={shortCode}
-            onShortCodeChange={setShortCode}
-            suggestedShortCode={suggestedCode}
-            variant={variant}
-            onVariantChange={setVariant}
-            testName={testName}
-            onTestNameChange={setTestName}
-          />
-
-          {/* Style */}
-          <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground font-bold">Branding & Style</CardTitle>
-              <CardDescription className="text-muted-foreground">Customize the appearance of your QR code</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <QrStyleEditor style={style} onChange={setStyle} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right: preview */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-20">
-            <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
-              <CardHeader>
-                <CardTitle className="text-lg text-foreground font-bold">Live Preview</CardTitle>
-              </CardHeader>
-              <CardContent className="flex justify-center py-6 bg-card">
-                <QRPreview
-                  type={type}
-                  payload={payload}
-                  isDynamic={isDynamic}
-                  shortLinkUrl={shortLinkUrl}
-                  style={style}
-                />
               </CardContent>
             </Card>
-          </div>
+          </aside>
         </div>
       </div>
     </form>
