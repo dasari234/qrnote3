@@ -18,8 +18,8 @@ export function QrCreateHeader({
   onBack,
 }: Props) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-1.5 sm:px-6 lg:px-8">
+    <header className="sticky top-20 z-30 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             type="button"
