@@ -77,7 +77,7 @@ export function QRPreview({
       : { borderStyle: 'solid', borderColor: activeFrameColor };
 
   return (
-    <div className="flex flex-col items-center gap-3 select-none pt-10 pb-4">
+    <div className="flex flex-col items-center gap-3 select-none pb-4">
       <div
         className={cn(
           //  Added isolate, forced overflow-hidden, and cleaned up padding properties to lock in the rounded corners
