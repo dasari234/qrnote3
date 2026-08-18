@@ -602,7 +602,7 @@ export function QrEditForm({
       {/* -------------------------------------------------------------------- */}
 
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur-xl">
-        <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 py-1.5 sm:px-6 lg:px-8">
+        <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-8">
           {/* Left */}
           <div className="flex min-w-0 items-center gap-3">
             <Button
