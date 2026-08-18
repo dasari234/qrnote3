@@ -1,19 +1,20 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
-import { QrFormFields } from '@/components/qr/qr-form-fields';
-import { QRPreview } from '@/components/qr/qr-preview';
-import { QrStyleEditor } from '@/components/qr/qr-style-editor';
-import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,426 +23,1219 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { deleteQrCode, updateQrCode, updateQrStatus, duplicateQrCode } from '@/lib/qr/actions';
-import { QR_TYPES } from '@/lib/qr/types';
-import { QRStyle, QRType } from '@/lib/types';
-import { Copy, ExternalLink, Pause, Play, Save, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+  Copy,
+  ExternalLink,
+  Loader2,
+  Pause,
+  Play,
+  Save,
+  Trash2,
+} from 'lucide-react';
+
+import { QRPreview } from '@/components/qr/qr-preview';
 import { QrPdfDownload } from './qr-pdf-download';
 import { QrPngDownload } from './qr-png-download';
-import { cn } from '@/lib/utils';
+
+import { QrAdvancedSection } from './create/qr-advanced-section';
+import { QrBrandingSection } from './create/qr-branding-section';
+import { QrContentSection } from './create/qr-content-section';
+import { QrOrganizationSection } from './create/qr-organization-section';
+import { QrTypeSelector } from './create/qr-type-selector';
+
+import {
+  deleteQrCode,
+  duplicateQrCode,
+  updateQrCode,
+  updateQrStatus,
+} from '@/lib/qr/actions';
+
+import { QR_TYPES } from '@/lib/qr/types';
+import { QRStyle, QRType } from '@/lib/types';
+
 interface Props {
   qr: any;
-  folders: { id: string; name: string }[];
-  tags: { id: string; name: string; color: string }[];
+
+  folders: {
+    id: string;
+    name: string;
+  }[];
+
+  tags: {
+    id: string;
+    name: string;
+    color: string;
+  }[];
+
   selectedTagIds: string[];
 }
 
-export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
+export function QrEditForm({
+  qr,
+  folders,
+  tags,
+  selectedTagIds,
+}: Props) {
   const router = useRouter();
-  const canvasWrapperRef = useRef<HTMLDivElement>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const [name, setName] = useState(qr.name);
-  const [type, setType] = useState<QRType>(qr.type);
-  const [payload, setPayload] = useState<Record<string, any>>(qr.payload || {});
-  const [isDynamic, setIsDynamic] = useState(qr.isDynamic);
-  const [style, setStyle] = useState<QRStyle>(
-    (qr.style as QRStyle) || { fgColor: '#000000', bgColor: '#ffffff' }
-  );
-  const [status, setStatus] = useState(qr.status);
-  const [folderId, setFolderId] = useState<string>(qr.folderId || '');
-  const [selectedTags, setSelectedTags] = useState<string[]>(selectedTagIds);
-  const [loading, setLoading] = useState(false);
-  const [duplicating, setDuplicating] = useState(false);
 
-  // New state for A/B testing, expiry, vanity slug
-  const [expiresAt, setExpiresAt] = useState<string | null>(
-    qr.expiresAt ? new Date(qr.expiresAt).toISOString().split('T')[0] : null
-  );
-  const [shortCode, setShortCode] = useState(qr.shortCode || '');
-  const [variant, setVariant] = useState<string | null>(qr.variant || null);
-  const [testName, setTestName] = useState(qr.testName || '');
+  const canvasWrapperRef =
+    useRef<HTMLDivElement>(null);
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  /* -------------------------------------------------------------------------- */
+  /* Mounted                                                                    */
+  /* -------------------------------------------------------------------------- */
 
-  const typeDef = QR_TYPES.find((t) => t.type === type)!;
-  const shortLinkUrl = useMemo(() => {
-    if (isMounted && typeof window !== 'undefined' && qr.shortCode) {
-      return `${window.location.origin}/q/${qr.shortCode}`;
-    }
-    return `/q/${qr.shortCode || 'preview'}`;
-  }, [isMounted, qr.shortCode]);
-
-  const handleFieldChange = (key: string, value: string) => {
-    setPayload((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      await updateQrCode({
-        id: qr.id,
-        name: name.trim(),
-        type,
-        payload,
-        isDynamic,
-        style,
-        status,
-        folderId: folderId || null,
-        tagIds: selectedTags,
-        customShortCode: shortCode || undefined,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        variant: variant || null,
-        testName: testName || undefined,
-      });
-      toast.success('QR code updated');
-      router.refresh();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-    setLoading(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await handleDelete(); // Executes your original delete block safely
-      setIsDeleteDialogOpen(false);
-    } catch (err) {
-      // Errors handled gracefully inside your original handleDelete block
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDuplicate = async () => {
-    setDuplicating(true);
-    try {
-      const result = await duplicateQrCode(qr.id);
-      toast.success('QR code duplicated!');
-      router.push(`/dashboard/qr/${result.id}`);
-      router.refresh();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to duplicate QR code');
-    }
-    setDuplicating(false);
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteQrCode(qr.id);
-      toast.success('QR code deleted');
-      router.push('/dashboard/qr');
-      router.refresh();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
-
-  const handleToggleStatus = async () => {
-    const next = status === 'active' ? 'paused' : 'active';
-    setStatus(next);
-    try {
-      await updateQrStatus(qr.id, next);
-      toast.success(next === 'active' ? 'QR activated' : 'QR paused');
-      router.refresh();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-  };
-
-  const handleCopyLink = () => {
-    if (!qr.shortCode) {
-      toast.error('Static QR codes do not have a short link');
-      return;
-    }
-    const link = `${window.location.origin}/q/${qr.shortCode}`;
-    navigator.clipboard.writeText(link);
-    toast.success('Short link copied');
-  };
+  const [isMounted, setIsMounted] =
+    useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  /* -------------------------------------------------------------------------- */
+  /* Core QR state                                                               */
+  /* -------------------------------------------------------------------------- */
+
+  const [name, setName] =
+    useState<string>(qr.name || '');
+
+  const [type, setType] =
+    useState<QRType>(qr.type);
+
+  const [payload, setPayload] =
+    useState<Record<string, any>>(
+      qr.payload || {}
+    );
+
+  const [isDynamic, setIsDynamic] =
+    useState<boolean>(
+      Boolean(qr.isDynamic)
+    );
+
+  const [style, setStyle] =
+    useState<QRStyle>(
+      (qr.style as QRStyle) || {
+        fgColor: '#000000',
+        bgColor: '#ffffff',
+        templateId: 'classic-black',
+      }
+    );
+
+  /* -------------------------------------------------------------------------- */
+  /* Organization                                                               */
+  /* -------------------------------------------------------------------------- */
+
+  const [folderId, setFolderId] =
+    useState<string>(
+      qr.folderId || ''
+    );
+
+  const [selectedTags, setSelectedTags] =
+    useState<string[]>(
+      selectedTagIds || []
+    );
+
+  /* -------------------------------------------------------------------------- */
+  /* Status                                                                     */
+  /* -------------------------------------------------------------------------- */
+
+  const [status, setStatus] =
+    useState(qr.status);
+
+  /* -------------------------------------------------------------------------- */
+  /* Advanced                                                                   */
+  /* -------------------------------------------------------------------------- */
+
+  const [expiresAt, setExpiresAt] =
+    useState<string | null>(
+      qr.expiresAt
+        ? new Date(qr.expiresAt)
+            .toISOString()
+            .split('T')[0]
+        : null
+    );
+
+  const [shortCode, setShortCode] =
+    useState<string>(
+      qr.shortCode || ''
+    );
+
+  const [variant, setVariant] =
+    useState<string | null>(
+      qr.variant || null
+    );
+
+  const [testName, setTestName] =
+    useState<string>(
+      qr.testName || ''
+    );
+
+  /* -------------------------------------------------------------------------- */
+  /* UI state                                                                   */
+  /* -------------------------------------------------------------------------- */
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [duplicating, setDuplicating] =
+    useState(false);
+
+  const [isDeleting, setIsDeleting] =
+    useState(false);
+
+  const [
+    isDeleteDialogOpen,
+    setIsDeleteDialogOpen,
+  ] = useState(false);
+
+  /* -------------------------------------------------------------------------- */
+  /* QR definition                                                              */
+  /* -------------------------------------------------------------------------- */
+
+  const typeDef = useMemo(
+    () =>
+      QR_TYPES.find(
+        (item) => item.type === type
+      ),
+    [type]
+  );
+
+  /* -------------------------------------------------------------------------- */
+  /* Short URL                                                                  */
+  /* -------------------------------------------------------------------------- */
+
+  const shortLinkUrl = useMemo(() => {
+    if (
+      isMounted &&
+      typeof window !== 'undefined' &&
+      shortCode
+    ) {
+      return `${window.location.origin}/q/${shortCode}`;
+    }
+
+    return `/q/${shortCode || 'preview'}`;
+  }, [isMounted, shortCode]);
+
+  /* -------------------------------------------------------------------------- */
+  /* Dirty state                                                                */
+  /* -------------------------------------------------------------------------- */
+
+  const hasChanges = useMemo(() => {
+    const originalStyle =
+      (qr.style as QRStyle) || {
+        fgColor: '#000000',
+        bgColor: '#ffffff',
+      };
+
+    const originalExpiresAt =
+      qr.expiresAt
+        ? new Date(qr.expiresAt)
+            .toISOString()
+            .split('T')[0]
+        : null;
+
+    const payloadChanged =
+      JSON.stringify(payload) !==
+      JSON.stringify(qr.payload || {});
+
+    const styleChanged =
+      JSON.stringify(style) !==
+      JSON.stringify(originalStyle);
+
+    const tagsChanged =
+      JSON.stringify(
+        [...selectedTags].sort()
+      ) !==
+      JSON.stringify(
+        [...(selectedTagIds || [])].sort()
+      );
+
+    return (
+      name !== (qr.name || '') ||
+      type !== qr.type ||
+      payloadChanged ||
+      isDynamic !== Boolean(qr.isDynamic) ||
+      styleChanged ||
+      folderId !== (qr.folderId || '') ||
+      tagsChanged ||
+      expiresAt !== originalExpiresAt ||
+      shortCode !== (qr.shortCode || '') ||
+      variant !== (qr.variant || null) ||
+      testName !== (qr.testName || '')
+    );
+  }, [
+    name,
+    type,
+    payload,
+    isDynamic,
+    style,
+    folderId,
+    selectedTags,
+    expiresAt,
+    shortCode,
+    variant,
+    testName,
+    qr,
+    selectedTagIds,
+  ]);
+
+  /* -------------------------------------------------------------------------- */
+  /* Handlers                                                                   */
+  /* -------------------------------------------------------------------------- */
+
+  const handleFieldChange = (
+    key: string,
+    value: string
+  ) => {
+    setPayload((previous) => ({
+      ...previous,
+      [key]: value,
+    }));
+  };
+
+  const handleTypeChange = (
+    nextType: QRType
+  ) => {
+    if (nextType === type) {
+      return;
+    }
+
+    setType(nextType);
+
+    /*
+     * QR payload fields are type-specific.
+     * Do not carry old fields into the new QR type.
+     */
+    setPayload({});
+  };
+
+  const handleTagToggle = (
+    tagId: string
+  ) => {
+    setSelectedTags((previous) => {
+      if (previous.includes(tagId)) {
+        return previous.filter(
+          (id) => id !== tagId
+        );
+      }
+
+      return [...previous, tagId];
+    });
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Save                                                                       */
+  /* -------------------------------------------------------------------------- */
+
+  const handleSave = async () => {
+    if (loading) {
+      return;
+    }
+
+    if (!name.trim()) {
+      toast.error(
+        'Please give your QR code a name'
+      );
+
+      return;
+    }
+
+    const requiredFields =
+      typeDef?.fields.filter(
+        (field) => field.required
+      ) || [];
+
+    const missingField =
+      requiredFields.find((field) => {
+        const value =
+          payload[field.key];
+
+        return (
+          !value ||
+          !String(value).trim()
+        );
+      });
+
+    if (missingField) {
+      toast.error(
+        `${missingField.label} is required`
+      );
+
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await updateQrCode({
+        id: qr.id,
+
+        name: name.trim(),
+
+        type,
+
+        payload,
+
+        isDynamic,
+
+        style,
+
+        status,
+
+        folderId:
+          folderId || null,
+
+        tagIds: selectedTags,
+
+        customShortCode:
+          shortCode || undefined,
+
+        expiresAt: expiresAt
+          ? new Date(expiresAt)
+          : null,
+
+        variant:
+          variant || null,
+
+        testName:
+          testName || undefined,
+      });
+
+      toast.success(
+        'QR code updated successfully'
+      );
+
+      router.refresh();
+    } catch (error: any) {
+      console.error(
+        'Failed to update QR code',
+        error
+      );
+
+      toast.error(
+        error?.message ||
+          'Failed to update QR code'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Status                                                                     */
+  /* -------------------------------------------------------------------------- */
+
+  const handleToggleStatus = async () => {
+    if (loading) {
+      return;
+    }
+
+    const next =
+      status === 'active'
+        ? 'paused'
+        : 'active';
+
+    setStatus(next);
+
+    try {
+      await updateQrStatus(
+        qr.id,
+        next
+      );
+
+      toast.success(
+        next === 'active'
+          ? 'QR code activated'
+          : 'QR code paused'
+      );
+
+      router.refresh();
+    } catch (error: any) {
+      setStatus(status);
+
+      toast.error(
+        error?.message ||
+          'Failed to update QR status'
+      );
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Duplicate                                                                  */
+  /* -------------------------------------------------------------------------- */
+
+  const handleDuplicate = async () => {
+    if (duplicating) {
+      return;
+    }
+
+    setDuplicating(true);
+
+    try {
+      const result =
+        await duplicateQrCode(
+          qr.id
+        );
+
+      toast.success(
+        'QR code duplicated'
+      );
+
+      router.push(
+        `/dashboard/qr/${result.id}`
+      );
+
+      router.refresh();
+    } catch (error: any) {
+      toast.error(
+        error?.message ||
+          'Failed to duplicate QR code'
+      );
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Delete                                                                     */
+  /* -------------------------------------------------------------------------- */
+
+  const handleDelete = async () => {
+    try {
+      await deleteQrCode(qr.id);
+
+      toast.success(
+        'QR code deleted'
+      );
+
+      router.push(
+        '/dashboard/qr'
+      );
+
+      router.refresh();
+    } catch (error: any) {
+      toast.error(
+        error?.message ||
+          'Failed to delete QR code'
+      );
+
+      throw error;
+    }
+  };
+
+  const handleConfirmDelete =
+    async () => {
+      if (isDeleting) {
+        return;
+      }
+
+      setIsDeleting(true);
+
+      try {
+        await handleDelete();
+
+        setIsDeleteDialogOpen(false);
+      } catch {
+        // Error already displayed.
+      } finally {
+        setIsDeleting(false);
+      }
+    };
+
+  /* -------------------------------------------------------------------------- */
+  /* Copy                                                                       */
+  /* -------------------------------------------------------------------------- */
+
+  const handleCopyLink = async () => {
+    if (!shortCode) {
+      toast.error(
+        'Static QR codes do not have a short link'
+      );
+
+      return;
+    }
+
+    try {
+      const link =
+        `${window.location.origin}/q/${shortCode}`;
+
+      await navigator.clipboard.writeText(
+        link
+      );
+
+      toast.success(
+        'Short link copied'
+      );
+    } catch {
+      toast.error(
+        'Unable to copy short link'
+      );
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Back                                                                       */
+  /* -------------------------------------------------------------------------- */
+
+  const handleBack = () => {
+    if (
+      hasChanges &&
+      !window.confirm(
+        'You have unsaved changes. Leave without saving?'
+      )
+    ) {
+      return;
+    }
+
+    router.back();
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* Render                                                                     */
+  /* -------------------------------------------------------------------------- */
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/40 pb-4 mb-6 text-foreground">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{qr.name}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            <span className="capitalize">{qr.type.replace('_', ' ')}</span> · {qr.isDynamic ? 'Dynamic' : 'Static'} · {qr.scanCount} scans
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <Button variant="outline" onClick={handleToggleStatus} disabled={loading} className="hover:bg-accent hover:text-accent-foreground shadow-sm">
-            {status === 'active' ? (
-              <>
-                <Pause className="mr-2 h-4 w-4 text-muted-foreground/80" /> Pause
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4 text-primary" /> Activate
-              </>
-            )}
-          </Button>
+    <div className="min-h-screen bg-muted/[0.18]">
+      {/* -------------------------------------------------------------------- */}
+      {/* Header                                                               */}
+      {/* -------------------------------------------------------------------- */}
 
-          <Button variant="outline" onClick={handleDuplicate} disabled={duplicating || loading} className="hover:bg-accent hover:text-accent-foreground shadow-sm">
-            <Copy className="mr-2 h-4 w-4 text-muted-foreground/80" /> Duplicate
-          </Button>
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          {/* Left */}
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleBack}
+              className="h-9 w-9 shrink-0 rounded-lg"
+            >
+              <span className="text-lg">
+                ←
+              </span>
 
-          {/* Radix Dialog Confirmation Modal */}
-          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" disabled={loading || isDeleting} className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 shadow-sm">
-                <Trash2 className="mr-2 h-4 w-4 text-destructive/80" /> Delete
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-popover text-popover-foreground border-border shadow-lg animate-in fade-in-0 zoom-in-95 duration-200">
-              <DialogHeader>
-                <DialogTitle className="text-foreground font-bold">Delete this QR code?</DialogTitle>
-                <DialogDescription className="text-muted-foreground text-sm mt-1 leading-relaxed">
-                  This action cannot be undone. This will permanently delete your QR code and completely stop all traffic redirects.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="mt-6 gap-2 sm:gap-0">
-                <DialogClose asChild>
-                  <Button type="button" variant="outline" disabled={isDeleting} className="hover:bg-accent hover:text-accent-foreground">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  disabled={isDeleting}
-                  onClick={handleConfirmDelete}
-                  className="shadow-sm transition-transform active:scale-[0.99]"
-                >
-                  {isDeleting ? 'Deleting…' : 'Delete'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              <span className="sr-only">
+                Go back
+              </span>
+            </Button>
 
-          <Button onClick={handleSave} disabled={loading} className="shadow-sm transition-transform active:scale-[0.99]">
-            <Save className="mr-2 h-4 w-4" />
-            {loading ? 'Saving…' : 'Save'}
-          </Button>
-        </div>
-      </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-base font-semibold sm:text-lg">
+                  Edit QR Code
+                </h1>
 
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left: form */}
-        <div className="space-y-6 lg:col-span-2">
-          <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground font-bold">Details</CardTitle>
-              <CardDescription className="text-muted-foreground">Edit your QR code content</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5 bg-card">
-              {/* QR Name Field */}
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground font-medium">QR Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-background text-foreground border-input placeholder:text-muted-foreground/50 focus-visible:ring-ring font-medium text-sm"
-                />
+                {hasChanges && (
+                  <span className="hidden items-center gap-1 text-[11px] text-muted-foreground sm:inline-flex">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Unsaved changes
+                  </span>
+                )}
               </div>
 
-              {/* QR Type Selector Menu Dropdown */}
-              <div className="space-y-2">
-                <Label className="text-foreground font-medium">QR Type</Label>
-                <Select value={type} onValueChange={(v) => setType(v as QRType)}>
-                  <SelectTrigger className="w-full bg-background text-foreground border-input focus:ring-ring font-medium text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover text-popover-foreground border-border shadow-md">
-                    {QR_TYPES.map((t) => (
-                      <SelectItem
-                        key={t.type}
-                        value={t.type}
-                        className="focus:bg-accent focus:text-accent-foreground cursor-pointer font-medium text-sm py-2"
-                      >
-                        {t.label} — <span className="text-muted-foreground font-normal text-xs">{t.description}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="truncate">
+                  {qr.name}
+                </span>
+
+                <span>·</span>
+
+                <span className="capitalize">
+                  {String(type).replace(
+                    '_',
+                    ' '
+                  )}
+                </span>
+
+                <span>·</span>
+
+                <span>
+                  {qr.scanCount || 0}{' '}
+                  scans
+                </span>
               </div>
+            </div>
+          </div>
 
-              <QrFormFields typeDef={typeDef} payload={payload} onChange={handleFieldChange} />
+          {/* Actions */}
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={
+                handleToggleStatus
+              }
+              disabled={
+                loading ||
+                duplicating ||
+                isDeleting
+              }
+              className="hidden sm:inline-flex"
+            >
+              {status === 'active' ? (
+                <>
+                  <Pause className="mr-2 h-4 w-4" />
+                  Pause
+                </>
+              ) : (
+                <>
+                  <Play className="mr-2 h-4 w-4" />
+                  Activate
+                </>
+              )}
+            </Button>
 
-              {/* Folder Selector Dropdown */}
-              <div className="space-y-2">
-                <Label htmlFor="folder" className="text-foreground font-medium">Folder</Label>
-                <select
-                  id="folder"
-                  value={folderId}
-                  onChange={(e) => setFolderId(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-ring focus:border-ring font-medium transition-all dark:bg-card cursor-pointer"
-                >
-                  <option value="" className="bg-popover text-popover-foreground">No folder</option>
-                  {folders.map((f) => (
-                    <option key={f.id} value={f.id} className="bg-popover text-popover-foreground py-2">
-                      📁 {f.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Tags Selector Matrix */}
-              {tags.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-foreground font-medium">Tags</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => {
-                      const active = selectedTags.includes(tag.id);
-                      return (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedTags((prev) =>
-                              active ? prev.filter((t) => t !== tag.id) : [...prev, tag.id]
-                            );
-                          }}
-                          className={cn(
-                            "rounded-full border px-3 py-1 text-xs font-semibold transition-all select-none shadow-xs border-border bg-background text-foreground hover:bg-accent hover:border-muted-foreground/30",
-                            active && "border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:border-primary"
-                          )}
-                        >
-                          <span
-                            className="mr-1.5 inline-block h-2 w-2 rounded-full border border-black/10 dark:border-white/10 shrink-0"
-                            style={{ backgroundColor: tag.color }}
-                          />
-                          <span>{tag.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={
+                handleDuplicate
+              }
+              disabled={
+                loading ||
+                duplicating ||
+                isDeleting
+              }
+            >
+              {duplicating ? (
+                <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+              ) : (
+                <Copy className="h-4 w-4 sm:mr-2" />
               )}
 
-              {/* Dynamic Action Switch Tray Container */}
-              <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-muted/10 dark:bg-transparent shadow-inner">
-                <div className="space-y-0.5 pr-4">
-                  <Label htmlFor="dynamic" className="text-foreground font-semibold leading-none">Dynamic QR</Label>
-                  <p className="text-xs text-muted-foreground leading-normal mt-1">
-                    Dynamic QRs can be edited without reprinting and track scans.
-                  </p>
-                </div>
-                <Switch
-                  id="dynamic"
-                  checked={isDynamic}
-                  onCheckedChange={setIsDynamic}
-                  disabled={!!qr.shortCode}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              <span className="hidden sm:inline">
+                Duplicate
+              </span>
+            </Button>
 
+            {/* Delete */}
+            <Dialog
+              open={
+                isDeleteDialogOpen
+              }
+              onOpenChange={
+                setIsDeleteDialogOpen
+              }
+            >
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    loading ||
+                    duplicating ||
+                    isDeleting
+                  }
+                  className="hidden text-destructive hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive sm:inline-flex"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              </DialogTrigger>
 
-          {/* Extended fields: Vanity Slug, Expiry, A/B Testing */}
-          <QrFormFieldsExtended
-            typeDef={typeDef}
-            payload={payload}
-            onChange={handleFieldChange}
-            expiresAt={expiresAt ?? undefined}
-            onExpiryChange={setExpiresAt}
-            shortCode={shortCode}
-            onShortCodeChange={setShortCode}
-            variant={variant}
-            onVariantChange={setVariant}
-            testName={testName}
-            onTestNameChange={setTestName}
-          />
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    Delete this QR code?
+                  </DialogTitle>
 
-          <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground font-bold">Branding & Style</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QrStyleEditor style={style} onChange={setStyle} />
-            </CardContent>
-          </Card>
+                  <DialogDescription>
+                    This action cannot be
+                    undone. The QR code will
+                    be permanently removed and
+                    its traffic redirects will
+                    stop.
+                  </DialogDescription>
+                </DialogHeader>
 
+                <DialogFooter className="gap-2">
+                  <DialogClose asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        isDeleting
+                      }
+                    >
+                      Cancel
+                    </Button>
+                  </DialogClose>
+
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={
+                      isDeleting
+                    }
+                    onClick={
+                      handleConfirmDelete
+                    }
+                  >
+                    {isDeleting
+                      ? 'Deleting…'
+                      : 'Delete QR Code'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={
+                loading ||
+                duplicating ||
+                isDeleting ||
+                !hasChanges
+              }
+              className="min-w-[90px]"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Main                                                                  */}
+      {/* -------------------------------------------------------------------- */}
+
+      <main className="mx-auto max-w-[1440px] px-4 py-6 pb-28 sm:px-6 lg:px-8 lg:py-8 lg:pb-8">
+        {/* Page intro */}
+        <div className="mb-7">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Edit your QR code
+            </h2>
+
+            <span
+              className={
+                status === 'active'
+                  ? 'rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-600'
+                  : 'rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600'
+              }
+            >
+              {status === 'active'
+                ? 'Active'
+                : 'Paused'}
+            </span>
+          </div>
+
+          <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+            Update your QR content,
+            organization, advanced settings and
+            appearance.
+          </p>
         </div>
 
-        {/* Right: preview */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-20 space-y-4">
-            <Card className="bg-card text-card-foreground border-border shadow-sm transition-colors duration-200">
-              <CardHeader className="pb-0">
-                <CardTitle className="text-lg text-foreground font-bold">Preview</CardTitle>
+        {/* ------------------------------------------------------------------ */}
+        {/* Layout                                                              */}
+        {/* ------------------------------------------------------------------ */}
+
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_390px]">
+          {/* ================================================================ */}
+          {/* LEFT                                                               */}
+          {/* ================================================================ */}
+
+          <div className="min-w-0 space-y-6">
+            {/* -------------------------------------------------------------- */}
+            {/* 1. QR TYPE                                                       */}
+            {/* -------------------------------------------------------------- */}
+
+            <QrTypeSelector
+              type={type}
+              onTypeChange={
+                handleTypeChange
+              }
+            />
+
+            {/* -------------------------------------------------------------- */}
+            {/* 2. CONTENT                                                       */}
+            {/* -------------------------------------------------------------- */}
+
+            <QrContentSection
+              typeDef={typeDef}
+              name={name}
+              payload={payload}
+              isDynamic={isDynamic}
+              onNameChange={
+                setName
+              }
+              onFieldChange={
+                handleFieldChange
+              }
+              onDynamicChange={
+                setIsDynamic
+              }
+            />
+
+            {/* -------------------------------------------------------------- */}
+            {/* 3. ORGANIZATION                                                  */}
+            {/* -------------------------------------------------------------- */}
+
+            <QrOrganizationSection
+              folders={folders}
+              tags={tags}
+              folderId={folderId}
+              selectedTags={
+                selectedTags
+              }
+              onFolderChange={
+                setFolderId
+              }
+              onTagToggle={
+                handleTagToggle
+              }
+            />
+
+            {/* -------------------------------------------------------------- */}
+            {/* 4. ADVANCED                                                      */}
+            {/* -------------------------------------------------------------- */}
+
+            <QrAdvancedSection
+              typeDef={typeDef}
+              payload={payload}
+              onFieldChange={
+                handleFieldChange
+              }
+              expiresAt={
+                expiresAt ?? undefined
+              }
+              onExpiryChange={
+                setExpiresAt
+              }
+              shortCode={
+                shortCode
+              }
+              onShortCodeChange={
+                setShortCode
+              }
+              suggestedShortCode={
+                shortCode
+              }
+              variant={variant}
+              onVariantChange={
+                setVariant
+              }
+              testName={testName}
+              onTestNameChange={
+                setTestName
+              }
+            />
+
+            {/* -------------------------------------------------------------- */}
+            {/* 5. BRANDING                                                      */}
+            {/* -------------------------------------------------------------- */}
+
+            <QrBrandingSection
+              style={style}
+              onStyleChange={
+                setStyle
+              }
+            />
+
+            {/* -------------------------------------------------------------- */}
+            {/* Mobile status action                                             */}
+            {/* -------------------------------------------------------------- */}
+
+            <Card className="border-border/70 shadow-sm sm:hidden">
+              <CardContent className="p-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={
+                    handleToggleStatus
+                  }
+                  disabled={loading}
+                >
+                  {status ===
+                  'active' ? (
+                    <>
+                      <Pause className="mr-2 h-4 w-4" />
+                      Pause QR Code
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Activate QR Code
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ================================================================ */}
+          {/* RIGHT / PREVIEW                                                    */}
+          {/* ================================================================ */}
+
+          <aside className="lg:sticky lg:top-[88px]">
+            <Card className="overflow-hidden border-border/70 shadow-sm">
+              {/* Preview header */}
+              <CardHeader className="border-b border-border/60 bg-muted/[0.12] pb-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">
+                      Live preview
+                    </CardTitle>
+
+                    <CardDescription className="mt-1">
+                      Changes appear instantly.
+                    </CardDescription>
+                  </div>
+
+                  <span
+                    className={
+                      status === 'active'
+                        ? 'rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-600'
+                        : 'rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-600'
+                    }
+                  >
+                    {status === 'active'
+                      ? 'Active'
+                      : 'Paused'}
+                  </span>
+                </div>
               </CardHeader>
 
-              <CardContent className="flex flex-col items-center gap-4 pt-1 pb-4 bg-card">
-                <div ref={canvasWrapperRef} className="p-1 rounded-lg bg-transparent">
-                  <QRPreview
-                    type={type}
-                    payload={payload}
-                    isDynamic={isDynamic}
-                    shortLinkUrl={shortLinkUrl}
-                    style={style}
-                  />
-                </div>
-                <QrPngDownload
-                  canvasWrapperRef={canvasWrapperRef}
-                  name={name}
-                />
-
-                <QrPdfDownload
-                  canvasWrapperRef={canvasWrapperRef}
-                  name={name}
-                  typeLabel={typeDef?.label ?? type}
-                  scanCount={qr.scanCount}
-                  isDynamic={isDynamic}
-                  shortLinkUrl={isDynamic && qr.shortCode ? shortLinkUrl : undefined}
-                />
-
-                {isMounted && qr.isDynamic && qr.shortCode && (
-                  <div className="w-full space-y-3 pt-2 border-t border-border/40 mt-1">
-                    {/* Short Link URL Pill Container */}
-                    <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 dark:bg-muted/10 p-2.5 text-xs shadow-inner">
-                      <span className="truncate text-foreground/80 font-mono font-medium">
-                        {shortLinkUrl.replace(/^https?:\/\//, '')}
-                      </span>
+              <CardContent className="p-0">
+                {/* QR stage */}
+                <div className="flex min-h-[390px] items-center justify-center bg-muted/[0.12] p-6">
+                  <div className="w-full max-w-[300px] rounded-2xl border border-border/70 bg-background p-5 shadow-sm">
+                    <div
+                      ref={
+                        canvasWrapperRef
+                      }
+                      className="flex min-h-[275px] items-center justify-center rounded-xl bg-white p-5"
+                    >
+                      <QRPreview
+                        type={type}
+                        payload={
+                          payload
+                        }
+                        isDynamic={
+                          isDynamic
+                        }
+                        shortLinkUrl={
+                          shortLinkUrl
+                        }
+                        style={style}
+                      />
                     </div>
 
-                    {/* Action Button Grid */}
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1 hover:bg-accent hover:text-accent-foreground transition-all shadow-sm" onClick={handleCopyLink}>
-                        <Copy className="mr-1.5 h-3.5 w-3.5 text-muted-foreground/80" /> Copy
-                      </Button>
-                      <Button asChild variant="outline" size="sm" className="flex-1 hover:bg-accent hover:text-accent-foreground transition-all shadow-sm">
-                        <a href={shortLinkUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="mr-1.5 h-3.5 w-3.5 text-muted-foreground/80" /> Open
-                        </a>
-                      </Button>
+                    <div className="mt-4 text-center">
+                      <p className="truncate text-sm font-semibold">
+                        {name.trim() ||
+                          'Untitled QR Code'}
+                      </p>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {typeDef?.label ||
+                          type}
+                        {' · '}
+                        {isDynamic
+                          ? 'Dynamic'
+                          : 'Static'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Download actions */}
+                <div className="grid grid-cols-2 gap-2 border-t border-border/60 p-4">
+                  <QrPngDownload
+                    canvasWrapperRef={
+                      canvasWrapperRef
+                    }
+                    name={name}
+                  />
+
+                  <QrPdfDownload
+                    canvasWrapperRef={
+                      canvasWrapperRef
+                    }
+                    name={name}
+                    typeLabel={
+                      typeDef?.label ??
+                      type
+                    }
+                    scanCount={
+                      qr.scanCount
+                    }
+                    isDynamic={
+                      isDynamic
+                    }
+                    shortLinkUrl={
+                      isDynamic &&
+                      shortCode
+                        ? shortLinkUrl
+                        : undefined
+                    }
+                  />
+                </div>
+
+                {/* Short URL */}
+                {isMounted &&
+                  isDynamic &&
+                  shortCode && (
+                    <div className="border-t border-border/60 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs font-semibold">
+                          Short link
+                        </span>
+
+                        <span className="text-[10px] text-emerald-600">
+                          Live
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl border border-border/70 bg-muted/[0.2] p-3">
+                        <p className="truncate font-mono text-xs text-muted-foreground">
+                          {shortLinkUrl.replace(
+                            /^https?:\/\//,
+                            ''
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={
+                            handleCopyLink
+                          }
+                        >
+                          <Copy className="mr-1.5 h-3.5 w-3.5" />
+                          Copy
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <a
+                            href={
+                              shortLinkUrl
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                            Open
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                {/* Stats */}
+                <div className="border-t border-border/60 p-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-muted/[0.35] p-3">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Scans
+                      </p>
+
+                      <p className="mt-1 text-lg font-bold">
+                        {qr.scanCount ||
+                          0}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl bg-muted/[0.35] p-3">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                        Status
+                      </p>
+
+                      <p className="mt-1 text-sm font-bold capitalize">
+                        {status}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Unsaved state */}
+                {hasChanges && (
+                  <div className="border-t border-border/60 bg-amber-500/[0.05] px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+
+                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                        You have unsaved changes.
+                      </p>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
+          </aside>
         </div>
+      </main>
 
+      {/* -------------------------------------------------------------------- */}
+      {/* Mobile sticky save                                                   */}
+      {/* -------------------------------------------------------------------- */}
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/95 p-3 shadow-lg backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-[1440px] gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-11"
+            onClick={
+              handleToggleStatus
+            }
+            disabled={loading}
+          >
+            {status === 'active' ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+
+          <Button
+            type="button"
+            className="h-11 flex-1"
+            onClick={handleSave}
+            disabled={
+              loading ||
+              !hasChanges
+            }
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save changes
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
