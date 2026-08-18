@@ -17,11 +17,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
-import {
-  Tabs,
-  TabsContent,
-  TabsTrigger
-} from '@/components/ui/tabs';
 
 import { createQrCode } from '@/lib/qr/actions';
 import { QR_TYPES, QR_TYPE_CATEGORIES } from '@/lib/qr/types';
@@ -479,137 +474,141 @@ export function QrCreateForm({
 
               <Card className="overflow-hidden border-border/70 shadow-sm">
                 <CardContent className="p-0">
-                  <Tabs
-                    value={activeCategory}
-                    onValueChange={setActiveCategory}
-                  >
-                    {/* Category navigation */}
-                    <div className="relative border-b border-border/70 bg-muted/20">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        disabled={!canScrollLeft}
-                        onClick={() => scrollTabs('left')}
-                        className={cn(
-                          'absolute left-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm',
-                          !canScrollLeft &&
-                            'pointer-events-none opacity-0'
-                        )}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
+                  {/* Category navigation */}
+                  <div className="relative border-b border-border/70 bg-muted/[0.18]">
+                    {/* Left scroll button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={!canScrollLeft}
+                      onClick={() => scrollTabs('left')}
+                      className={cn(
+                        'absolute left-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm transition-all',
+                        !canScrollLeft &&
+                          'pointer-events-none opacity-0'
+                      )}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="sr-only">
+                        Scroll categories left
+                      </span>
+                    </Button>
 
-                      <div
-                        ref={tabsRef}
-                        className="scrollbar-hide flex gap-1 overflow-x-auto px-11 py-2"
-                      >
-                        {QR_TYPE_CATEGORIES.map(
-                          (category) => (
-                            <TabsTrigger
-                              key={category.id}
-                              ref={(element) => {
-                                tabRefs.current[
-                                  category.id
-                                ] = element;
-                              }}
-                              value={category.id}
-                              className={cn(
-                                'shrink-0 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all',
-                                'text-muted-foreground',
-                                'hover:bg-background hover:text-foreground',
-                                'data-[state=active]:bg-background',
-                                'data-[state=active]:text-foreground',
-                                'data-[state=active]:shadow-sm'
-                              )}
-                            >
-                              {category.label}
-                            </TabsTrigger>
-                          )
-                        )}
-                      </div>
+                    {/* Categories */}
+                    <div
+                      ref={tabsRef}
+                      className="scrollbar-hide flex gap-1 overflow-x-auto px-11 py-2"
+                    >
+                      {QR_TYPE_CATEGORIES.map((category) => {
+                        const active =
+                          activeCategory === category.id;
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        disabled={!canScrollRight}
-                        onClick={() => scrollTabs('right')}
-                        className={cn(
-                          'absolute right-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm',
-                          !canScrollRight &&
-                            'pointer-events-none opacity-0'
-                        )}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                        return (
+                          <button
+                            key={category.id}
+                            ref={(element) => {
+                              tabRefs.current[category.id] =
+                                element;
+                            }}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
+                            aria-controls={`qr-category-${category.id}`}
+                            onClick={() => {
+                              setActiveCategory(category.id);
+                            }}
+                            className={cn(
+                              'shrink-0 rounded-lg px-3.5 py-2 text-xs font-semibold transition-all',
+                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                              active
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-background hover:text-foreground'
+                            )}
+                          >
+                            {category.label}
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    {QR_TYPE_CATEGORIES.map(
-                      (category) => (
-                        <TabsContent
-                          key={category.id}
-                          value={category.id}
-                          className="m-0 p-4 sm:p-5"
-                        >
-                          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
-                            {QR_TYPES.filter(
-                              (item) =>
-                                item.category ===
-                                category.id
-                            ).map((item) => {
-                              const Icon =
-                                ICONS[item.icon] ||
-                                Link;
+                    {/* Right scroll button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={!canScrollRight}
+                      onClick={() => scrollTabs('right')}
+                      className={cn(
+                        'absolute right-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm transition-all',
+                        !canScrollRight &&
+                          'pointer-events-none opacity-0'
+                      )}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="sr-only">
+                        Scroll categories right
+                      </span>
+                    </Button>
+                  </div>
 
-                              const active =
-                                item.type === type;
+                  {/* QR type cards */}
+                  <div
+                    id={`qr-category-${activeCategory}`}
+                    role="tabpanel"
+                    className="p-4 sm:p-5"
+                  >
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+                      {QR_TYPES.filter(
+                        (item) =>
+                          item.category === activeCategory
+                      ).map((item) => {
+                        const Icon =
+                          ICONS[item.icon] || Link;
 
-                              return (
-                                <button
-                                  key={item.type}
-                                  type="button"
-                                  onClick={() =>
-                                    handleTypeChange(
-                                      item.type
-                                    )
-                                  }
-                                  className={cn(
-                                    'group relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all',
-                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                                    active
-                                      ? 'border-primary bg-primary/[0.06] shadow-sm ring-1 ring-primary'
-                                      : 'border-border/70 bg-background hover:border-primary/40 hover:bg-muted/30'
-                                  )}
-                                >
-                                  {active && (
-                                    <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                                      <Check className="h-3 w-3" />
-                                    </span>
-                                  )}
+                        const active = item.type === type;
 
-                                  <span
-                                    className={cn(
-                                      'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
-                                      active
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'bg-muted text-muted-foreground group-hover:text-foreground'
-                                    )}
-                                  >
-                                    <Icon className="h-4.5 w-4.5" />
-                                  </span>
+                        return (
+                          <button
+                            key={item.type}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() =>
+                              handleTypeChange(item.type)
+                            }
+                            className={cn(
+                              'group relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all',
+                              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                              active
+                                ? 'border-primary bg-primary/[0.06] shadow-sm ring-1 ring-primary'
+                                : 'border-border/70 bg-background hover:border-primary/40 hover:bg-muted/30'
+                            )}
+                          >
+                            {active && (
+                              <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                <Check className="h-3 w-3" />
+                              </span>
+                            )}
 
-                                  <span className="text-xs font-semibold leading-tight">
-                                    {item.label}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </TabsContent>
-                      )
-                    )}
-                  </Tabs>
+                            <span
+                              className={cn(
+                                'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                                active
+                                  ? 'bg-primary/10 text-primary'
+                                  : 'bg-muted text-muted-foreground group-hover:text-foreground'
+                              )}
+                            >
+                              <Icon className="h-[18px] w-[18px]" />
+                            </span>
+
+                            <span className="text-xs font-semibold leading-tight">
+                              {item.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </section>
