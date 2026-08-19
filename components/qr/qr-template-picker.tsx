@@ -52,7 +52,7 @@ export function QrTemplatePicker({ selectedId, onSelect }: QrTemplatePickerProps
             {isActive && <span className="sr-only">(Selected)</span>}
 
             <div className="flex w-full items-center justify-center pt-2 pb-1 overflow-visible shrink-0">
-              <div className="flex items-center justify-center bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-xl p-4 shadow-sm group-hover:scale-105 transition-transform duration-200 aspect-square w-28 h-30">
+              <div className="flex items-center justify-center bg-white dark:bg-zinc-900 p-4  group-hover:scale-105 transition-transform duration-200 aspect-square w-28 h-30">
                 <QRPreview
                   type="url"
                   payload={{ url: 'https://example.com' }}
