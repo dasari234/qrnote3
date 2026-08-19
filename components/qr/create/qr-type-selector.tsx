@@ -245,10 +245,10 @@ export function QrTypeSelector({
               disabled={!canScrollLeft}
               onClick={() => scroll('left')}
               className={cn(
-                'absolute left-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm',
-                !canScrollLeft &&
-                  'pointer-events-none opacity-0'
-              )}
+                  'absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-none rounded-r-lg border-l-0 bg-background shadow-sm',
+                  !canScrollLeft &&
+                    'pointer-events-none opacity-0'
+                )}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -303,7 +303,7 @@ export function QrTypeSelector({
               disabled={!canScrollRight}
               onClick={() => scroll('right')}
               className={cn(
-                'absolute right-2 top-1/2 z-10 h-8 w-8 -translate-y-1/2 rounded-full bg-background shadow-sm',
+                'absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-none rounded-l-lg border-r-0 bg-background shadow-sm',
                 !canScrollRight &&
                   'pointer-events-none opacity-0'
               )}
