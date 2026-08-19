@@ -69,7 +69,7 @@ export function QRPreview({
         ? 'rounded-none border-4 border-solid p-4 bg-white dark:bg-card'
         : frame === 'caption'
           ? 'rounded-lg border-2 border-solid p-4 pb-3 bg-white dark:bg-card'
-          : 'bg-white p-2 rounded-xl border border-border/40 shadow-sm';
+          : 'bg-white p-2 rounded-xl border border-border/40 shadow-sm mt-[25px]';
 
   const frameStyle =
     frame === 'none'
