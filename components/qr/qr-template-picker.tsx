@@ -33,38 +33,41 @@ export function QrTemplatePicker({ selectedId, onSelect }: QrTemplatePickerProps
             role="radio"
             aria-checked={isActive}
             onClick={() => handleSelect(template.id, template.style)}
-            className={cn(
-              'group relative flex flex-col items-center gap-3 rounded-lg border border-border bg-card p-3 text-center transition-all duration-200 select-none overflow-visible isolate',
+               className={cn(
+              'group relative flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-3 text-center transition-all duration-200 select-none overflow-visible',
               'hover:border-primary/40 hover:bg-muted/30 dark:hover:bg-muted/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-              isActive && 'border-primary bg-primary/5 ring-1 ring-primary dark:bg-primary/10 shadow-sm'
+              isActive && 'border-primary ring-2 ring-primary dark:ring-primary shadow-sm'
             )}
           >
             {/* Visual Indicator Layer */}
             {isActive && (
               <span
-                className="absolute -top-1.5 -right-1.5 z-50 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-150"
+                className="absolute -top-1.5 -right-1.5 z-30 flex h-5 w-5 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black shadow-md animate-in fade-in-0 zoom-in-95 duration-150"
                 aria-hidden="true"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-3 w-3 stroke-[3]" />
               </span>
             )}
 
             {isActive && <span className="sr-only">(Selected)</span>}
 
-            <div className="flex h-28 w-full items-center justify-center rounded-md bg-muted/40 border border-border/30 dark:bg-muted/20 shrink-0 overflow-visible">
-              <div className="flex items-center justify-center p-2 group-hover:scale-105 transition-transform duration-200 w-[80px] h-[80px]">
+            <div className="flex w-full items-center justify-center pt-2 pb-1 overflow-visible shrink-0">
+              <div className="flex items-center justify-center bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/10 rounded-xl p-4 shadow-sm group-hover:scale-105 transition-transform duration-200 aspect-square w-28 h-28">
                 <QRPreview
                   type="url"
                   payload={{ url: 'https://example.com' }}
                   isDynamic={false}
                   style={template.style}
-                  size={80}
+                  size={64}
                 />
               </div>
             </div>
 
             {/* Template Meta Context */}
-            <div className="space-y-1 w-full">
+            <div className="space-y-1 w-full pt-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+                Static QR
+              </span>
               <p className="text-xs font-bold text-foreground leading-none truncate">
                 {template.name}
               </p>
