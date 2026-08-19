@@ -4,51 +4,51 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 import {
-    QR_TYPES,
-    QR_TYPE_CATEGORIES,
+  QR_TYPES,
+  QR_TYPE_CATEGORIES,
 } from '@/lib/qr/types';
 
 import { QRType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 import {
-    Bitcoin,
-    Calendar,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Contact,
-    DollarSign,
-    FileText,
-    Flower2,
-    Gift,
-    HeartPulse,
-    Home,
-    Image as ImageIcon,
-    Link,
-    Mail,
-    MapPin,
-    MessageCircle,
-    MessageSquare,
-    PawPrint,
-    Phone,
-    Search,
-    Send,
-    Share2,
-    Smartphone,
-    Star,
-    Type,
-    User,
-    Users,
-    UtensilsCrossed,
-    Video,
-    Wifi,
+  Bitcoin,
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Contact,
+  DollarSign,
+  FileText,
+  Flower2,
+  Gift,
+  HeartPulse,
+  Home,
+  Image as ImageIcon,
+  Link,
+  Mail,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+  PawPrint,
+  Phone,
+  Search,
+  Send,
+  Share2,
+  Smartphone,
+  Star,
+  Type,
+  User,
+  Users,
+  UtensilsCrossed,
+  Video,
+  Wifi,
 } from 'lucide-react';
 
 import {
-    useEffect,
-    useRef,
-    useState,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
 
 const ICONS: Record<
@@ -176,15 +176,34 @@ export function QrTypeSelector({
   }, [activeCategory]);
 
   useEffect(() => {
-    const category =
-      QR_TYPES.find(
-        (item) => item.type === type
-      )?.category;
+    const categoryTypes = QR_TYPES.filter(
+      (item) =>
+        item.category === activeCategory
+    );
 
-    if (category) {
-      setActiveCategory(category);
+    if (categoryTypes.length === 0) {
+      return;
     }
-  }, [type]);
+
+    // Keep the current type if it already belongs
+    // to the selected category.
+    const currentTypeExists =
+      categoryTypes.some(
+        (item) => item.type === type
+      );
+
+    if (!currentTypeExists) {
+      // Otherwise select the first QR type
+      // from the active category.
+      onTypeChange(
+        categoryTypes[0].type
+      );
+    }
+  }, [
+    activeCategory,
+    type,
+    onTypeChange,
+  ]);
 
   const scroll = (
     direction: 'left' | 'right'
