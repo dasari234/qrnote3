@@ -1,7 +1,7 @@
 'use client';
 
-import { deleteQrCode } from '@/app/dashboard/actions';
 import { Button } from '@/components/ui/button';
+import { deleteQrCode } from '@/lib/qr/actions';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useTransition } from 'react';
 
