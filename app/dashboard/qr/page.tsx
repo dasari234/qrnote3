@@ -157,9 +157,10 @@ export default async function QrListPage({
                     <QrCodeIcon className="h-6 w-6 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1,5 flex-shrink-0">
+                    <div className="flex items-center justify-between gap-2">
                       <h3 className="truncate text-sm font-semibold text-foreground">{qr.name}</h3>
-                      <Badge
+                      <div className='flex items-center justify-between gap-1.5'>
+                        <Badge
                         variant={qr.status === 'active' ? 'default' : 'secondary'}
                         className={`flex-shrink-0 transition-colors ${qr.status === 'active'
                             ? 'bg-primary text-primary-foreground'
@@ -169,6 +170,8 @@ export default async function QrListPage({
                         {qr.status}
                       </Badge>
                       <DeleteQrButton id={qr.id} />
+                      </div>
+
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span className="capitalize">{qr.type}</span>
