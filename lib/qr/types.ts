@@ -9,15 +9,29 @@ export interface QRTypeDefinition {
   fields: QRField[];
 }
 
+export type DateRestriction =
+  | 'none'
+  | 'past'
+  | 'future';
+
+export interface DateConfig {
+  restriction?: DateRestriction;
+  includeToday?: boolean;
+  enableTime?: boolean;
+  timeFormat?: '12h' | '24h';
+  minDate?: string;
+  maxDate?: string;
+}
+
 export interface QRField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'url' | 'select' | 'password' | 'email' | 'tel' | 'datetime-local' | 'date';
+  type: 'text' | 'textarea' | 'url' | 'select' | 'password' | 'email' | 'tel' | 'datetime' | 'date';
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];
   helpText?: string;
-  disableFutureDates?: boolean;
+  dateConfig?: DateConfig;
 }
 
 export const QR_TYPES: QRTypeDefinition[] = [
@@ -276,7 +290,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'wedding', label: 'Wedding', description: 'Wedding invitation page', icon: 'Heart', category: 'events',
     fields: [
       { key: 'coupleNames', label: 'Couple Names', type: 'text', required: true, placeholder: 'Jane & John' },
-      { key: 'date', label: 'Wedding Date', type: 'datetime-local', required: true },
+      { key: 'date', label: 'Wedding Date', type: 'datetime',    dateConfig: {  restriction: 'future',  includeToday: true, enableTime: true,   timeFormat: '12h',  }, required: true },
       { key: 'venue', label: 'Venue', type: 'text' },
       { key: 'address', label: 'Address', type: 'text' },
       { key: 'details', label: 'Details', type: 'textarea' },
@@ -289,7 +303,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'birthday', label: 'Birthday', description: 'Birthday party invitation', icon: 'Cake', category: 'events',
     fields: [
       { key: 'title', label: 'Event Title', type: 'text', required: true, placeholder: 'Jane\'s 30th Birthday' },
-      { key: 'date', label: 'Date & Time', type: 'datetime-local', required: true },
+      { key: 'date', label: 'Date & Time', type: 'datetime',  dateConfig: {  restriction: 'future',  includeToday: false, enableTime: true,   timeFormat: '12h',  }, required: true },
       { key: 'location', label: 'Location', type: 'text' },
       { key: 'details', label: 'Details', type: 'textarea' },
       { key: 'rsvpUrl', label: 'RSVP URL', type: 'url' },
@@ -299,7 +313,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'rsvp', label: 'RSVP', description: 'RSVP form for any event', icon: 'ClipboardCheck', category: 'events',
     fields: [
       { key: 'eventName', label: 'Event Name', type: 'text', required: true },
-      { key: 'date', label: 'Event Date', type: 'datetime-local', required: true },
+      { key: 'date', label: 'Event Date', type: 'datetime',  dateConfig: {  restriction: 'future',  includeToday: false, enableTime: true,   timeFormat: '12h',  },required: true },
       { key: 'location', label: 'Location', type: 'text' },
       { key: 'description', label: 'Description', type: 'textarea' },
       { key: 'contactPhone', label: 'Contact Phone', type: 'tel' },
@@ -310,7 +324,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'conference', label: 'Conference', description: 'Conference info & schedule', icon: 'Users', category: 'events',
     fields: [
       { key: 'name', label: 'Conference Name', type: 'text', required: true },
-      { key: 'date', label: 'Date', type: 'datetime-local', required: true },
+      { key: 'date', label: 'Date', type: 'datetime', dateConfig: {  restriction: 'future',  includeToday: false, enableTime: true,   timeFormat: '12h',  },required: true },
       { key: 'location', label: 'Location', type: 'text' },
       { key: 'schedule', label: 'Schedule', type: 'textarea', placeholder: '9:00 Keynote, 10:00 Session 1...' },
       { key: 'website', label: 'Website', type: 'url' },
@@ -321,7 +335,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'meetup', label: 'Meetup', description: 'Meetup group info', icon: 'Users', category: 'events',
     fields: [
       { key: 'name', label: 'Meetup Name', type: 'text', required: true },
-      { key: 'date', label: 'Date & Time', type: 'datetime-local', required: true },
+      { key: 'date', label: 'Date & Time', type: 'datetime',  dateConfig: {  restriction: 'future',  includeToday: false, enableTime: true,   timeFormat: '12h',  }, required: true },
       { key: 'location', label: 'Location', type: 'text' },
       { key: 'description', label: 'Description', type: 'textarea' },
       { key: 'groupUrl', label: 'Group URL', type: 'url' },
@@ -332,7 +346,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     fields: [
       { key: 'title', label: 'Seminar Title', type: 'text', required: true },
       { key: 'speaker', label: 'Speaker', type: 'text' },
-      { key: 'date', label: 'Date & Time', type: 'datetime-local', required: true },
+      { key: 'date', label: 'Date & Time', type: 'datetime',  dateConfig: {  restriction: 'future',  includeToday: false, enableTime: true,   timeFormat: '12h',  },required: true },
       { key: 'location', label: 'Location', type: 'text' },
       { key: 'description', label: 'Description', type: 'textarea' },
       { key: 'registerUrl', label: 'Registration URL', type: 'url' },
@@ -342,7 +356,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'medical_emergency', label: 'Medical Emergency Card', description: 'Emergency medical info accessible by scanning', icon: 'HeartPulse', category: 'healthcare',
     fields: [
       { key: 'fullName', label: 'Full Name', type: 'text', required: true },
-      { key: 'dateOfBirth', label: 'Date of Birth', type: 'date',  disableFutureDates: true, },
+      { key: 'dateOfBirth', label: 'Date of Birth', type: 'date',   dateConfig: {  restriction: 'past',  includeToday: true }, },
       { key: 'bloodGroup', label: 'Blood Group', type: 'select', options: [
         { value: '', label: 'Unknown' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' },
         { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' },

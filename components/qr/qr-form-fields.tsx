@@ -1,17 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 
 import {
   Select,
@@ -27,16 +17,9 @@ import {
   QRField,
   QRTypeDefinition,
 } from '@/lib/qr/types';
+import { DateField } from './date-field';
+import { DateTimeField } from './date-time-field';
 
-import {
-  CalendarDays,
-} from 'lucide-react';
-
-import {
-  format,
-  isAfter,
-  startOfDay,
-} from 'date-fns';
 
 interface QrFormFieldsProps {
   typeDef: QRTypeDefinition;
@@ -106,6 +89,32 @@ function FieldInput({
         )}
       </Label>
 
+      {field.type === 'date' && (
+        <DateField
+          id={field.key}
+          value={value}
+          placeholder={
+            field.placeholder ||
+            'Select date'
+          }
+          dateConfig={field.dateConfig}
+          onChange={onChange}
+        />
+      )}
+
+      {field.type === 'datetime' && (
+        <DateTimeField
+          id={field.key}
+          value={value}
+          placeholder={
+            field.placeholder ||
+            'Select date & time'
+          }
+          dateConfig={field.dateConfig}
+          onChange={onChange}
+        />
+      )}
+
       {field.type === 'textarea' ? (
         <Textarea
           id={inputId}
@@ -145,16 +154,6 @@ function FieldInput({
             ))}
           </SelectContent>
         </Select>
-      ) : field.type === 'date' ? (
-        <DateField
-          id={inputId}
-          value={value}
-          placeholder={field.placeholder}
-          disableFutureDates={
-            field.disableFutureDates
-          }
-          onChange={onChange}
-        />
       ) : (
         <Input
           id={inputId}
@@ -183,154 +182,3 @@ function FieldInput({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Date Field                                                                  */
-/* -------------------------------------------------------------------------- */
-
-function DateField({
-  id,
-  value,
-  placeholder,
-  disableFutureDates = false,
-  onChange,
-}: {
-  id: string;
-  value: string;
-  placeholder?: string;
-  disableFutureDates?: boolean;
-  onChange: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const selectedDate = useMemo(() => {
-    if (!value) {
-      return undefined;
-    }
-
-    const date = new Date(
-      `${value}T00:00:00`
-    );
-
-    return Number.isNaN(date.getTime())
-      ? undefined
-      : date;
-  }, [value]);
-
-  const today = startOfDay(new Date());
-
-  /*
-   * Lock page scrolling while the date picker
-   * popover is open.
-   */
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const body = document.body;
-
-    const previousOverflow =
-      body.style.overflow;
-
-    const previousPaddingRight =
-      body.style.paddingRight;
-
-    // Prevent layout jump caused by scrollbar disappearing
-    const scrollbarWidth =
-      window.innerWidth -
-      document.documentElement
-        .clientWidth;
-
-    body.style.overflow = 'hidden';
-
-    if (scrollbarWidth > 0) {
-      body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    return () => {
-      body.style.overflow =
-        previousOverflow;
-
-      body.style.paddingRight =
-        previousPaddingRight;
-    };
-  }, [open]);
-
-  const handleSelect = (date?: Date) => {
-    if (!date) {
-      return;
-    }
-
-    if (
-      disableFutureDates &&
-      isAfter(
-        startOfDay(date),
-        today
-      )
-    ) {
-      return;
-    }
-
-    onChange(
-      format(date, 'yyyy-MM-dd')
-    );
-
-    // Close after selecting a date
-    setOpen(false);
-  };
-
-  return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          className="h-10 w-full justify-start border-input bg-background px-3 text-left text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
-        >
-          <CalendarDays className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
-
-          <span
-            className={
-              selectedDate
-                ? 'text-foreground'
-                : 'text-muted-foreground'
-            }
-          >
-            {selectedDate
-              ? format(
-                  selectedDate,
-                  'dd MMM yyyy'
-                )
-              : placeholder ||
-                'Select date'}
-          </span>
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent
-        align="start"
-        className="w-auto p-0"
-      >
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleSelect}
-          disabled={
-            disableFutureDates
-              ? (date) =>
-                  isAfter(
-                    startOfDay(date),
-                    today
-                  )
-              : undefined
-          }
-          initialFocus
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
