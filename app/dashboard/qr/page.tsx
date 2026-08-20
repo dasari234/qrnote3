@@ -1,3 +1,4 @@
+import { DeleteQrButton } from '@/components/qr/delete-qr-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -156,7 +157,7 @@ export default async function QrListPage({
                     <QrCodeIcon className="h-6 w-6 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-1,5 flex-shrink-0">
                       <h3 className="truncate text-sm font-semibold text-foreground">{qr.name}</h3>
                       <Badge
                         variant={qr.status === 'active' ? 'default' : 'secondary'}
@@ -167,6 +168,7 @@ export default async function QrListPage({
                       >
                         {qr.status}
                       </Badge>
+                      <DeleteQrButton id={qr.id} />
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span className="capitalize">{qr.type}</span>
