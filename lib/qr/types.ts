@@ -26,7 +26,7 @@ export interface DateConfig {
 export interface QRField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'url' | 'select' | 'password' | 'email' | 'tel' | 'datetime' | 'date';
+  type: 'text' | 'textarea' | 'url' | 'select' | 'password' | 'email' | 'tel' | 'datetime' | 'date' |'time';
   placeholder?: string;
   required?: boolean;
   options?: { label: string; value: string }[];
