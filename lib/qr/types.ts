@@ -17,6 +17,7 @@ export interface QRField {
   required?: boolean;
   options?: { label: string; value: string }[];
   helpText?: string;
+  disableFutureDates?: boolean;
 }
 
 export const QR_TYPES: QRTypeDefinition[] = [
@@ -341,7 +342,7 @@ export const QR_TYPES: QRTypeDefinition[] = [
     type: 'medical_emergency', label: 'Medical Emergency Card', description: 'Emergency medical info accessible by scanning', icon: 'HeartPulse', category: 'healthcare',
     fields: [
       { key: 'fullName', label: 'Full Name', type: 'text', required: true },
-      { key: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
+      { key: 'dateOfBirth', label: 'Date of Birth', type: 'date',  disableFutureDates: true, },
       { key: 'bloodGroup', label: 'Blood Group', type: 'select', options: [
         { value: '', label: 'Unknown' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' },
         { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' },

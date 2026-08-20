@@ -24,7 +24,7 @@ import { QRField, QRTypeDefinition } from '@/lib/qr/types';
 
 import { CalendarDays } from 'lucide-react';
 
-import { format, isBefore, startOfDay } from 'date-fns';
+import { format, isAfter, startOfDay } from 'date-fns';
 
 interface QrFormFieldsProps {
   typeDef: QRTypeDefinition;
@@ -171,11 +171,13 @@ function DateField({
   id,
   value,
   placeholder,
+  disableFutureDates = false,
   onChange,
 }: {
   id: string;
   value: string;
   placeholder?: string;
+  disableFutureDates?: boolean;
   onChange: (value: string) => void;
 }) {
   const selectedDate = useMemo(() => {
@@ -183,34 +185,39 @@ function DateField({
       return undefined;
     }
 
-    const date = new Date(`${value}T00:00:00`);
+    const date = new Date(
+      `${value}T00:00:00`
+    );
 
     return Number.isNaN(date.getTime())
       ? undefined
       : date;
   }, [value]);
 
-  const today = startOfDay(new Date());
+  const today = startOfDay(
+    new Date()
+  );
 
   const handleSelect = (date?: Date) => {
     if (!date) {
       return;
     }
 
-    /*
-     * Store the date in DD-MM-YYYY format.
-     *
-     * This is preferable for QR payloads because:
-     * - no timezone conversion
-     * - predictable API value
-     * - easy database storage
-     */
-    const formattedDate = format(
-      date,
-      'dd-MM-yyyy'
-    );
+    // Extra protection even if the calendar
+    // somehow returns a future date.
+    if (
+      disableFutureDates &&
+      isAfter(
+        startOfDay(date),
+        today
+      )
+    ) {
+      return;
+    }
 
-    onChange(formattedDate);
+    onChange(
+      format(date, 'yyyy-MM-dd')
+    );
   };
 
   return (
@@ -236,7 +243,8 @@ function DateField({
                   selectedDate,
                   'dd MMM yyyy'
                 )
-              : placeholder || 'Select date'}
+              : placeholder ||
+                'Select date'}
           </span>
         </Button>
       </PopoverTrigger>
@@ -249,11 +257,14 @@ function DateField({
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
-          disabled={(date) =>
-            isBefore(
-              startOfDay(date),
-              today
-            )
+          disabled={
+            disableFutureDates
+              ? (date) =>
+                  isAfter(
+                    startOfDay(date),
+                    today
+                  )
+              : undefined
           }
           initialFocus
         />
