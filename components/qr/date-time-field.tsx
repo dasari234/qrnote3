@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import {
-    CalendarDays,
-    Clock3,
+    CalendarDays
 } from 'lucide-react';
 
 import {
@@ -252,13 +251,6 @@ export function DateTimeField({
           {/* Time */}
 
           <div className="border-t border-border pt-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Clock3 className="h-4 w-4 text-muted-foreground" />
-
-              <span className="text-xs font-semibold">
-                Time
-              </span>
-            </div>
 
             <TimeField
               value={
