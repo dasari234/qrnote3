@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -200,6 +200,8 @@ function DateField({
   disableFutureDates?: boolean;
   onChange: (value: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   const selectedDate = useMemo(() => {
     if (!value) {
       return undefined;
@@ -214,17 +216,51 @@ function DateField({
       : date;
   }, [value]);
 
-  const today = startOfDay(
-    new Date()
-  );
+  const today = startOfDay(new Date());
+
+  /*
+   * Lock page scrolling while the date picker
+   * popover is open.
+   */
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const body = document.body;
+
+    const previousOverflow =
+      body.style.overflow;
+
+    const previousPaddingRight =
+      body.style.paddingRight;
+
+    // Prevent layout jump caused by scrollbar disappearing
+    const scrollbarWidth =
+      window.innerWidth -
+      document.documentElement
+        .clientWidth;
+
+    body.style.overflow = 'hidden';
+
+    if (scrollbarWidth > 0) {
+      body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      body.style.overflow =
+        previousOverflow;
+
+      body.style.paddingRight =
+        previousPaddingRight;
+    };
+  }, [open]);
 
   const handleSelect = (date?: Date) => {
     if (!date) {
       return;
     }
 
-    // Extra protection even if the calendar
-    // somehow returns a future date.
     if (
       disableFutureDates &&
       isAfter(
@@ -238,10 +274,16 @@ function DateField({
     onChange(
       format(date, 'yyyy-MM-dd')
     );
+
+    // Close after selecting a date
+    setOpen(false);
   };
 
   return (
-    <Popover>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+    >
       <PopoverTrigger asChild>
         <Button
           id={id}
