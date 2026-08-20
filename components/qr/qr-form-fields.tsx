@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+
 import {
   Select,
   SelectContent,
@@ -18,18 +20,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
 import { Textarea } from '@/components/ui/textarea';
 
-import { QRField, QRTypeDefinition } from '@/lib/qr/types';
+import {
+  QRField,
+  QRTypeDefinition,
+} from '@/lib/qr/types';
 
-import { CalendarDays } from 'lucide-react';
+import {
+  CalendarDays,
+} from 'lucide-react';
 
-import { format, isAfter, startOfDay } from 'date-fns';
+import {
+  format,
+  isAfter,
+  startOfDay,
+} from 'date-fns';
 
 interface QrFormFieldsProps {
   typeDef: QRTypeDefinition;
   payload: Record<string, any>;
-  onChange: (key: string, value: string) => void;
+  onChange: (
+    key: string,
+    value: string
+  ) => void;
 }
 
 export function QrFormFields({
@@ -37,10 +52,14 @@ export function QrFormFields({
   payload,
   onChange,
 }: QrFormFieldsProps) {
-  if (!typeDef?.fields || typeDef.fields.length === 0) {
+  if (
+    !typeDef?.fields ||
+    typeDef.fields.length === 0
+  ) {
     return (
       <p className="py-4 text-center text-sm font-medium text-muted-foreground">
-        No specific data fields required for this QR format configuration.
+        No specific data fields required for
+        this QR format configuration.
       </p>
     );
   }
@@ -52,7 +71,9 @@ export function QrFormFields({
           key={field.key}
           field={field}
           value={payload[field.key] || ''}
-          onChange={(value) => onChange(field.key, value)}
+          onChange={(value) =>
+            onChange(field.key, value)
+          }
         />
       ))}
     </div>
@@ -85,7 +106,6 @@ function FieldInput({
         )}
       </Label>
 
-      {/* TEXTAREA */}
       {field.type === 'textarea' ? (
         <Textarea
           id={inputId}
@@ -98,7 +118,6 @@ function FieldInput({
           rows={3}
         />
       ) : field.type === 'select' ? (
-        /* SELECT */
         <Select
           value={
             value ||
@@ -127,15 +146,16 @@ function FieldInput({
           </SelectContent>
         </Select>
       ) : field.type === 'date' ? (
-        /* DATE PICKER */
         <DateField
           id={inputId}
           value={value}
           placeholder={field.placeholder}
+          disableFutureDates={
+            field.disableFutureDates
+          }
           onChange={onChange}
         />
       ) : (
-        /* NORMAL INPUT */
         <Input
           id={inputId}
           type={
