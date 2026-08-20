@@ -1,7 +1,12 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+} from '@/components/ui/card';
 
 import {
   QR_TYPES,
@@ -44,12 +49,6 @@ import {
   Video,
   Wifi,
 } from 'lucide-react';
-
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
 
 const ICONS: Record<
   string,
@@ -106,14 +105,84 @@ export function QrTypeSelector({
     >
   >({});
 
+  /*
+   * Find the category that contains
+   * the currently selected QR type.
+   */
+  const getCategoryForType = (
+    qrType?: QRType
+  ) => {
+    if (!qrType) {
+      return (
+        QR_TYPE_CATEGORIES[0]?.id ||
+        ''
+      );
+    }
+
+    return (
+      QR_TYPES.find(
+        (item) => item.type === qrType
+      )?.category ||
+      QR_TYPE_CATEGORIES[0]?.id ||
+      ''
+    );
+  };
+
+  /*
+   * IMPORTANT:
+   *
+   * Initialize category from the supplied
+   * QR type.
+   *
+   * This is what makes Edit open the
+   * exact category automatically.
+   */
   const [activeCategory, setActiveCategory] =
-    useState('link');
+    useState(() =>
+      getCategoryForType(type)
+    );
 
   const [canScrollLeft, setCanScrollLeft] =
     useState(false);
 
   const [canScrollRight, setCanScrollRight] =
     useState(false);
+
+  /*
+   * If the parent changes the type,
+   * automatically change the category.
+   *
+   * This is particularly important for
+   * Edit mode.
+   */
+  useEffect(() => {
+    const category =
+      getCategoryForType(type);
+
+    if (
+      category &&
+      category !== activeCategory
+    ) {
+      setActiveCategory(category);
+    }
+  }, [type]);
+
+  /*
+   * Scroll selected category into view.
+   */
+  useEffect(() => {
+    if (!activeCategory) {
+      return;
+    }
+
+    tabRefs.current[
+      activeCategory
+    ]?.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    });
+  }, [activeCategory]);
 
   const updateScrollButtons = () => {
     const element = tabsRef.current;
@@ -163,38 +232,38 @@ export function QrTypeSelector({
         updateScrollButtons
       );
     };
-  }, []);
-
-  useEffect(() => {
-    tabRefs.current[
-      activeCategory
-    ]?.scrollIntoView({
-      behavior: 'smooth',
-      inline: 'center',
-      block: 'nearest',
-    });
   }, [activeCategory]);
 
+  /*
+   * If the active category has no selected
+   * type, automatically select the first
+   * QR type in that category.
+   *
+   * This is useful for Create mode.
+   *
+   * IMPORTANT:
+   * On Edit, if `type` already belongs to
+   * the category, it will NOT be replaced.
+   */
   useEffect(() => {
-    const categoryTypes = QR_TYPES.filter(
-      (item) =>
-        item.category === activeCategory
-    );
+    const categoryTypes =
+      QR_TYPES.filter(
+        (item) =>
+          item.category ===
+          activeCategory
+      );
 
-    if (categoryTypes.length === 0) {
+    if (!categoryTypes.length) {
       return;
     }
 
-    // Keep the current type if it already belongs
-    // to the selected category.
     const currentTypeExists =
       categoryTypes.some(
-        (item) => item.type === type
+        (item) =>
+          item.type === type
       );
 
     if (!currentTypeExists) {
-      // Otherwise select the first QR type
-      // from the active category.
       onTypeChange(
         categoryTypes[0].type
       );
@@ -217,6 +286,13 @@ export function QrTypeSelector({
     });
   };
 
+  const categoryTypes =
+    QR_TYPES.filter(
+      (item) =>
+        item.category ===
+        activeCategory
+    );
+
   return (
     <section>
       <div className="mb-3">
@@ -231,31 +307,37 @@ export function QrTypeSelector({
         </div>
 
         <p className="ml-8 mt-1 text-sm text-muted-foreground">
-          What do you want your QR code to do?
+          What do you want your QR code
+          to do?
         </p>
       </div>
 
       <Card className="overflow-hidden border-border/70 shadow-sm">
         <CardContent className="p-0">
+          {/* Category tabs */}
           <div className="relative border-b border-border/70 bg-muted/[0.18]">
+            {/* LEFT */}
+
             <Button
               type="button"
               variant="outline"
               size="icon"
               disabled={!canScrollLeft}
-              onClick={() => scroll('left')}
+              onClick={() =>
+                scroll('left')
+              }
               className={cn(
-                  'absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-none rounded-r-lg border-l-0 bg-background shadow-sm',
-                  !canScrollLeft &&
-                    'pointer-events-none opacity-0'
-                )}
+                'absolute left-0 top-0 z-20 h-full w-9 rounded-none border-y-0 border-l-0 bg-background shadow-none',
+                !canScrollLeft &&
+                  'pointer-events-none opacity-0'
+              )}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
             <div
               ref={tabsRef}
-              className="scrollbar-hide flex gap-1 overflow-x-auto px-11 py-2"
+              className="scrollbar-hide flex gap-1 overflow-x-auto px-10 py-2"
               role="tablist"
               aria-label="QR code categories"
             >
@@ -267,7 +349,9 @@ export function QrTypeSelector({
 
                   return (
                     <button
-                      key={category.id}
+                      key={
+                        category.id
+                      }
                       ref={(element) => {
                         tabRefs.current[
                           category.id
@@ -275,7 +359,9 @@ export function QrTypeSelector({
                       }}
                       type="button"
                       role="tab"
-                      aria-selected={active}
+                      aria-selected={
+                        active
+                      }
                       onClick={() =>
                         setActiveCategory(
                           category.id
@@ -289,21 +375,29 @@ export function QrTypeSelector({
                           : 'text-muted-foreground hover:bg-background hover:text-foreground'
                       )}
                     >
-                      {category.label}
+                      {
+                        category.label
+                      }
                     </button>
                   );
                 }
               )}
             </div>
 
+            {/* RIGHT */}
+
             <Button
               type="button"
               variant="outline"
               size="icon"
-              disabled={!canScrollRight}
-              onClick={() => scroll('right')}
+              disabled={
+                !canScrollRight
+              }
+              onClick={() =>
+                scroll('right')
+              }
               className={cn(
-                'absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-none rounded-l-lg border-r-0 bg-background shadow-sm',
+                'absolute right-0 top-0 z-20 h-full w-9 rounded-none border-y-0 border-r-0 bg-background shadow-none',
                 !canScrollRight &&
                   'pointer-events-none opacity-0'
               )}
@@ -312,61 +406,77 @@ export function QrTypeSelector({
             </Button>
           </div>
 
+          {/* QR types */}
+
           <div className="p-4 sm:p-5">
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
-              {QR_TYPES.filter(
-                (item) =>
-                  item.category ===
-                  activeCategory
-              ).map((item) => {
-                const Icon =
-                  ICONS[item.icon] || Link;
+            {categoryTypes.length ===
+            0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                No QR types available.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
+                {categoryTypes.map(
+                  (item) => {
+                    const Icon =
+                      ICONS[
+                        item.icon
+                      ] || Link;
 
-                const active =
-                  item.type === type;
+                    const active =
+                      item.type ===
+                      type;
 
-                return (
-                  <button
-                    key={item.type}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() =>
-                      onTypeChange(
-                        item.type
-                      )
-                    }
-                    className={cn(
-                      'group relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                      active
-                        ? 'border-primary bg-primary/[0.06] shadow-sm ring-1 ring-primary'
-                        : 'border-border/70 bg-background hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    {active && (
-                      <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        <Check className="h-3 w-3" />
-                      </span>
-                    )}
+                    return (
+                      <button
+                        key={
+                          item.type
+                        }
+                        type="button"
+                        aria-pressed={
+                          active
+                        }
+                        onClick={() =>
+                          onTypeChange(
+                            item.type
+                          )
+                        }
+                        className={cn(
+                          'group relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                          active
+                            ? 'border-primary bg-primary/[0.06] shadow-sm ring-1 ring-primary'
+                            : 'border-border/70 bg-background hover:border-primary/40 hover:bg-muted/30'
+                        )}
+                      >
+                        {active && (
+                          <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
 
-                    <span
-                      className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-lg',
-                        active
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-muted text-muted-foreground group-hover:text-foreground'
-                      )}
-                    >
-                      <Icon className="h-[18px] w-[18px]" />
-                    </span>
+                        <span
+                          className={cn(
+                            'flex h-9 w-9 items-center justify-center rounded-lg',
+                            active
+                              ? 'bg-primary/10 text-primary'
+                              : 'bg-muted text-muted-foreground group-hover:text-foreground'
+                          )}
+                        >
+                          <Icon className="h-[18px] w-[18px]" />
+                        </span>
 
-                    <span className="text-xs font-semibold leading-tight">
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                        <span className="text-xs font-semibold leading-tight">
+                          {
+                            item.label
+                          }
+                        </span>
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
