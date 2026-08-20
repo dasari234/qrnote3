@@ -1,3 +1,4 @@
+import { DeleteQrButton } from '@/components/qr/delete-qr-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { prisma } from '@/lib/prisma';
@@ -17,18 +18,21 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) return null;
 
   const memberships = await prisma.organizationMember.findMany({
     where: { userId: user.id },
     select: { orgId: true },
   });
+
   const orgIds = memberships.map((m) => m.orgId);
 
   const workspaces = await prisma.workspace.findMany({
     where: { orgId: { in: orgIds } },
     select: { id: true },
   });
+
   const wsIds = workspaces.map((w) => w.id);
 
   let qrCodes: any[] = [];
@@ -51,14 +55,17 @@ export default async function DashboardPage() {
       orderBy: { createdAt: 'desc' },
       take: 5,
     });
-    //  Aggregate scan calculations across full workspace set
+
     const allQrForScans = await prisma.qrCode.findMany({
       where: { workspaceId: { in: wsIds } },
       select: { scanCount: true, status: true }
     });
+
     totalScans = allQrForScans.reduce((sum, q) => sum + (q.scanCount || 0), 0);
     activeCount = allQrForScans.filter((q) => q.status === 'active').length;
-    folderCount = await prisma.folder.count({ where: { workspaceId: { in: wsIds } } });
+    folderCount = await prisma.folder.count({
+      where: { workspaceId: { in: wsIds } }
+    });
   }
 
   const stats = [
@@ -79,8 +86,7 @@ export default async function DashboardPage() {
         </div>
         <Button asChild>
           <Link href="/dashboard/qr/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Create QR Code
+            <Plus className="mr-2 h-4 w-4" /> Create QR Code
           </Link>
         </Button>
       </div>
@@ -107,8 +113,7 @@ export default async function DashboardPage() {
           <CardTitle className="text-lg text-foreground">Recent QR Codes</CardTitle>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/dashboard/qr" className="hover:bg-accent hover:text-accent-foreground">
-              View all
-              <ArrowRight className="ml-2 h-4 w-4" />
+              View all <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </CardHeader>
@@ -124,8 +129,7 @@ export default async function DashboardPage() {
               </p>
               <Button asChild>
                 <Link href="/dashboard/qr/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create QR Code
+                  <Plus className="mr-2 h-4 w-4" /> Create QR Code
                 </Link>
               </Button>
             </div>
@@ -148,6 +152,8 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* 2. Embedded Action Group */}
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>{qr.scanCount} scans</span>
                     <span
@@ -159,6 +165,7 @@ export default async function DashboardPage() {
                     >
                       {qr.status}
                     </span>
+                    <DeleteQrButton id={qr.id} />
                   </div>
                 </Link>
               ))}
