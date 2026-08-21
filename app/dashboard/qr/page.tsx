@@ -160,15 +160,17 @@ export default async function QrListPage({
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="truncate text-sm font-semibold text-foreground">{qr.name}</h3>
                       <div className='flex items-center justify-between gap-1.5'>
-                        <Badge
+                      <Badge
                         variant={qr.status === 'active' ? 'default' : 'secondary'}
-                        className={`flex-shrink-0 transition-colors ${qr.status === 'active'
-                            ? 'dark:bg-green-900/30 dark:text-green-400'
+                        className={`flex-shrink-0 transition-colors ${
+                          qr.status === 'active'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                             : 'bg-muted text-muted-foreground dark:bg-muted/60'
-                          }`}
+                        }`}
                       >
                         {qr.status}
                       </Badge>
+
                       <DeleteQrButton id={qr.id} />
                       </div>
 
