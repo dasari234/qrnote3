@@ -13,19 +13,24 @@ import {
 } from '@/components/ui/dialog';
 import { deleteQrCode } from '@/lib/qr/actions';
 import { Loader2, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
 export function DeleteQrButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const handleConfirmDelete = () => {
     startTransition(async () => {
       try {
         await deleteQrCode(id);
         setIsOpen(false);
+        toast.success('QR code deleted successfully');
+        router.refresh();
       } catch (error) {
-        alert('Failed to delete QR code');
+        toast.error('Failed to delete QR code');
       }
     });
   };
