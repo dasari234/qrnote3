@@ -406,8 +406,7 @@ export function QrEditForm({
         'QR code updated successfully'
       );
 
-      router.refresh();
-      router.push('/dashboard/qr');
+      router.replace('/dashboard/qr');
     } catch (error: any) {
       console.error(
         'Failed to update QR code',
@@ -510,11 +509,7 @@ export function QrEditForm({
         'QR code deleted'
       );
 
-      router.push(
-        '/dashboard/qr'
-      );
-
-      router.refresh();
+      router.replace('/dashboard/qr');
     } catch (error: any) {
       toast.error(
         error?.message ||

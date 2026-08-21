@@ -163,7 +163,7 @@ export default async function QrListPage({
                         <Badge
                         variant={qr.status === 'active' ? 'default' : 'secondary'}
                         className={`flex-shrink-0 transition-colors ${qr.status === 'active'
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'dark:bg-green-900/30 dark:text-green-400'
                             : 'bg-muted text-muted-foreground dark:bg-muted/60'
                           }`}
                       >
