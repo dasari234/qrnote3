@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { Button } from '@/components/ui/button';
+
 import {
   Card,
   CardContent,
@@ -38,6 +39,7 @@ import {
 } from 'lucide-react';
 
 import { QRPreview } from '@/components/qr/qr-preview';
+
 import { QrPdfDownload } from './qr-pdf-download';
 import { QrPngDownload } from './qr-png-download';
 
@@ -56,6 +58,7 @@ import {
 
 import { QR_TYPES } from '@/lib/qr/types';
 import { QRStyle, QRType } from '@/lib/types';
+
 import { QrCreateStep, QrCreateSteps } from './create/qr-create-steps';
 
 interface Props {
@@ -248,7 +251,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
     /*
      * QR payload fields are type-specific.
-     * Do not carry old fields into the new QR type.
+     * Do not carry old fields into another QR type.
      */
     setPayload({});
   };
@@ -264,6 +267,33 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   };
 
   /* -------------------------------------------------------------------------- */
+  /* Validation                                                                 */
+  /* -------------------------------------------------------------------------- */
+
+  const validateContent = (): boolean => {
+    if (!name.trim()) {
+      toast.error('Please give your QR code a name');
+
+      return false;
+    }
+
+    const requiredFields =
+      typeDef?.fields.filter((field) => field.required) || [];
+
+    for (const field of requiredFields) {
+      const value = payload[field.key];
+
+      if (typeof value !== 'string' || !value.trim()) {
+        toast.error(`${field.label} is required`);
+
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  /* -------------------------------------------------------------------------- */
   /* Save                                                                       */
   /* -------------------------------------------------------------------------- */
 
@@ -272,24 +302,8 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
       return;
     }
 
-    if (!name.trim()) {
-      toast.error('Please give your QR code a name');
-
-      return;
-    }
-
-    const requiredFields =
-      typeDef?.fields.filter((field) => field.required) || [];
-
-    const missingField = requiredFields.find((field) => {
-      const value = payload[field.key];
-
-      return !value || !String(value).trim();
-    });
-
-    if (missingField) {
-      toast.error(`${missingField.label} is required`);
-
+    if (!validateContent()) {
+      setCurrentStep('content');
       return;
     }
 
@@ -341,7 +355,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   /* -------------------------------------------------------------------------- */
 
   const handleToggleStatus = async () => {
-    if (loading) {
+    if (loading || duplicating || isDeleting) {
       return;
     }
 
@@ -353,8 +367,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
       await updateQrStatus(qr.id, next);
 
       toast.success(next === 'active' ? 'QR code activated' : 'QR code paused');
-
-      router.refresh();
     } catch (error: any) {
       setStatus(status);
 
@@ -379,8 +391,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
       toast.success('QR code duplicated');
 
       router.push(`/dashboard/qr/${result.id}`);
-
-      router.refresh();
     } catch (error: any) {
       toast.error(error?.message || 'Failed to duplicate QR code');
     } finally {
@@ -393,17 +403,11 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   /* -------------------------------------------------------------------------- */
 
   const handleDelete = async () => {
-    try {
-      await deleteQrCode(qr.id);
+    await deleteQrCode(qr.id);
 
-      toast.success('QR code deleted');
+    toast.success('QR code deleted');
 
-      router.replace('/dashboard/qr');
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to delete QR code');
-
-      throw error;
-    }
+    router.replace('/dashboard/qr');
   };
 
   const handleConfirmDelete = async () => {
@@ -417,8 +421,8 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
       await handleDelete();
 
       setIsDeleteDialogOpen(false);
-    } catch {
-      // Error already displayed.
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to delete QR code');
     } finally {
       setIsDeleting(false);
     }
@@ -461,34 +465,13 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
     router.back();
   };
 
-  const validateContent = (): boolean => {
-    if (!name.trim()) {
-      toast.error('Please give your QR code a name');
+  /* -------------------------------------------------------------------------- */
+  /* Wizard                                                                     */
+  /* -------------------------------------------------------------------------- */
 
-      return false;
-    }
-
-    const requiredFields =
-      typeDef?.fields.filter((field) => field.required) || [];
-
-    for (const field of requiredFields) {
-      const value = payload[field.key];
-
-      if (typeof value !== 'string' || !value.trim()) {
-        toast.error(`${field.label} is required`);
-
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const handleNext = (e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleNext = (event?: React.MouseEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
 
     if (currentStep === 'content') {
       if (!validateContent()) {
@@ -502,8 +485,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
     if (currentStep === 'advanced') {
       setCurrentStep('branding');
-
-      return;
     }
   };
 
@@ -516,8 +497,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
     if (currentStep === 'advanced') {
       setCurrentStep('content');
-
-      return;
     }
   };
 
@@ -527,41 +506,104 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* -------------------------------------------------------------------- */}
-      {/* Header                                                               */}
-      {/* -------------------------------------------------------------------- */}
+      {/* ====================================================================== */}
+      {/* HEADER                                                                 */}
+      {/* ====================================================================== */}
 
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 py-1 sm:px-6 lg:px-8">
-          {/* Left */}
+      <header
+        className="
+          sticky
+          top-0
+          z-40
+          border-b
+          border-border/70
+          bg-background/95
+          backdrop-blur
+          supports-[backdrop-filter]:bg-background/80
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            min-h-16
+            max-w-[1500px]
+            items-center
+            justify-between
+            gap-4
+            px-4
+            py-2
+            sm:px-6
+            lg:px-8
+          "
+        >
+          {/* Header left */}
+
           <div className="flex min-w-0 items-center gap-3">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={handleBack}
-              className="h-9 w-9 shrink-0 rounded-lg"
+              className="
+                h-9
+                w-9
+                shrink-0
+                rounded-lg
+              "
             >
-              <span className="text-lg">←</span>
+              <ArrowLeft className="h-4 w-4" />
 
               <span className="sr-only">Go back</span>
             </Button>
 
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="truncate text-base font-semibold sm:text-lg">
+                <h1
+                  className="
+                    truncate
+                    text-base
+                    font-semibold
+                    sm:text-lg
+                  "
+                >
                   Edit QR Code
                 </h1>
 
                 {hasChanges && (
-                  <span className="hidden items-center gap-1 text-[11px] text-muted-foreground sm:inline-flex">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  <span
+                    className="
+                      hidden
+                      items-center
+                      gap-1
+                      text-[11px]
+                      text-muted-foreground
+                      sm:inline-flex
+                    "
+                  >
+                    <span
+                      className="
+                        h-1.5
+                        w-1.5
+                        rounded-full
+                        bg-amber-500
+                      "
+                    />
                     Unsaved changes
                   </span>
                 )}
               </div>
 
-              <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+              <div
+                className="
+                  mt-0.5
+                  flex
+                  items-center
+                  gap-2
+                  text-xs
+                  text-muted-foreground
+                "
+              >
                 <span className="truncate">{qr.name}</span>
 
                 <span>·</span>
@@ -577,8 +619,16 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex shrink-0 items-center gap-2">
+          {/* Header actions */}
+
+          <div
+            className="
+              flex
+              shrink-0
+              items-center
+              gap-2
+            "
+          >
             <Button
               type="button"
               variant="outline"
@@ -617,6 +667,7 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             </Button>
 
             {/* Delete */}
+
             <Dialog
               open={isDeleteDialogOpen}
               onOpenChange={setIsDeleteDialogOpen}
@@ -627,7 +678,14 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                   variant="outline"
                   size="sm"
                   disabled={loading || duplicating || isDeleting}
-                  className="hidden text-destructive hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive sm:inline-flex"
+                  className="
+                    hidden
+                    text-destructive
+                    hover:border-destructive/30
+                    hover:bg-destructive/10
+                    hover:text-destructive
+                    sm:inline-flex
+                  "
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
@@ -689,179 +747,286 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
         </div>
       </header>
 
-      {/* -------------------------------------------------------------------- */}
-      {/* Main                                                                  */}
-      {/* -------------------------------------------------------------------- */}
+      {/* ====================================================================== */}
+      {/* MAIN                                                                    */}
+      {/* ====================================================================== */}
 
-      <main className="mx-auto max-w-[1440px] px-4 py-6 pb-28 sm:px-6 lg:px-8 lg:py-8 lg:pb-8">
-        {/* Page intro */}
+      <main
+        className="
+          mx-auto
+          w-full
+          max-w-[1500px]
+          px-4
+          py-6
+          pb-24
+          sm:px-6
+          lg:px-8
+          lg:py-8
+        "
+      >
+        {/* Page title */}
+
         <div className="mb-7">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2
+              className="
+                text-2xl
+                font-bold
+                tracking-tight
+                sm:text-3xl
+              "
+            >
               Edit your QR code
             </h2>
 
             <span
               className={
                 status === 'active'
-                  ? 'rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-600'
-                  : 'rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600'
+                  ? `
+                    rounded-full
+                    bg-emerald-500/10
+                    px-2.5
+                    py-1
+                    text-[10px]
+                    font-semibold
+                    uppercase
+                    tracking-wide
+                    text-emerald-600
+                  `
+                  : `
+                    rounded-full
+                    bg-amber-500/10
+                    px-2.5
+                    py-1
+                    text-[10px]
+                    font-semibold
+                    uppercase
+                    tracking-wide
+                    text-amber-600
+                  `
               }
             >
               {status === 'active' ? 'Active' : 'Paused'}
             </span>
           </div>
 
-          <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
+          <p
+            className="
+              mt-1.5
+              max-w-2xl
+              text-sm
+              text-muted-foreground
+            "
+          >
             Update your QR content, organization, advanced settings and
             appearance.
           </p>
         </div>
 
-        {/* ------------------------------------------------------------------ */}
-        {/* Layout                                                              */}
-        {/* ------------------------------------------------------------------ */}
+        {/* ==================================================================== */}
+        {/* TWO COLUMN LAYOUT                                                    */}
+        {/* ==================================================================== */}
 
-        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_390px]">
-          {/* ================================================================ */}
-          {/* LEFT                                                               */}
-          {/* ================================================================ */}
+        <div
+          className="
+            grid
+            w-full
+            items-start
+            gap-6
+            lg:grid-cols-[minmax(0,1fr)_380px]
+            xl:grid-cols-[minmax(0,1fr)_420px]
+            xl:gap-8
+          "
+        >
+          {/* ================================================================== */}
+          {/* LEFT COLUMN                                                        */}
+          {/* ================================================================== */}
 
-          <QrCreateSteps
-            currentStep={currentStep}
-            onStepChange={setCurrentStep}
-          />
+          <section
+            className="
+              min-w-0
+              w-full
+              space-y-6
+            "
+          >
+            {/* -------------------------------------------------------------- */}
+            {/* Wizard navigation                                              */}
+            {/* -------------------------------------------------------------- */}
 
-          {currentStep === 'content' && (
-            <div className="space-y-6">
-              <QrTypeSelector type={type} onTypeChange={handleTypeChange} />
-
-              <QrContentSection
-                typeDef={typeDef}
-                name={name}
-                payload={payload}
-                isDynamic={isDynamic}
-                onNameChange={setName}
-                onFieldChange={handleFieldChange}
-                onDynamicChange={setIsDynamic}
-              />
-
-              <QrOrganizationSection
-                folders={folders}
-                tags={tags}
-                folderId={folderId}
-                selectedTags={selectedTags}
-                onFolderChange={setFolderId}
-                onTagToggle={handleTagToggle}
-              />
-            </div>
-          )}
-
-          {currentStep === 'advanced' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold">Advanced settings</h2>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Configure expiry, short codes and additional QR behavior.
-                </p>
-              </div>
-
-              <QrAdvancedSection
-                typeDef={typeDef}
-                payload={payload}
-                onFieldChange={handleFieldChange}
-                expiresAt={expiresAt ?? undefined}
-                onExpiryChange={setExpiresAt}
-                shortCode={shortCode}
-                onShortCodeChange={setShortCode}
-                suggestedShortCode={shortCode}
-                variant={variant}
-                onVariantChange={setVariant}
-                testName={testName}
-                onTestNameChange={setTestName}
-              />
-            </div>
-          )}
-
-          {currentStep === 'branding' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold">Branding</h2>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Customize the appearance of your QR code.
-                </p>
-              </div>
-              <QrBrandingSection style={style} onStyleChange={setStyle} />
-            </div>
-          )}
-
-          <div className="mt-8 flex items-center justify-between border-t border-border/70 pt-5">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={currentStep === 'content' || loading}
-              onClick={handleBottomBack}
+            <div
+              className="
+                sticky
+                top-[80px]
+                z-20
+                rounded-xl
+                border
+                border-border/70
+                bg-background/95
+                p-1
+                shadow-sm
+                backdrop-blur
+              "
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
+              <QrCreateSteps
+                currentStep={currentStep}
+                onStepChange={setCurrentStep}
+              />
+            </div>
 
-            <Button
-              type={currentStep === 'branding' ? 'submit' : 'button'}
-              onClick={currentStep !== 'branding' ? handleNext : undefined}
-              disabled={loading}
+            {/* -------------------------------------------------------------- */}
+            {/* Content step                                                    */}
+            {/* -------------------------------------------------------------- */}
+
+            {currentStep === 'content' && (
+              <div
+                className="
+                  min-w-0
+                  space-y-6
+                "
+              >
+                <QrTypeSelector type={type} onTypeChange={handleTypeChange} />
+
+                <QrContentSection
+                  typeDef={typeDef}
+                  name={name}
+                  payload={payload}
+                  isDynamic={isDynamic}
+                  onNameChange={setName}
+                  onFieldChange={handleFieldChange}
+                  onDynamicChange={setIsDynamic}
+                />
+
+                <QrOrganizationSection
+                  folders={folders}
+                  tags={tags}
+                  folderId={folderId}
+                  selectedTags={selectedTags}
+                  onFolderChange={setFolderId}
+                  onTagToggle={handleTagToggle}
+                />
+              </div>
+            )}
+
+            {/* -------------------------------------------------------------- */}
+            {/* Advanced step                                                   */}
+            {/* -------------------------------------------------------------- */}
+
+            {currentStep === 'advanced' && (
+              <div
+                className="
+                  min-w-0
+                  space-y-6
+                "
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">Advanced settings</h2>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Configure expiry, short codes and additional QR behavior.
+                  </p>
+                </div>
+
+                <QrAdvancedSection
+                  typeDef={typeDef}
+                  payload={payload}
+                  onFieldChange={handleFieldChange}
+                  expiresAt={expiresAt ?? undefined}
+                  onExpiryChange={setExpiresAt}
+                  shortCode={shortCode}
+                  onShortCodeChange={setShortCode}
+                  suggestedShortCode={shortCode}
+                  variant={variant}
+                  onVariantChange={setVariant}
+                  testName={testName}
+                  onTestNameChange={setTestName}
+                />
+              </div>
+            )}
+
+            {/* -------------------------------------------------------------- */}
+            {/* Branding step                                                   */}
+            {/* -------------------------------------------------------------- */}
+
+            {currentStep === 'branding' && (
+              <div
+                className="
+                  min-w-0
+                  space-y-6
+                "
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">Branding</h2>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Customize the appearance of your QR code.
+                  </p>
+                </div>
+
+                <QrBrandingSection style={style} onStyleChange={setStyle} />
+              </div>
+            )}
+
+            {/* -------------------------------------------------------------- */}
+            {/* Wizard navigation buttons                                       */}
+            {/* -------------------------------------------------------------- */}
+
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                border-t
+                border-border/70
+                pt-5
+              "
             >
+              <Button
+                type="button"
+                variant="outline"
+                disabled={currentStep === 'content' || loading}
+                onClick={handleBottomBack}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+
               {currentStep !== 'branding' ? (
-                <>
+                <Button type="button" onClick={handleNext} disabled={loading}>
                   Continue
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              ) : loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Update QR Code…
-                </>
+                </Button>
               ) : (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Save changes
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* -------------------------------------------------------------- */}
-          {/* Mobile create button                                            */}
-          {/* -------------------------------------------------------------- */}
-
-          <div className="mt-4 lg:hidden">
-            {currentStep === 'branding' && (
-              <div className="mt-4 lg:hidden">
                 <Button
-                  type="submit"
-                  disabled={loading}
-                  className="h-12 w-full font-semibold"
+                  type="button"
+                  onClick={handleSave}
+                  disabled={loading || !hasChanges}
                 >
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving…
+                      Updating…
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-4 w-4" />
+                      <Check className="mr-2 h-4 w-4" />
                       Save changes
                     </>
                   )}
                 </Button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="min-w-0 space-y-6">
-            <Card className="border-border/70 shadow-sm sm:hidden">
+            {/* -------------------------------------------------------------- */}
+            {/* Mobile status                                                    */}
+            {/* -------------------------------------------------------------- */}
+
+            <Card
+              className="
+                border-border/70
+                shadow-sm
+                sm:hidden
+              "
+            >
               <CardContent className="p-4">
                 <Button
                   type="button"
@@ -884,18 +1049,52 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                 </Button>
               </CardContent>
             </Card>
-          </div>
+          </section>
 
-          {/* ================================================================ */}
-          {/* RIGHT / PREVIEW                                                    */}
-          {/* ================================================================ */}
+          {/* ================================================================== */}
+          {/* RIGHT COLUMN - PREVIEW                                            */}
+          {/* ================================================================== */}
 
-          <aside className="lg:sticky lg:top-[88px]">
-            <Card className="overflow-hidden border-border/70 shadow-sm">
-              {/* Preview header */}
-              <CardHeader className="border-b border-border/60 bg-muted/[0.12] pb-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+          <aside
+            className="
+              hidden
+              min-w-0
+              w-full
+              self-start
+              lg:block
+              lg:sticky
+              lg:top-[88px]
+            "
+          >
+            <Card
+              className="
+                w-full
+                overflow-hidden
+                border-border/70
+                shadow-sm
+              "
+            >
+              {/* ------------------------------------------------------------ */}
+              {/* Preview header                                                */}
+              {/* ------------------------------------------------------------ */}
+
+              <CardHeader
+                className="
+                  border-b
+                  border-border/60
+                  bg-muted/[0.12]
+                  pb-4
+                "
+              >
+                <div
+                  className="
+                    flex
+                    items-start
+                    justify-between
+                    gap-3
+                  "
+                >
+                  <div className="min-w-0">
                     <CardTitle className="text-base">Live preview</CardTitle>
 
                     <CardDescription className="mt-1">
@@ -906,8 +1105,26 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                   <span
                     className={
                       status === 'active'
-                        ? 'rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-600'
-                        : 'rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-600'
+                        ? `
+                          shrink-0
+                          rounded-full
+                          bg-emerald-500/10
+                          px-2.5
+                          py-1
+                          text-[10px]
+                          font-semibold
+                          text-emerald-600
+                        `
+                        : `
+                          shrink-0
+                          rounded-full
+                          bg-amber-500/10
+                          px-2.5
+                          py-1
+                          text-[10px]
+                          font-semibold
+                          text-amber-600
+                        `
                     }
                   >
                     {status === 'active' ? 'Active' : 'Paused'}
@@ -916,12 +1133,43 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
               </CardHeader>
 
               <CardContent className="p-0">
-                {/* QR stage */}
-                <div className="flex min-h-[390px] items-center justify-center bg-muted/[0.12] p-6">
-                  <div className="w-full max-w-[300px] rounded-2xl border border-border/70 bg-background p-5 shadow-sm">
+                {/* ---------------------------------------------------------- */}
+                {/* QR preview                                                  */}
+                {/* ---------------------------------------------------------- */}
+
+                <div
+                  className="
+                    flex
+                    min-h-[390px]
+                    items-center
+                    justify-center
+                    bg-muted/[0.12]
+                    p-6
+                  "
+                >
+                  <div
+                    className="
+                      w-full
+                      max-w-[300px]
+                      rounded-2xl
+                      border
+                      border-border/70
+                      bg-background
+                      p-5
+                      shadow-sm
+                    "
+                  >
                     <div
                       ref={canvasWrapperRef}
-                      className="flex min-h-[275px] items-center justify-center rounded-xl bg-white p-5"
+                      className="
+                        flex
+                        min-h-[275px]
+                        items-center
+                        justify-center
+                        rounded-xl
+                        bg-white
+                        p-5
+                      "
                     >
                       <QRPreview
                         type={type}
@@ -939,15 +1187,29 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
                       <p className="mt-1 text-xs text-muted-foreground">
                         {typeDef?.label || type}
+
                         {' · '}
+
                         {isDynamic ? 'Dynamic' : 'Static'}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Download actions */}
-                <div className="grid grid-cols-2 gap-2 border-t border-border/60 p-4">
+                {/* ---------------------------------------------------------- */}
+                {/* Downloads                                                   */}
+                {/* ---------------------------------------------------------- */}
+
+                <div
+                  className="
+                    grid
+                    grid-cols-2
+                    gap-2
+                    border-t
+                    border-border/60
+                    p-4
+                  "
+                >
                   <QrPngDownload
                     canvasWrapperRef={canvasWrapperRef}
                     name={name}
@@ -965,22 +1227,60 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                   />
                 </div>
 
-                {/* Short URL */}
+                {/* ---------------------------------------------------------- */}
+                {/* Short link                                                  */}
+                {/* ---------------------------------------------------------- */}
+
                 {isMounted && isDynamic && shortCode && (
-                  <div className="border-t border-border/60 p-4">
-                    <div className="mb-2 flex items-center justify-between">
+                  <div
+                    className="
+                        border-t
+                        border-border/60
+                        p-4
+                      "
+                  >
+                    <div
+                      className="
+                          mb-2
+                          flex
+                          items-center
+                          justify-between
+                        "
+                    >
                       <span className="text-xs font-semibold">Short link</span>
 
                       <span className="text-[10px] text-emerald-600">Live</span>
                     </div>
 
-                    <div className="rounded-xl border border-border/70 bg-muted/[0.2] p-3">
-                      <p className="truncate font-mono text-xs text-muted-foreground">
+                    <div
+                      className="
+                          rounded-xl
+                          border
+                          border-border/70
+                          bg-muted/[0.2]
+                          p-3
+                        "
+                    >
+                      <p
+                        className="
+                            truncate
+                            font-mono
+                            text-xs
+                            text-muted-foreground
+                          "
+                      >
                         {shortLinkUrl.replace(/^https?:\/\//, '')}
                       </p>
                     </div>
 
-                    <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div
+                      className="
+                          mt-2
+                          grid
+                          grid-cols-2
+                          gap-2
+                        "
+                    >
                       <Button
                         type="button"
                         variant="outline"
@@ -1001,38 +1301,125 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
                   </div>
                 )}
 
-                {/* Stats */}
-                <div className="border-t border-border/60 p-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl bg-muted/[0.35] p-3">
-                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                {/* ---------------------------------------------------------- */}
+                {/* Statistics                                                  */}
+                {/* ---------------------------------------------------------- */}
+
+                <div
+                  className="
+                    border-t
+                    border-border/60
+                    p-4
+                  "
+                >
+                  <div
+                    className="
+                      grid
+                      grid-cols-2
+                      gap-3
+                    "
+                  >
+                    <div
+                      className="
+                        rounded-xl
+                        bg-muted/[0.35]
+                        p-3
+                      "
+                    >
+                      <p
+                        className="
+                          text-[10px]
+                          font-medium
+                          uppercase
+                          tracking-wide
+                          text-muted-foreground
+                        "
+                      >
                         Scans
                       </p>
 
-                      <p className="mt-1 text-lg font-bold">
+                      <p
+                        className="
+                          mt-1
+                          text-lg
+                          font-bold
+                        "
+                      >
                         {qr.scanCount || 0}
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-muted/[0.35] p-3">
-                      <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <div
+                      className="
+                        rounded-xl
+                        bg-muted/[0.35]
+                        p-3
+                      "
+                    >
+                      <p
+                        className="
+                          text-[10px]
+                          font-medium
+                          uppercase
+                          tracking-wide
+                          text-muted-foreground
+                        "
+                      >
                         Status
                       </p>
 
-                      <p className="mt-1 text-sm font-bold capitalize">
+                      <p
+                        className="
+                          mt-1
+                          text-sm
+                          font-bold
+                          capitalize
+                        "
+                      >
                         {status}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Unsaved state */}
-                {hasChanges && (
-                  <div className="border-t border-border/60 bg-amber-500/[0.05] px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                {/* ---------------------------------------------------------- */}
+                {/* Unsaved changes                                             */}
+                {/* ---------------------------------------------------------- */}
 
-                      <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                {hasChanges && (
+                  <div
+                    className="
+                      border-t
+                      border-border/60
+                      bg-amber-500/[0.05]
+                      px-4
+                      py-3
+                    "
+                  >
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-2
+                      "
+                    >
+                      <span
+                        className="
+                          h-2
+                          w-2
+                          rounded-full
+                          bg-amber-500
+                        "
+                      />
+
+                      <p
+                        className="
+                          text-xs
+                          font-medium
+                          text-amber-700
+                          dark:text-amber-400
+                        "
+                      >
                         You have unsaved changes.
                       </p>
                     </div>
@@ -1044,12 +1431,33 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
         </div>
       </main>
 
-      {/* -------------------------------------------------------------------- */}
-      {/* Mobile sticky save                                                   */}
-      {/* -------------------------------------------------------------------- */}
+      {/* ====================================================================== */}
+      {/* MOBILE STICKY ACTION BAR                                               */}
+      {/* ====================================================================== */}
 
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/95 p-3 shadow-lg backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-[1440px] gap-2">
+      <div
+        className="
+          fixed
+          inset-x-0
+          bottom-0
+          z-50
+          border-t
+          border-border/70
+          bg-background/95
+          p-3
+          shadow-lg
+          backdrop-blur-xl
+          lg:hidden
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            max-w-[1500px]
+            gap-2
+          "
+        >
           <Button
             type="button"
             variant="outline"
@@ -1067,18 +1475,23 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
           <Button
             type="button"
             className="h-11 flex-1"
-            onClick={handleSave}
-            disabled={loading || !hasChanges}
+            onClick={currentStep === 'branding' ? handleSave : handleNext}
+            disabled={loading || (currentStep === 'branding' && !hasChanges)}
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving…
               </>
-            ) : (
+            ) : currentStep === 'branding' ? (
               <>
                 <Save className="mr-2 h-4 w-4" />
                 Save changes
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
