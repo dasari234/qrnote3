@@ -506,10 +506,6 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ====================================================================== */}
-      {/* HEADER                                                                 */}
-      {/* ====================================================================== */}
-
       <header
         className="
           sticky
@@ -853,25 +849,10 @@ export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
             {/* Wizard navigation                                              */}
             {/* -------------------------------------------------------------- */}
 
-            <div
-              className="
-                sticky
-                top-[80px]
-                z-20
-                rounded-xl
-                border
-                border-border/70
-                bg-background/95
-                p-1
-                shadow-sm
-                backdrop-blur
-              "
-            >
-              <QrCreateSteps
-                currentStep={currentStep}
-                onStepChange={setCurrentStep}
-              />
-            </div>
+            <QrCreateSteps
+              currentStep={currentStep}
+              onStepChange={setCurrentStep}
+            />
 
             {/* -------------------------------------------------------------- */}
             {/* Content step                                                    */}
