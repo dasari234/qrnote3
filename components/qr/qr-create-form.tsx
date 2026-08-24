@@ -15,11 +15,12 @@ import { QR_TYPES } from '@/lib/qr/types';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { QRStyle, QRType } from '@/lib/types';
 
-import { Loader2, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Loader2, Save } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { QrCreateStep, QrCreateSteps } from './create/qr-create-steps';
 
 interface Props {
   workspaceId: string;
@@ -94,6 +95,10 @@ export function QrCreateForm({
   /* -------------------------------------------------------------------------- */
 
   const [loading, setLoading] = useState(false);
+    const [currentStep, setCurrentStep] =
+    useState<QrCreateStep>(
+      'content'
+    );
 
   const typeDef = useMemo(
     () =>
@@ -151,6 +156,98 @@ export function QrCreateForm({
   /* -------------------------------------------------------------------------- */
   /* Submit                                                                      */
   /* -------------------------------------------------------------------------- */
+
+  const validateContent =
+    (): boolean => {
+      if (!name.trim()) {
+        toast.error(
+          'Please give your QR code a name'
+        );
+
+        return false;
+      }
+
+      const requiredFields =
+        typeDef?.fields.filter(
+          (field) =>
+            field.required
+        ) || [];
+
+      for (const field of requiredFields) {
+        const value =
+          payload[
+            field.key
+          ];
+
+        if (
+          typeof value !==
+            'string' ||
+          !value.trim()
+        ) {
+          toast.error(
+            `${field.label} is required`
+          );
+
+          return false;
+        }
+      }
+
+      return true;
+    };
+
+    const handleNext = () => {
+    if (
+      currentStep ===
+      'content'
+    ) {
+      if (
+        !validateContent()
+      ) {
+        return;
+      }
+
+      setCurrentStep(
+        'advanced'
+      );
+
+      return;
+    }
+
+    if (
+      currentStep ===
+      'advanced'
+    ) {
+      setCurrentStep(
+        'branding'
+      );
+
+      return;
+    }
+  };
+
+  const handleBack = () => {
+    if (
+      currentStep ===
+      'branding'
+    ) {
+      setCurrentStep(
+        'advanced'
+      );
+
+      return;
+    }
+
+    if (
+      currentStep ===
+      'advanced'
+    ) {
+      setCurrentStep(
+        'content'
+      );
+
+      return;
+    }
+  };
 
   const handleSubmit = async (
     event: React.SyntheticEvent<HTMLFormElement>
@@ -254,69 +351,180 @@ export function QrCreateForm({
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] xl:gap-8">
-          <main className="min-w-0 space-y-6">
-            <QrTypeSelector
-              type={type}
-              onTypeChange={handleTypeChange}
-            />
+          <main className="min-w-0">
 
-            <QrContentSection
-              typeDef={typeDef}
-              name={name}
-              payload={payload}
-              isDynamic={isDynamic}
-              onNameChange={handleNameChange}
-              onFieldChange={handleFieldChange}
-              onDynamicChange={setIsDynamic}
+            <QrCreateSteps
+              currentStep={
+                currentStep
+              }
+              onStepChange={
+                setCurrentStep
+              }
             />
+            {currentStep ==='content' && (
+              <div className="space-y-6">
+                <QrTypeSelector
+                  type={type}
+                  onTypeChange={handleTypeChange}
+                />
 
-            <QrOrganizationSection
-              folders={folders}
-              tags={tags}
-              folderId={folderId}
-              selectedTags={selectedTags}
-              onFolderChange={setFolderId}
-              onTagToggle={handleTagToggle}
-            />
+                <QrContentSection
+                  typeDef={typeDef}
+                  name={name}
+                  payload={payload}
+                  isDynamic={isDynamic}
+                  onNameChange={handleNameChange}
+                  onFieldChange={handleFieldChange}
+                  onDynamicChange={setIsDynamic}
+                />
 
-            <QrAdvancedSection
-              typeDef={typeDef}
-              payload={payload}
-              onFieldChange={handleFieldChange}
-              expiresAt={expiresAt}
-              onExpiryChange={setExpiresAt}
-              shortCode={shortCode}
-              onShortCodeChange={setShortCode}
-              suggestedShortCode={suggestedCode}
-              variant={variant}
-              onVariantChange={setVariant}
-              testName={testName}
-              onTestNameChange={setTestName}
-            />
+                <QrOrganizationSection
+                    folders={folders}
+                    tags={tags}
+                    folderId={folderId}
+                    selectedTags={selectedTags}
+                    onFolderChange={setFolderId}
+                    onTagToggle={handleTagToggle}
+                  />
+              </div>
+            )}
 
-            <QrBrandingSection
-              style={style}
-              onStyleChange={setStyle}
-            />
 
-            <div className="pt-2 lg:hidden">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="h-12 w-full font-semibold"
+            {currentStep ==='advanced' && (
+              <div className="space-y-6">
+                 <div>
+                  <h2 className="text-lg font-semibold">
+                    Advanced settings
+                  </h2>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Configure expiry,
+                    short codes and
+                    additional QR
+                    behavior.
+                  </p>
+                </div>
+                <QrAdvancedSection
+                  typeDef={typeDef}
+                  payload={payload}
+                  onFieldChange={handleFieldChange}
+                  expiresAt={expiresAt}
+                  onExpiryChange={setExpiresAt}
+                  shortCode={shortCode}
+                  onShortCodeChange={setShortCode}
+                  suggestedShortCode={suggestedCode}
+                  variant={variant}
+                  onVariantChange={setVariant}
+                  testName={testName}
+                  onTestNameChange={setTestName}
+                />
+              </div>
+            )}
+
+            {currentStep ==='branding' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    Branding
+                  </h2>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Customize the appearance
+                    of your QR code.
+                  </p>
+                </div>
+                <QrBrandingSection
+                    style={style}
+                    onStyleChange={setStyle}
+                />
+
+              </div>
+            )}
+
+
+
+
+
+            <div className="mt-8 flex items-center justify-between border-t border-border/70 pt-5">
+<Button
+                type="button"
+                variant="outline"
+                disabled={
+                  currentStep ===
+                    'content' ||
+                  loading
+                }
+                onClick={
+                  handleBack
+                }
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating QR Code…
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Create QR Code
-                  </>
-                )}
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
               </Button>
+
+              {currentStep !==
+              'branding' ? (
+                <Button
+                  type="button"
+                  onClick={
+                    handleNext
+                  }
+                  disabled={
+                    loading
+                  }
+                >
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  disabled={
+                    loading
+                  }
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating QR Code…
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Create QR Code
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {/* -------------------------------------------------------------- */}
+            {/* Mobile create button                                            */}
+            {/* -------------------------------------------------------------- */}
+
+            <div className="mt-4 lg:hidden">
+              {currentStep ===
+                'branding' && (
+                <Button
+                  type="submit"
+                  disabled={
+                    loading
+                  }
+                  className="h-12 w-full font-semibold"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating QR Code…
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Create QR Code
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </main>
 
