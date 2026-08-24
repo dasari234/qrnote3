@@ -25,6 +25,9 @@ import {
 } from '@/components/ui/card';
 
 import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
   Copy,
   ExternalLink,
   Loader2,
@@ -53,6 +56,7 @@ import {
 
 import { QR_TYPES } from '@/lib/qr/types';
 import { QRStyle, QRType } from '@/lib/types';
+import { QrCreateStep, QrCreateSteps } from './create/qr-create-steps';
 
 interface Props {
   qr: any;
@@ -71,23 +75,16 @@ interface Props {
   selectedTagIds: string[];
 }
 
-export function QrEditForm({
-  qr,
-  folders,
-  tags,
-  selectedTagIds,
-}: Props) {
+export function QrEditForm({ qr, folders, tags, selectedTagIds }: Props) {
   const router = useRouter();
 
-  const canvasWrapperRef =
-    useRef<HTMLDivElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
 
   /* -------------------------------------------------------------------------- */
   /* Mounted                                                                    */
   /* -------------------------------------------------------------------------- */
 
-  const [isMounted, setIsMounted] =
-    useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -97,107 +94,72 @@ export function QrEditForm({
   /* Core QR state                                                               */
   /* -------------------------------------------------------------------------- */
 
-  const [name, setName] =
-    useState<string>(qr.name || '');
+  const [name, setName] = useState<string>(qr.name || '');
 
-  const [type, setType] =
-    useState<QRType>(qr.type);
+  const [type, setType] = useState<QRType>(qr.type);
 
-  const [payload, setPayload] =
-    useState<Record<string, any>>(
-      qr.payload || {}
-    );
+  const [payload, setPayload] = useState<Record<string, any>>(qr.payload || {});
 
-  const [isDynamic, setIsDynamic] =
-    useState<boolean>(
-      Boolean(qr.isDynamic)
-    );
+  const [isDynamic, setIsDynamic] = useState<boolean>(Boolean(qr.isDynamic));
 
-  const [style, setStyle] =
-    useState<QRStyle>(
-      (qr.style as QRStyle) || {
-        fgColor: '#000000',
-        bgColor: '#ffffff',
-        templateId: 'classic-black',
-      }
-    );
+  const [style, setStyle] = useState<QRStyle>(
+    (qr.style as QRStyle) || {
+      fgColor: '#000000',
+      bgColor: '#ffffff',
+      templateId: 'classic-black',
+    }
+  );
 
   /* -------------------------------------------------------------------------- */
   /* Organization                                                               */
   /* -------------------------------------------------------------------------- */
 
-  const [folderId, setFolderId] =
-    useState<string>(
-      qr.folderId || ''
-    );
+  const [folderId, setFolderId] = useState<string>(qr.folderId || '');
 
-  const [selectedTags, setSelectedTags] =
-    useState<string[]>(
-      selectedTagIds || []
-    );
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    selectedTagIds || []
+  );
 
   /* -------------------------------------------------------------------------- */
   /* Status                                                                     */
   /* -------------------------------------------------------------------------- */
 
-  const [status, setStatus] =
-    useState(qr.status);
+  const [status, setStatus] = useState(qr.status);
 
   /* -------------------------------------------------------------------------- */
   /* Advanced                                                                   */
   /* -------------------------------------------------------------------------- */
 
-  const [expiresAt, setExpiresAt] =
-    useState<string | null>(
-      qr.expiresAt
-        ? new Date(qr.expiresAt)
-            .toISOString()
-            .split('T')[0]
-        : null
-    );
+  const [expiresAt, setExpiresAt] = useState<string | null>(
+    qr.expiresAt ? new Date(qr.expiresAt).toISOString().split('T')[0] : null
+  );
 
-  const [shortCode, setShortCode] =
-    useState<string>(
-      qr.shortCode || ''
-    );
+  const [shortCode, setShortCode] = useState<string>(qr.shortCode || '');
 
-  const [variant, setVariant] =
-    useState<string | null>(
-      qr.variant || null
-    );
+  const [variant, setVariant] = useState<string | null>(qr.variant || null);
 
-  const [testName, setTestName] =
-    useState<string>(
-      qr.testName || ''
-    );
+  const [testName, setTestName] = useState<string>(qr.testName || '');
 
   /* -------------------------------------------------------------------------- */
   /* UI state                                                                   */
   /* -------------------------------------------------------------------------- */
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [duplicating, setDuplicating] =
-    useState(false);
+  const [duplicating, setDuplicating] = useState(false);
 
-  const [isDeleting, setIsDeleting] =
-    useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [
-    isDeleteDialogOpen,
-    setIsDeleteDialogOpen,
-  ] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const [currentStep, setCurrentStep] = useState<QrCreateStep>('content');
 
   /* -------------------------------------------------------------------------- */
   /* QR definition                                                              */
   /* -------------------------------------------------------------------------- */
 
   const typeDef = useMemo(
-    () =>
-      QR_TYPES.find(
-        (item) => item.type === type
-      ),
+    () => QR_TYPES.find((item) => item.type === type),
     [type]
   );
 
@@ -206,11 +168,7 @@ export function QrEditForm({
   /* -------------------------------------------------------------------------- */
 
   const shortLinkUrl = useMemo(() => {
-    if (
-      isMounted &&
-      typeof window !== 'undefined' &&
-      shortCode
-    ) {
+    if (isMounted && typeof window !== 'undefined' && shortCode) {
       return `${window.location.origin}/q/${shortCode}`;
     }
 
@@ -222,34 +180,24 @@ export function QrEditForm({
   /* -------------------------------------------------------------------------- */
 
   const hasChanges = useMemo(() => {
-    const originalStyle =
-      (qr.style as QRStyle) || {
-        fgColor: '#000000',
-        bgColor: '#ffffff',
-      };
+    const originalStyle = (qr.style as QRStyle) || {
+      fgColor: '#000000',
+      bgColor: '#ffffff',
+    };
 
-    const originalExpiresAt =
-      qr.expiresAt
-        ? new Date(qr.expiresAt)
-            .toISOString()
-            .split('T')[0]
-        : null;
+    const originalExpiresAt = qr.expiresAt
+      ? new Date(qr.expiresAt).toISOString().split('T')[0]
+      : null;
 
     const payloadChanged =
-      JSON.stringify(payload) !==
-      JSON.stringify(qr.payload || {});
+      JSON.stringify(payload) !== JSON.stringify(qr.payload || {});
 
     const styleChanged =
-      JSON.stringify(style) !==
-      JSON.stringify(originalStyle);
+      JSON.stringify(style) !== JSON.stringify(originalStyle);
 
     const tagsChanged =
-      JSON.stringify(
-        [...selectedTags].sort()
-      ) !==
-      JSON.stringify(
-        [...(selectedTagIds || [])].sort()
-      );
+      JSON.stringify([...selectedTags].sort()) !==
+      JSON.stringify([...(selectedTagIds || [])].sort());
 
     return (
       name !== (qr.name || '') ||
@@ -284,19 +232,14 @@ export function QrEditForm({
   /* Handlers                                                                   */
   /* -------------------------------------------------------------------------- */
 
-  const handleFieldChange = (
-    key: string,
-    value: string
-  ) => {
+  const handleFieldChange = (key: string, value: string) => {
     setPayload((previous) => ({
       ...previous,
       [key]: value,
     }));
   };
 
-  const handleTypeChange = (
-    nextType: QRType
-  ) => {
+  const handleTypeChange = (nextType: QRType) => {
     if (nextType === type) {
       return;
     }
@@ -310,14 +253,10 @@ export function QrEditForm({
     setPayload({});
   };
 
-  const handleTagToggle = (
-    tagId: string
-  ) => {
+  const handleTagToggle = (tagId: string) => {
     setSelectedTags((previous) => {
       if (previous.includes(tagId)) {
-        return previous.filter(
-          (id) => id !== tagId
-        );
+        return previous.filter((id) => id !== tagId);
       }
 
       return [...previous, tagId];
@@ -334,33 +273,22 @@ export function QrEditForm({
     }
 
     if (!name.trim()) {
-      toast.error(
-        'Please give your QR code a name'
-      );
+      toast.error('Please give your QR code a name');
 
       return;
     }
 
     const requiredFields =
-      typeDef?.fields.filter(
-        (field) => field.required
-      ) || [];
+      typeDef?.fields.filter((field) => field.required) || [];
 
-    const missingField =
-      requiredFields.find((field) => {
-        const value =
-          payload[field.key];
+    const missingField = requiredFields.find((field) => {
+      const value = payload[field.key];
 
-        return (
-          !value ||
-          !String(value).trim()
-        );
-      });
+      return !value || !String(value).trim();
+    });
 
     if (missingField) {
-      toast.error(
-        `${missingField.label} is required`
-      );
+      toast.error(`${missingField.label} is required`);
 
       return;
     }
@@ -383,40 +311,26 @@ export function QrEditForm({
 
         status,
 
-        folderId:
-          folderId || null,
+        folderId: folderId || null,
 
         tagIds: selectedTags,
 
-        customShortCode:
-          shortCode || undefined,
+        customShortCode: shortCode || undefined,
 
-        expiresAt: expiresAt
-          ? new Date(expiresAt)
-          : null,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
 
-        variant:
-          variant || null,
+        variant: variant || null,
 
-        testName:
-          testName || undefined,
+        testName: testName || undefined,
       });
 
-      toast.success(
-        'QR code updated successfully'
-      );
+      toast.success('QR code updated successfully');
 
       router.replace('/dashboard/qr');
     } catch (error: any) {
-      console.error(
-        'Failed to update QR code',
-        error
-      );
+      console.error('Failed to update QR code', error);
 
-      toast.error(
-        error?.message ||
-          'Failed to update QR code'
-      );
+      toast.error(error?.message || 'Failed to update QR code');
     } finally {
       setLoading(false);
     }
@@ -431,33 +345,20 @@ export function QrEditForm({
       return;
     }
 
-    const next =
-      status === 'active'
-        ? 'paused'
-        : 'active';
+    const next = status === 'active' ? 'paused' : 'active';
 
     setStatus(next);
 
     try {
-      await updateQrStatus(
-        qr.id,
-        next
-      );
+      await updateQrStatus(qr.id, next);
 
-      toast.success(
-        next === 'active'
-          ? 'QR code activated'
-          : 'QR code paused'
-      );
+      toast.success(next === 'active' ? 'QR code activated' : 'QR code paused');
 
       router.refresh();
     } catch (error: any) {
       setStatus(status);
 
-      toast.error(
-        error?.message ||
-          'Failed to update QR status'
-      );
+      toast.error(error?.message || 'Failed to update QR status');
     }
   };
 
@@ -473,25 +374,15 @@ export function QrEditForm({
     setDuplicating(true);
 
     try {
-      const result =
-        await duplicateQrCode(
-          qr.id
-        );
+      const result = await duplicateQrCode(qr.id);
 
-      toast.success(
-        'QR code duplicated'
-      );
+      toast.success('QR code duplicated');
 
-      router.push(
-        `/dashboard/qr/${result.id}`
-      );
+      router.push(`/dashboard/qr/${result.id}`);
 
       router.refresh();
     } catch (error: any) {
-      toast.error(
-        error?.message ||
-          'Failed to duplicate QR code'
-      );
+      toast.error(error?.message || 'Failed to duplicate QR code');
     } finally {
       setDuplicating(false);
     }
@@ -505,39 +396,33 @@ export function QrEditForm({
     try {
       await deleteQrCode(qr.id);
 
-      toast.success(
-        'QR code deleted'
-      );
+      toast.success('QR code deleted');
 
       router.replace('/dashboard/qr');
     } catch (error: any) {
-      toast.error(
-        error?.message ||
-          'Failed to delete QR code'
-      );
+      toast.error(error?.message || 'Failed to delete QR code');
 
       throw error;
     }
   };
 
-  const handleConfirmDelete =
-    async () => {
-      if (isDeleting) {
-        return;
-      }
+  const handleConfirmDelete = async () => {
+    if (isDeleting) {
+      return;
+    }
 
-      setIsDeleting(true);
+    setIsDeleting(true);
 
-      try {
-        await handleDelete();
+    try {
+      await handleDelete();
 
-        setIsDeleteDialogOpen(false);
-      } catch {
-        // Error already displayed.
-      } finally {
-        setIsDeleting(false);
-      }
-    };
+      setIsDeleteDialogOpen(false);
+    } catch {
+      // Error already displayed.
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   /* -------------------------------------------------------------------------- */
   /* Copy                                                                       */
@@ -545,28 +430,19 @@ export function QrEditForm({
 
   const handleCopyLink = async () => {
     if (!shortCode) {
-      toast.error(
-        'Static QR codes do not have a short link'
-      );
+      toast.error('Static QR codes do not have a short link');
 
       return;
     }
 
     try {
-      const link =
-        `${window.location.origin}/q/${shortCode}`;
+      const link = `${window.location.origin}/q/${shortCode}`;
 
-      await navigator.clipboard.writeText(
-        link
-      );
+      await navigator.clipboard.writeText(link);
 
-      toast.success(
-        'Short link copied'
-      );
+      toast.success('Short link copied');
     } catch {
-      toast.error(
-        'Unable to copy short link'
-      );
+      toast.error('Unable to copy short link');
     }
   };
 
@@ -577,14 +453,72 @@ export function QrEditForm({
   const handleBack = () => {
     if (
       hasChanges &&
-      !window.confirm(
-        'You have unsaved changes. Leave without saving?'
-      )
+      !window.confirm('You have unsaved changes. Leave without saving?')
     ) {
       return;
     }
 
     router.back();
+  };
+
+  const validateContent = (): boolean => {
+    if (!name.trim()) {
+      toast.error('Please give your QR code a name');
+
+      return false;
+    }
+
+    const requiredFields =
+      typeDef?.fields.filter((field) => field.required) || [];
+
+    for (const field of requiredFields) {
+      const value = payload[field.key];
+
+      if (typeof value !== 'string' || !value.trim()) {
+        toast.error(`${field.label} is required`);
+
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (currentStep === 'content') {
+      if (!validateContent()) {
+        return;
+      }
+
+      setCurrentStep('advanced');
+
+      return;
+    }
+
+    if (currentStep === 'advanced') {
+      setCurrentStep('branding');
+
+      return;
+    }
+  };
+
+  const handleBottomBack = () => {
+    if (currentStep === 'branding') {
+      setCurrentStep('advanced');
+
+      return;
+    }
+
+    if (currentStep === 'advanced') {
+      setCurrentStep('content');
+
+      return;
+    }
   };
 
   /* -------------------------------------------------------------------------- */
@@ -608,13 +542,9 @@ export function QrEditForm({
               onClick={handleBack}
               className="h-9 w-9 shrink-0 rounded-lg"
             >
-              <span className="text-lg">
-                ←
-              </span>
+              <span className="text-lg">←</span>
 
-              <span className="sr-only">
-                Go back
-              </span>
+              <span className="sr-only">Go back</span>
             </Button>
 
             <div className="min-w-0">
@@ -632,25 +562,17 @@ export function QrEditForm({
               </div>
 
               <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="truncate">
-                  {qr.name}
-                </span>
+                <span className="truncate">{qr.name}</span>
 
                 <span>·</span>
 
                 <span className="capitalize">
-                  {String(type).replace(
-                    '_',
-                    ' '
-                  )}
+                  {String(type).replace('_', ' ')}
                 </span>
 
                 <span>·</span>
 
-                <span>
-                  {qr.scanCount || 0}{' '}
-                  scans
-                </span>
+                <span>{qr.scanCount || 0} scans</span>
               </div>
             </div>
           </div>
@@ -661,14 +583,8 @@ export function QrEditForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={
-                handleToggleStatus
-              }
-              disabled={
-                loading ||
-                duplicating ||
-                isDeleting
-              }
+              onClick={handleToggleStatus}
+              disabled={loading || duplicating || isDeleting}
               className="hidden sm:inline-flex"
             >
               {status === 'active' ? (
@@ -688,14 +604,8 @@ export function QrEditForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={
-                handleDuplicate
-              }
-              disabled={
-                loading ||
-                duplicating ||
-                isDeleting
-              }
+              onClick={handleDuplicate}
+              disabled={loading || duplicating || isDeleting}
             >
               {duplicating ? (
                 <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
@@ -703,30 +613,20 @@ export function QrEditForm({
                 <Copy className="h-4 w-4 sm:mr-2" />
               )}
 
-              <span className="hidden sm:inline">
-                Duplicate
-              </span>
+              <span className="hidden sm:inline">Duplicate</span>
             </Button>
 
             {/* Delete */}
             <Dialog
-              open={
-                isDeleteDialogOpen
-              }
-              onOpenChange={
-                setIsDeleteDialogOpen
-              }
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}
             >
               <DialogTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={
-                    loading ||
-                    duplicating ||
-                    isDeleting
-                  }
+                  disabled={loading || duplicating || isDeleting}
                   className="hidden text-destructive hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive sm:inline-flex"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -736,16 +636,11 @@ export function QrEditForm({
 
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>
-                    Delete this QR code?
-                  </DialogTitle>
+                  <DialogTitle>Delete this QR code?</DialogTitle>
 
                   <DialogDescription>
-                    This action cannot be
-                    undone. The QR code will
-                    be permanently removed and
-                    its traffic redirects will
-                    stop.
+                    This action cannot be undone. The QR code will be
+                    permanently removed and its traffic redirects will stop.
                   </DialogDescription>
                 </DialogHeader>
 
@@ -754,9 +649,7 @@ export function QrEditForm({
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={
-                        isDeleting
-                      }
+                      disabled={isDeleting}
                     >
                       Cancel
                     </Button>
@@ -765,16 +658,10 @@ export function QrEditForm({
                   <Button
                     type="button"
                     variant="destructive"
-                    disabled={
-                      isDeleting
-                    }
-                    onClick={
-                      handleConfirmDelete
-                    }
+                    disabled={isDeleting}
+                    onClick={handleConfirmDelete}
                   >
-                    {isDeleting
-                      ? 'Deleting…'
-                      : 'Delete QR Code'}
+                    {isDeleting ? 'Deleting…' : 'Delete QR Code'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -783,12 +670,7 @@ export function QrEditForm({
             <Button
               type="button"
               onClick={handleSave}
-              disabled={
-                loading ||
-                duplicating ||
-                isDeleting ||
-                !hasChanges
-              }
+              disabled={loading || duplicating || isDeleting || !hasChanges}
               className="min-w-[90px]"
             >
               {loading ? (
@@ -826,15 +708,12 @@ export function QrEditForm({
                   : 'rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600'
               }
             >
-              {status === 'active'
-                ? 'Active'
-                : 'Paused'}
+              {status === 'active' ? 'Active' : 'Paused'}
             </span>
           </div>
 
           <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
-            Update your QR content,
-            organization, advanced settings and
+            Update your QR content, organization, advanced settings and
             appearance.
           </p>
         </div>
@@ -848,120 +727,150 @@ export function QrEditForm({
           {/* LEFT                                                               */}
           {/* ================================================================ */}
 
+          <QrCreateSteps
+            currentStep={currentStep}
+            onStepChange={setCurrentStep}
+          />
+
+          {currentStep === 'content' && (
+            <div className="space-y-6">
+              <QrTypeSelector type={type} onTypeChange={handleTypeChange} />
+
+              <QrContentSection
+                typeDef={typeDef}
+                name={name}
+                payload={payload}
+                isDynamic={isDynamic}
+                onNameChange={setName}
+                onFieldChange={handleFieldChange}
+                onDynamicChange={setIsDynamic}
+              />
+
+              <QrOrganizationSection
+                folders={folders}
+                tags={tags}
+                folderId={folderId}
+                selectedTags={selectedTags}
+                onFolderChange={setFolderId}
+                onTagToggle={handleTagToggle}
+              />
+            </div>
+          )}
+
+          {currentStep === 'advanced' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold">Advanced settings</h2>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Configure expiry, short codes and additional QR behavior.
+                </p>
+              </div>
+
+              <QrAdvancedSection
+                typeDef={typeDef}
+                payload={payload}
+                onFieldChange={handleFieldChange}
+                expiresAt={expiresAt ?? undefined}
+                onExpiryChange={setExpiresAt}
+                shortCode={shortCode}
+                onShortCodeChange={setShortCode}
+                suggestedShortCode={shortCode}
+                variant={variant}
+                onVariantChange={setVariant}
+                testName={testName}
+                onTestNameChange={setTestName}
+              />
+            </div>
+          )}
+
+          {currentStep === 'branding' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold">Branding</h2>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Customize the appearance of your QR code.
+                </p>
+              </div>
+              <QrBrandingSection style={style} onStyleChange={setStyle} />
+            </div>
+          )}
+
+          <div className="mt-8 flex items-center justify-between border-t border-border/70 pt-5">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={currentStep === 'content' || loading}
+              onClick={handleBottomBack}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+
+            <Button
+              type={currentStep === 'branding' ? 'submit' : 'button'}
+              onClick={currentStep !== 'branding' ? handleNext : undefined}
+              disabled={loading}
+            >
+              {currentStep !== 'branding' ? (
+                <>
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              ) : loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Update QR Code…
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Save changes
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* -------------------------------------------------------------- */}
+          {/* Mobile create button                                            */}
+          {/* -------------------------------------------------------------- */}
+
+          <div className="mt-4 lg:hidden">
+            {currentStep === 'branding' && (
+              <div className="mt-4 lg:hidden">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-12 w-full font-semibold"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div className="min-w-0 space-y-6">
-            {/* -------------------------------------------------------------- */}
-            {/* 1. QR TYPE                                                       */}
-            {/* -------------------------------------------------------------- */}
-
-            <QrTypeSelector
-              type={type}
-              onTypeChange={
-                handleTypeChange
-              }
-            />
-
-            {/* -------------------------------------------------------------- */}
-            {/* 2. CONTENT                                                       */}
-            {/* -------------------------------------------------------------- */}
-
-            <QrContentSection
-              typeDef={typeDef}
-              name={name}
-              payload={payload}
-              isDynamic={isDynamic}
-              onNameChange={
-                setName
-              }
-              onFieldChange={
-                handleFieldChange
-              }
-              onDynamicChange={
-                setIsDynamic
-              }
-            />
-
-            {/* -------------------------------------------------------------- */}
-            {/* 3. ORGANIZATION                                                  */}
-            {/* -------------------------------------------------------------- */}
-
-            <QrOrganizationSection
-              folders={folders}
-              tags={tags}
-              folderId={folderId}
-              selectedTags={
-                selectedTags
-              }
-              onFolderChange={
-                setFolderId
-              }
-              onTagToggle={
-                handleTagToggle
-              }
-            />
-
-            {/* -------------------------------------------------------------- */}
-            {/* 4. ADVANCED                                                      */}
-            {/* -------------------------------------------------------------- */}
-
-            <QrAdvancedSection
-              typeDef={typeDef}
-              payload={payload}
-              onFieldChange={
-                handleFieldChange
-              }
-              expiresAt={
-                expiresAt ?? undefined
-              }
-              onExpiryChange={
-                setExpiresAt
-              }
-              shortCode={
-                shortCode
-              }
-              onShortCodeChange={
-                setShortCode
-              }
-              suggestedShortCode={
-                shortCode
-              }
-              variant={variant}
-              onVariantChange={
-                setVariant
-              }
-              testName={testName}
-              onTestNameChange={
-                setTestName
-              }
-            />
-
-            {/* -------------------------------------------------------------- */}
-            {/* 5. BRANDING                                                      */}
-            {/* -------------------------------------------------------------- */}
-
-            <QrBrandingSection
-              style={style}
-              onStyleChange={
-                setStyle
-              }
-            />
-
-            {/* -------------------------------------------------------------- */}
-            {/* Mobile status action                                             */}
-            {/* -------------------------------------------------------------- */}
-
             <Card className="border-border/70 shadow-sm sm:hidden">
               <CardContent className="p-4">
                 <Button
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={
-                    handleToggleStatus
-                  }
+                  onClick={handleToggleStatus}
                   disabled={loading}
                 >
-                  {status ===
-                  'active' ? (
+                  {status === 'active' ? (
                     <>
                       <Pause className="mr-2 h-4 w-4" />
                       Pause QR Code
@@ -987,9 +896,7 @@ export function QrEditForm({
               <CardHeader className="border-b border-border/60 bg-muted/[0.12] pb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-base">
-                      Live preview
-                    </CardTitle>
+                    <CardTitle className="text-base">Live preview</CardTitle>
 
                     <CardDescription className="mt-1">
                       Changes appear instantly.
@@ -1003,9 +910,7 @@ export function QrEditForm({
                         : 'rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold text-amber-600'
                     }
                   >
-                    {status === 'active'
-                      ? 'Active'
-                      : 'Paused'}
+                    {status === 'active' ? 'Active' : 'Paused'}
                   </span>
                 </div>
               </CardHeader>
@@ -1015,39 +920,27 @@ export function QrEditForm({
                 <div className="flex min-h-[390px] items-center justify-center bg-muted/[0.12] p-6">
                   <div className="w-full max-w-[300px] rounded-2xl border border-border/70 bg-background p-5 shadow-sm">
                     <div
-                      ref={
-                        canvasWrapperRef
-                      }
+                      ref={canvasWrapperRef}
                       className="flex min-h-[275px] items-center justify-center rounded-xl bg-white p-5"
                     >
                       <QRPreview
                         type={type}
-                        payload={
-                          payload
-                        }
-                        isDynamic={
-                          isDynamic
-                        }
-                        shortLinkUrl={
-                          shortLinkUrl
-                        }
+                        payload={payload}
+                        isDynamic={isDynamic}
+                        shortLinkUrl={shortLinkUrl}
                         style={style}
                       />
                     </div>
 
                     <div className="mt-4 text-center">
                       <p className="truncate text-sm font-semibold">
-                        {name.trim() ||
-                          'Untitled QR Code'}
+                        {name.trim() || 'Untitled QR Code'}
                       </p>
 
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {typeDef?.label ||
-                          type}
+                        {typeDef?.label || type}
                         {' · '}
-                        {isDynamic
-                          ? 'Dynamic'
-                          : 'Static'}
+                        {isDynamic ? 'Dynamic' : 'Static'}
                       </p>
                     </div>
                   </div>
@@ -1056,93 +949,57 @@ export function QrEditForm({
                 {/* Download actions */}
                 <div className="grid grid-cols-2 gap-2 border-t border-border/60 p-4">
                   <QrPngDownload
-                    canvasWrapperRef={
-                      canvasWrapperRef
-                    }
+                    canvasWrapperRef={canvasWrapperRef}
                     name={name}
                   />
 
                   <QrPdfDownload
-                    canvasWrapperRef={
-                      canvasWrapperRef
-                    }
+                    canvasWrapperRef={canvasWrapperRef}
                     name={name}
-                    typeLabel={
-                      typeDef?.label ??
-                      type
-                    }
-                    scanCount={
-                      qr.scanCount
-                    }
-                    isDynamic={
-                      isDynamic
-                    }
+                    typeLabel={typeDef?.label ?? type}
+                    scanCount={qr.scanCount}
+                    isDynamic={isDynamic}
                     shortLinkUrl={
-                      isDynamic &&
-                      shortCode
-                        ? shortLinkUrl
-                        : undefined
+                      isDynamic && shortCode ? shortLinkUrl : undefined
                     }
                   />
                 </div>
 
                 {/* Short URL */}
-                {isMounted &&
-                  isDynamic &&
-                  shortCode && (
-                    <div className="border-t border-border/60 p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-xs font-semibold">
-                          Short link
-                        </span>
+                {isMounted && isDynamic && shortCode && (
+                  <div className="border-t border-border/60 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold">Short link</span>
 
-                        <span className="text-[10px] text-emerald-600">
-                          Live
-                        </span>
-                      </div>
-
-                      <div className="rounded-xl border border-border/70 bg-muted/[0.2] p-3">
-                        <p className="truncate font-mono text-xs text-muted-foreground">
-                          {shortLinkUrl.replace(
-                            /^https?:\/\//,
-                            ''
-                          )}
-                        </p>
-                      </div>
-
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={
-                            handleCopyLink
-                          }
-                        >
-                          <Copy className="mr-1.5 h-3.5 w-3.5" />
-                          Copy
-                        </Button>
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <a
-                            href={
-                              shortLinkUrl
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                            Open
-                          </a>
-                        </Button>
-                      </div>
+                      <span className="text-[10px] text-emerald-600">Live</span>
                     </div>
-                  )}
+
+                    <div className="rounded-xl border border-border/70 bg-muted/[0.2] p-3">
+                      <p className="truncate font-mono text-xs text-muted-foreground">
+                        {shortLinkUrl.replace(/^https?:\/\//, '')}
+                      </p>
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyLink}
+                      >
+                        <Copy className="mr-1.5 h-3.5 w-3.5" />
+                        Copy
+                      </Button>
+
+                      <Button type="button" variant="outline" size="sm" asChild>
+                        <a href={shortLinkUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                          Open
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Stats */}
                 <div className="border-t border-border/60 p-4">
@@ -1153,8 +1010,7 @@ export function QrEditForm({
                       </p>
 
                       <p className="mt-1 text-lg font-bold">
-                        {qr.scanCount ||
-                          0}
+                        {qr.scanCount || 0}
                       </p>
                     </div>
 
@@ -1198,9 +1054,7 @@ export function QrEditForm({
             type="button"
             variant="outline"
             className="h-11"
-            onClick={
-              handleToggleStatus
-            }
+            onClick={handleToggleStatus}
             disabled={loading}
           >
             {status === 'active' ? (
@@ -1214,10 +1068,7 @@ export function QrEditForm({
             type="button"
             className="h-11 flex-1"
             onClick={handleSave}
-            disabled={
-              loading ||
-              !hasChanges
-            }
+            disabled={loading || !hasChanges}
           >
             {loading ? (
               <>
