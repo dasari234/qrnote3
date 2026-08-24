@@ -453,85 +453,66 @@ export function QrCreateForm({
 
 
 
-            <div className="mt-8 flex items-center justify-between border-t border-border/70 pt-5">
-<Button
-                type="button"
-                variant="outline"
-                disabled={
-                  currentStep ===
-                    'content' ||
-                  loading
-                }
-                onClick={
-                  handleBack
-                }
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
+        <div className="mt-8 flex items-center justify-between border-t border-border/70 pt-5">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={currentStep === 'content' || loading}
+            onClick={handleBack}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
 
-              {currentStep !==
-              'branding' ? (
-                <Button
-                  type="button"
-                  onClick={
-                    handleNext
-                  }
-                  disabled={
-                    loading
-                  }
-                >
-                  Continue
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={
-                    loading
-                  }
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating QR Code…
-                    </>
-                  ) : (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Create QR Code
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+          <Button
+            type={currentStep === 'branding' ? 'submit' : 'button'}
+            onClick={currentStep !== 'branding' ? handleNext : undefined}
+            disabled={loading}
+          >
+            {currentStep !== 'branding' ? (
+              <>
+                Continue
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            ) : loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating QR Code…
+              </>
+            ) : (
+              <>
+                <Check className="mr-2 h-4 w-4" />
+                Create QR Code
+              </>
+            )}
+          </Button>
+        </div>
 
             {/* -------------------------------------------------------------- */}
             {/* Mobile create button                                            */}
             {/* -------------------------------------------------------------- */}
 
             <div className="mt-4 lg:hidden">
-              {currentStep ===
-                'branding' && (
-                <Button
-                  type="submit"
-                  disabled={
-                    loading
-                  }
-                  className="h-12 w-full font-semibold"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating QR Code…
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Create QR Code
-                    </>
-                  )}
-                </Button>
+              {currentStep === 'branding' && (
+                <div className="mt-4 lg:hidden">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="h-12 w-full font-semibold"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating QR Code…
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Create QR Code
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           </main>
