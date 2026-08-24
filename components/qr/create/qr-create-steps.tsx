@@ -1,10 +1,10 @@
 'use client';
 
 import {
-    Check,
-    Palette,
-    Settings2,
-    Sparkles,
+  Check,
+  Palette,
+  Settings2,
+  Sparkles,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -62,40 +62,32 @@ export function QrCreateSteps({
         {STEPS.map(
           (step, index) => {
             const Icon = step.icon;
-
-            const active =
-              step.id ===
-              currentStep;
-
-            const completed =
-              index < currentIndex;
-
-            const clickable =
-              index <=
-              currentIndex;
+            const active = step.id === currentStep;
+            const completed = index < currentIndex;
+            const clickable = index <= currentIndex;
 
             return (
               <button
                 key={step.id}
                 type="button"
                 disabled={!clickable}
-                onClick={() =>
-                  clickable &&
-                  onStepChange(
-                    step.id
-                  )
-                }
+                onClick={(e) => {
+                  // CRITICAL FIX: Stops the click event from bubbling up to the form
+                  e.stopPropagation();
+
+                  if (clickable) {
+                    onStepChange(step.id);
+                  }
+                }}
                 className={cn(
                   'relative flex min-h-[76px] items-center gap-3 px-3 py-3 text-left transition-colors sm:px-5',
                   active
                     ? 'bg-primary/[0.06]'
                     : 'hover:bg-muted/40',
-                  !clickable &&
-                    'cursor-default'
+                  !clickable && 'cursor-default'
                 )}
               >
                 {/* Step number / icon */}
-
                 <span
                   className={cn(
                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
@@ -122,8 +114,7 @@ export function QrCreateSteps({
                         : 'text-muted-foreground'
                     )}
                   >
-                    {step.number}.{' '}
-                    {step.label}
+                    {step.number}. {step.label}
                   </span>
 
                   <span className="hidden text-xs text-muted-foreground sm:block">
@@ -132,7 +123,6 @@ export function QrCreateSteps({
                 </span>
 
                 {/* Active indicator */}
-
                 {active && (
                   <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />
                 )}
