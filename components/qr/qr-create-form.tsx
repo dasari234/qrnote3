@@ -195,7 +195,8 @@ export function QrCreateForm({
       return true;
   };
 
-  const handleNext = () => {
+const handleNext = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (
       currentStep ===
       'content'
