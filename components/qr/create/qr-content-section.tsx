@@ -76,6 +76,7 @@ export function QrContentSection({
               id="name"
               value={name}
               placeholder="e.g. Summer Campaign"
+              required
               onChange={(event) =>
                 onNameChange(
                   event.target.value
