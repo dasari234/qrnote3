@@ -193,9 +193,9 @@ export function QrCreateForm({
       }
 
       return true;
-    };
+  };
 
-    const handleNext = () => {
+  const handleNext = () => {
     if (
       currentStep ===
       'content'
@@ -339,9 +339,17 @@ export function QrCreateForm({
     }
   };
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    // If the user hits enter inside a standard text input field, block the auto-submit
+    if (event.key === 'Enter' && (event.target as HTMLElement).tagName === 'INPUT') {
+      event.preventDefault();
+    }
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
+      onKeyDown={handleKeyDown}
       className="min-h-screen bg-background"
     >
       <QrCreateHeader
