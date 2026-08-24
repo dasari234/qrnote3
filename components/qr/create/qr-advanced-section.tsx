@@ -3,16 +3,11 @@
 import { QrFormFieldsExtended } from '@/components/qr/qr-form-fields-extended';
 
 import {
-    Card,
-    CardContent,
+  Card,
+  CardContent,
 } from '@/components/ui/card';
 
-import {
-    ChevronDown,
-    Settings2,
-} from 'lucide-react';
 
-import { useState } from 'react';
 
 interface Props {
   typeDef: any;
@@ -60,44 +55,10 @@ export function QrAdvancedSection({
   testName,
   onTestNameChange,
 }: Props) {
-  const [open, setOpen] =
-    useState(false);
 
   return (
     <section>
       <Card className="overflow-hidden border-border/70 shadow-sm">
-        <button
-          type="button"
-          onClick={() =>
-            setOpen((previous) => !previous)
-          }
-          className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-muted/30"
-          aria-expanded={open}
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-              <Settings2 className="h-4 w-4" />
-            </div>
-
-            <div>
-              <h2 className="text-sm font-semibold">
-                Advanced settings
-              </h2>
-
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Expiration, custom URL and A/B testing
-              </p>
-            </div>
-          </div>
-
-          <ChevronDown
-            className={`h-4 w-4 text-muted-foreground transition-transform ${
-              open ? 'rotate-180' : ''
-            }`}
-          />
-        </button>
-
-        {open && (
           <CardContent className="border-t border-border/70 p-5">
             <QrFormFieldsExtended
               typeDef={typeDef}
@@ -122,7 +83,6 @@ export function QrAdvancedSection({
               }
             />
           </CardContent>
-        )}
       </Card>
     </section>
   );
