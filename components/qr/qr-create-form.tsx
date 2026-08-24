@@ -196,7 +196,11 @@ export function QrCreateForm({
   };
 
 const handleNext = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (
       currentStep ===
       'content'
@@ -254,6 +258,13 @@ const handleNext = (e?: React.MouseEvent) => {
     event: React.SyntheticEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
+    if (currentStep !== 'branding') {
+      console.warn("Form submit blocked: User is not on the final branding step.");
+      return;
+    }
+
+    console.log("Form submission triggered by element:", event.nativeEvent.target);
 
     if (loading) {
       return;
