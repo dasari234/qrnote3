@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { QrStyleEditor } from '@/components/qr/qr-style-editor';
 
 import {
@@ -9,7 +7,14 @@ import {
   CardContent,
 } from '@/components/ui/card';
 
+import {
+  ChevronDown,
+  Palette,
+} from 'lucide-react';
+
 import { QRStyle } from '@/lib/types';
+
+import { useState } from 'react';
 
 interface Props {
   style: QRStyle;
@@ -22,68 +27,52 @@ export function QrBrandingSection({
   style,
   onStyleChange,
 }: Props) {
-  const [draftStyle, setDraftStyle] =
-    useState<QRStyle>(style);
-
-  /*
-   * Sync draft when the parent style changes.
-   *
-   * Important:
-   * This does NOT call onStyleChange().
-   */
-  useEffect(() => {
-    setDraftStyle(style);
-  }, [style]);
-
-  const handleDraftChange = (
-    nextStyle: QRStyle
-  ) => {
-    setDraftStyle(nextStyle);
-  };
-
-  const handleApply = () => {
-    onStyleChange(draftStyle);
-  };
-
-  const handleReset = () => {
-    setDraftStyle(style);
-  };
-
-  const hasChanges =
-    JSON.stringify(draftStyle) !==
-    JSON.stringify(style);
+  const [open, setOpen] =
+    useState(false);
 
   return (
     <section>
       <Card className="overflow-hidden border-border/70 shadow-sm">
-        <CardContent className="p-5">
-          <QrStyleEditor
-            style={draftStyle}
-            onChange={
-              handleDraftChange
-            }
-          />
+        <button
+          type="button"
+          onClick={() =>
+            setOpen((previous) => !previous)
+          }
+          className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-muted/30"
+          aria-expanded={open}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <Palette className="h-4 w-4" />
+            </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-border/70 pt-5">
-            <button
-              type="button"
-              onClick={handleReset}
-              disabled={!hasChanges}
-              className="rounded-md border border-border px-4 py-2 text-sm font-medium transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
-            >
-              Reset
-            </button>
+            <div>
+              <h2 className="text-sm font-semibold">
+                Branding & appearance
+              </h2>
 
-            <button
-              type="button"
-              onClick={handleApply}
-              disabled={!hasChanges}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-            >
-              Apply branding
-            </button>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Customize colors, templates and QR
+                appearance
+              </p>
+            </div>
           </div>
-        </CardContent>
+
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform ${
+              open ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+
+        {open && (
+          <CardContent className="border-t border-border/70 p-5">
+            <QrStyleEditor
+              style={style}
+              onChange={onStyleChange}
+            />
+          </CardContent>
+        )}
       </Card>
     </section>
   );
