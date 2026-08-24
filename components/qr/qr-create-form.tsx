@@ -356,6 +356,7 @@ const handleNext = (e?: React.MouseEvent) => {
       <QrCreateHeader
         loading={loading}
         onBack={() => router.back()}
+        currentStep={currentStep}
       />
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

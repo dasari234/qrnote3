@@ -1,21 +1,24 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { QrCreateStep } from './qr-create-steps';
 
 import {
-    ArrowLeft,
-    Loader2,
-    Save,
+  ArrowLeft,
+  Loader2,
+  Save,
 } from 'lucide-react';
 
 interface Props {
   loading: boolean;
   onBack: () => void;
+  currentStep: QrCreateStep;
 }
 
 export function QrCreateHeader({
   loading,
   onBack,
+  currentStep,
 }: Props) {
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -29,10 +32,7 @@ export function QrCreateHeader({
             className="h-9 w-9 shrink-0 rounded-lg"
           >
             <ArrowLeft className="h-4 w-4" />
-
-            <span className="sr-only">
-              Go back
-            </span>
+            <span className="sr-only">Go back</span>
           </Button>
 
           <div className="min-w-0">
@@ -40,21 +40,18 @@ export function QrCreateHeader({
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
                 Create QR Code
               </h1>
-
               <span className="hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary sm:inline-flex">
                 Builder
               </span>
             </div>
-
             <p className="hidden text-xs text-muted-foreground sm:block">
-              Create, customize and manage your QR
-              code
+              Create, customize and manage your QR code
             </p>
           </div>
         </div>
 
         <Button
-          type="submit"
+          type={currentStep === 'branding' ? 'submit' : 'button'}
           disabled={loading}
           className="min-w-[145px] shadow-sm"
         >
