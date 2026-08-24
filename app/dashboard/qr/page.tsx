@@ -162,10 +162,10 @@ export default async function QrListPage({
                       <div className='flex items-center justify-between gap-1.5'>
                       <Badge
                         variant={qr.status === 'active' ? 'default' : 'secondary'}
-                        className={`flex-shrink-0 transition-colors ${
+                        className={`flex-shrink-0 transition-colors pointer-events-none select-none ${
                           qr.status === 'active'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                            : 'bg-muted text-muted-foreground dark:bg-muted/60'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/30'
+                            : 'bg-muted text-muted-foreground hover:bg-muted dark:bg-muted/60 dark:hover:bg-muted/60'
                         }`}
                       >
                         {qr.status}
