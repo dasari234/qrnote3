@@ -98,7 +98,6 @@ export async function POST(req: Request) {
         receipt,
         status: 'open',
         userId: user?.id ?? null,
-        discount,
         // Optional: If your Prisma schema has fields for tracking fees, assign them here:
         // gatewayFee: platformFee,
         // gatewayGst: feeGst,
