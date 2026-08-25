@@ -55,10 +55,32 @@ export default function CartPage() {
       return;
     }
 
-    // 2. Fail-safe: Block checkout if the Razorpay script window class hasn't finished loading yet
+    // 1. DYNAMIC FALLBACK: If window.Razorpay doesn't exist yet, force load it immediately
     if (!(window as any).Razorpay) {
-      toast.error('Razorpay SDK loading. Please try again in a moment.');
-      return;
+      setLoading(true);
+      const loadToast = toast.loading(
+        'Initializing secure gateway connections...'
+      );
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () =>
+            reject(new Error('Razorpay CDN failed to respond.'));
+          document.body.appendChild(script);
+        });
+        toast.dismiss(loadToast);
+      } catch (err) {
+        toast.dismiss(loadToast);
+        setLoading(false);
+        toast.error(
+          'Network block detected. Please disable Ad-Blockers and try again.'
+        );
+        return;
+      }
     }
 
     setLoading(true);
