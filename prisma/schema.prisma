@@ -224,6 +224,22 @@ model Plan {
   @@schema("public")
 }
 
+model Coupon {
+  id         String    @id @default(uuid()) @db.Uuid
+  code       String    @unique
+  type       String // 'percentage' | 'fixed'
+  amount     Int // for percentage store percent (e.g., 20), for fixed store paise
+  usageLimit Int?
+  usedCount  Int       @default(0)
+  validFrom  DateTime?
+  validUntil DateTime?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  @@map("coupons")
+  @@schema("public")
+}
+
 model Order {
   id               String      @id @default(uuid()) @db.Uuid
   planId           String?     @map("plan_id") @db.Uuid
