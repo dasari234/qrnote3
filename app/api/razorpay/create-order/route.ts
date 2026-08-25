@@ -92,13 +92,12 @@ export async function POST(req: Request) {
     const receipt = `rcpt_${Date.now()}`;
     const dbOrder = await prisma.order.create({
       data: {
-        planId: lineItems[0].planId ?? null,
+        planId: lineItems[0]?.planId ?? null,
         amount: finalOrderAmount,
         currency: 'INR',
         receipt,
         status: 'open',
         userId: user?.id ?? null,
-        couponId: appliedCouponId,
         discount,
         // Optional: If your Prisma schema has fields for tracking fees, assign them here:
         // gatewayFee: platformFee,
