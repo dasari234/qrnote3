@@ -10,6 +10,13 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
+    if (!user || !user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in to complete your purchase.' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     let lineItems: Array<{ planId: string; qty: number }> = [];
     const couponCode: string | undefined = body.couponCode;
@@ -92,15 +99,14 @@ export async function POST(req: Request) {
     const receipt = `rcpt_${Date.now()}`;
     const dbOrder = await prisma.order.create({
       data: {
-        planId: lineItems[0]?.planId ?? null,
+        planId: lineItems[0].planId,
         amount: finalOrderAmount,
         currency: 'INR',
         receipt,
         status: 'open',
-        userId: user?.id ?? null,
-        // Optional: If your Prisma schema has fields for tracking fees, assign them here:
-        // gatewayFee: platformFee,
-        // gatewayGst: feeGst,
+        userId: user.id,
+        discount,
+        couponId: appliedCouponId,
       },
     });
 
