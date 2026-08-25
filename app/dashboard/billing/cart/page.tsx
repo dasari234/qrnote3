@@ -1,7 +1,7 @@
 'use client';
 
 import { useCart } from '@/components/providers/cart/CartProvider';
-import { Button } from '@/components/ui/button'; // <-- added import
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -10,7 +10,7 @@ function loadRazorpayScript(): Promise<void> {
     if (typeof window === 'undefined') return reject('window undefined');
     if ((window as any).Razorpay) return resolve();
     const s = document.createElement('script');
-    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.src = 'https://razorpay.com';
     s.onload = () => resolve();
     s.onerror = () => reject('failed to load razorpay');
     document.body.appendChild(s);
@@ -44,6 +44,23 @@ export default function CartPage() {
     }
   }
 
+  // Calculate totals (All internal math stays in paise)
+  const subtotal = total();
+  const discount = appliedDiscount || 0;
+  const amountBeforeFees = subtotal - discount;
+
+  // Razorpay Fee: 2% of the total after discount
+  const razorpayPlatformFee = Math.round(amountBeforeFees * 0.02);
+
+  // GST: 18% on top of the Razorpay Platform Fee
+  const razorpayGst = Math.round(razorpayPlatformFee * 0.18);
+
+  // Combined Payment Gateway handling surcharge
+  const totalGatewayCharges = razorpayPlatformFee + razorpayGst;
+
+  // Final amount that the customer will pay at checkout
+  const finalPayableAmount = amountBeforeFees + totalGatewayCharges;
+
   async function checkout() {
     if (items.length === 0) {
       toast.error('Cart is empty');
@@ -51,12 +68,14 @@ export default function CartPage() {
     }
     setLoading(true);
     try {
+      // Pass the updated finalPayableAmount to your order creation API
       const resp = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map((i) => ({ planId: i.id, qty: i.qty })),
           couponCode: coupon || undefined,
+          customTotal: finalPayableAmount, // Ensure your backend uses this amount for razorpay order creation
         }),
       });
 
@@ -107,11 +126,6 @@ export default function CartPage() {
       setLoading(false);
     }
   }
-
-  // Calculate totals
-  const subtotal = total(); // in paise
-  const discount = appliedDiscount || 0;
-  const totalAfterDiscount = subtotal - discount;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -212,12 +226,25 @@ export default function CartPage() {
                   <span>Shipping</span>
                   <span>₹0.00</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
-                  <span>Total</span>
-                  <span>₹{(totalAfterDiscount / 100).toFixed(2)}</span>
+
+                {/* Separated Razorpay Fee UI Component */}
+                <div className="flex justify-between text-sm text-gray-600 border-t pt-2 mt-1">
+                  <span>Gateway Fee (2%)</span>
+                  <span>₹{(razorpayPlatformFee / 100).toFixed(2)}</span>
                 </div>
 
-                {/* Button container — now with proper wrapping and full width */}
+                {/* Separated GST UI Component */}
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>GST on Gateway Fee (18%)</span>
+                  <span>₹{(razorpayGst / 100).toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
+                  <span>Total Payable</span>
+                  <span>₹{(finalPayableAmount / 100).toFixed(2)}</span>
+                </div>
+
+                {/* Button container */}
                 <div className="flex flex-col gap-2 mt-4">
                   <Button variant="outline" onClick={clear} className="w-full">
                     Clear Cart
