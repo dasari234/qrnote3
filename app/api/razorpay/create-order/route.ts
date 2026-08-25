@@ -10,17 +10,14 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
+    // 1. Guard check: Require user session before continuing
     if (!user || !user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in to complete your purchase.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
     let lineItems: Array<{ planId: string; qty: number }> = [];
     const couponCode: string | undefined = body.couponCode;
-    // 1. Capture the custom calculated total from the frontend
     const customTotal: number | undefined = body.customTotal;
 
     if (body.planId) {
@@ -32,6 +29,10 @@ export async function POST(req: Request) {
       }));
     } else {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    if (lineItems.length === 0) {
+      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
     const planIds = lineItems.map((li) => li.planId);
@@ -82,35 +83,33 @@ export async function POST(req: Request) {
       appliedCouponId = coupon.id;
     }
 
-    // 2. Base pricing logic validation
     const standardAmountAfterDiscount = Math.max(0, rawAmount - discount);
 
-    // 3. Fall back to standard logic if frontend customTotal parameter is absent
-    let platformFee = 0;
-    let feeGst = 0;
     let finalOrderAmount = standardAmountAfterDiscount;
-
     if (customTotal && customTotal > 0) {
       finalOrderAmount = customTotal;
-      platformFee = Math.round(standardAmountAfterDiscount * 0.02);
-      feeGst = Math.round(platformFee * 0.18);
     }
 
     const receipt = `rcpt_${Date.now()}`;
+
+    // 2. Safe parsing of planId from lineItems array index
+    const assignedPlanId = lineItems[0]?.planId || null;
+
+    // 3. Create database entry matching Profile requirements
     const dbOrder = await prisma.order.create({
       data: {
-        planId: lineItems[0].planId,
+        planId: assignedPlanId,
         amount: finalOrderAmount,
         currency: 'INR',
         receipt,
         status: 'open',
-        userId: user.id,
+        userId: user.id, // Direct assignment of verified user UUID string
         discount,
         couponId: appliedCouponId,
       },
     });
 
-    // increment coupon useCount if applied
+    // Increment coupon useCount if applied
     if (appliedCouponId) {
       await prisma.coupon.update({
         where: { id: appliedCouponId },
@@ -118,7 +117,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. Create Razorpay order with type-safe true parameter mapping
+    // Create Razorpay order
     const rzpOrder = await razorpay.orders.create({
       amount: finalOrderAmount,
       currency: 'INR',
