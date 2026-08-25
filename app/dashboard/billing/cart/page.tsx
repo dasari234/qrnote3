@@ -4,18 +4,8 @@ import { useCart } from '@/components/providers/cart/CartProvider';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
-
-function loadRazorpayScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined') return reject('window undefined');
-    if ((window as any).Razorpay) return resolve();
-    const s = document.createElement('script');
-    s.src = 'https://razorpay.com';
-    s.onload = () => resolve();
-    s.onerror = () => reject('failed to load razorpay');
-    document.body.appendChild(s);
-  });
-}
+// 1. Import Next.js native script injection handler
+import Script from 'next/script';
 
 export default function CartPage() {
   const { items, remove, clear, total } = useCart();
@@ -66,16 +56,22 @@ export default function CartPage() {
       toast.error('Cart is empty');
       return;
     }
+
+    // 2. Fail-safe: Block checkout if the Razorpay script window class hasn't finished loading yet
+    if (!(window as any).Razorpay) {
+      toast.error('Razorpay SDK loading. Please try again in a moment.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Pass the updated finalPayableAmount to your order creation API
       const resp = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map((i) => ({ planId: i.id, qty: i.qty })),
           couponCode: coupon || undefined,
-          customTotal: finalPayableAmount, // Ensure your backend uses this amount for razorpay order creation
+          customTotal: finalPayableAmount,
         }),
       });
 
@@ -85,8 +81,6 @@ export default function CartPage() {
         setLoading(false);
         return;
       }
-
-      await loadRazorpayScript();
 
       const options: any = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -227,13 +221,11 @@ export default function CartPage() {
                   <span>₹0.00</span>
                 </div>
 
-                {/* Separated Razorpay Fee UI Component */}
                 <div className="flex justify-between text-sm text-gray-600 border-t pt-2 mt-1">
                   <span>Gateway Fee (2%)</span>
                   <span>₹{(razorpayPlatformFee / 100).toFixed(2)}</span>
                 </div>
 
-                {/* Separated GST UI Component */}
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>GST on Gateway Fee (18%)</span>
                   <span>₹{(razorpayGst / 100).toFixed(2)}</span>
@@ -254,33 +246,7 @@ export default function CartPage() {
                     disabled={loading}
                     className="w-full whitespace-normal"
                   >
-                    {loading ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                          />
-                        </svg>
-                        Processing…
-                      </>
-                    ) : (
-                      'Proceed to Checkout'
-                    )}
+                    {loading ? 'Processing…' : 'Proceed to Checkout'}
                   </Button>
                 </div>
               </div>
@@ -288,6 +254,12 @@ export default function CartPage() {
           </div>
         </>
       )}
+
+      {/* 3. Safe, optimized native script attachment */}
+      <Script
+        src="https://razorpay.com"
+        strategy="beforeInteractive"
+      />
     </div>
   );
 }

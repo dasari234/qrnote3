@@ -1,7 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// FIXED: Export name must be exactly 'middleware'
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
