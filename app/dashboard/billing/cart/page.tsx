@@ -4,8 +4,6 @@ import { useCart } from '@/components/providers/cart/CartProvider';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
-// 1. Import Next.js native script injection handler
-import Script from 'next/script';
 
 export default function CartPage() {
   const { items, remove, clear, total } = useCart();
@@ -254,12 +252,6 @@ export default function CartPage() {
           </div>
         </>
       )}
-
-      {/* 3. Safe, optimized native script attachment */}
-      <Script
-        src="https://razorpay.com"
-        strategy="beforeInteractive"
-      />
     </div>
   );
 }
