@@ -13,9 +13,6 @@ export default function BillingClient({ plans }: BillingClientProps) {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Billing
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Stripe subscription integration arrives in Phase 4.
-        </p>
       </div>
 
       {/* Auto-centered and responsive grid alignment layout */}
