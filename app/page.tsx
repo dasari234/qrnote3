@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { prisma } from '@/lib/prisma';
 import {
   ArrowRight,
   BarChart3,
@@ -13,7 +14,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const plans = await prisma.plan.findMany({ orderBy: { price: 'asc' } });
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
@@ -174,37 +177,41 @@ export default function LandingPage() {
             <p className="mt-4 text-muted-foreground">Start free. Upgrade when you grow.</p>
           </div>
 
-          <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              { name: 'Free', price: '$0', features: ['5 dynamic QRs', '100 scans/mo', '1 workspace'] },
-              { name: 'Starter', price: '$19', features: ['100 dynamic QRs', '5K scans/mo', 'Custom branding'] },
-              { name: 'Pro', price: '$49', features: ['1,000 QRs', '50K scans/mo', 'Team collaboration'], highlight: true },
-              { name: 'Business', price: '$149', features: ['Unlimited QRs', '500K scans/mo', 'API access'] },
-            ].map((plan) => (
+          <div className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-6">
+            {plans?.map((plan: any) => (
               <Card
-                key={plan.name}
-                className={plan.highlight ? 'border-2 border-primary shadow-lg' : ''}
+                key={plan.id}
+                className="w-full sm:w-[300px] lg:w-[240px]"
               >
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold">{plan.name}</h3>
-                  <div className="mt-2 text-3xl font-bold">
-                    {plan.price}
-                    <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                <CardContent className="flex h-full flex-col justify-between p-6">
+                  <div>
+                    <h3 className="text-lg font-semibold">{plan.name}</h3>
+
+                    <div className="mt-2 flex items-baseline text-3xl font-bold">
+                      ₹{(plan.price / 100).toFixed(2)}
+                      <span className="ml-1 text-sm font-normal text-muted-foreground">
+                        /mo
+                      </span>
+                    </div>
+
+                    {plan.description && (
+                      <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                        {plan.description}
+                      </p>
+                    )}
+
+                    <ul className="mt-4 space-y-2">
+                      {plan?.features?.map((f: string) => (
+                        <li key={f} className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 shrink-0 text-green-600" />
+                          <span className="leading-tight">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="mt-4 space-y-2">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-green-600" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className="mt-6 w-full"
-                    variant={plan.highlight ? 'default' : 'outline'}
-                    asChild
-                  >
-                    <Link href="/sign-up">Get started</Link>
+
+                  <Button className="mt-6 w-full" variant="outline" asChild>
+                    <Link href="/dashboard/billing">Buy</Link>
                   </Button>
                 </CardContent>
               </Card>
