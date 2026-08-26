@@ -1,6 +1,6 @@
 'use client';
 
-import { useCart } from '@/components/providers/cart/CartProvider';
+import { useCart } from '@/components/providers/cart/cart-provider';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
