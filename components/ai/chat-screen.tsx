@@ -12,15 +12,13 @@ import ReactMarkdown from 'react-markdown';
 export default function ChatScreen() {
   const { provider } = useChatApp();
 
-  // 1. Local input message state state
+  // 1. Manage the chat text field state locally
   const [input, setInput] = useState('');
 
-  // 2. Correct parameter configuration using 'api'
-  const { messages, append, status } = useChat({
-    api: '/api/chat',
-  });
+  // 2. FIX: Omit the parameters entirely. It automatically defaults to '/api/chat'
+  const { messages, sendMessage, status } = useChat();
 
-  // 3. Status flag processing
+  // 3. Compute execution tracking state flags safely
   const isLoading = status === 'submitted' || status === 'streaming';
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -31,24 +29,19 @@ export default function ChatScreen() {
     }
   }, [messages]);
 
-  // 4. Multi-provider execution submission block
+  // 4. Form handling pipeline matching v5.0 body property standards
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const messageText = input;
-    setInput('');
+    setInput(''); // Optimistic UI clear
 
-    // Use 'append' instead of 'sendMessage' to retain standard API endpoint mappings
-    await append(
+    // Trigger the transport execution pipeline
+    await sendMessage(
+      { text: messageText },
       {
-        role: 'user',
-        content: messageText,
-      },
-      {
-        options: {
-          body: { provider }, // Seamlessly routes provider options straight down to your API payload
-        },
+        body: { provider }, // Maps criteria directly to your POST req.json() parsing layers
       }
     );
   };
@@ -85,8 +78,15 @@ export default function ChatScreen() {
                     : 'bg-muted border'
                 }`}
               >
-                {/* FIX: Change m.content to m.text to match the UIMessage type definitions */}
-                <ReactMarkdown>{m.text}</ReactMarkdown>
+                {m.parts.map((part, index) => {
+                  if (part.type === 'text') {
+                    return (
+                      <ReactMarkdown key={index}>{part.text}</ReactMarkdown>
+                    );
+                  }
+
+                  return null;
+                })}
               </div>
 
               {m.role === 'user' && (
