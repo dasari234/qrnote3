@@ -2,7 +2,7 @@ import ChatShell from '@/components/ai/chat/chat-shell';
 import { AiChatProvider } from '@/context/ai-chat-context';
 import { prisma } from '@/lib/prisma';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation'; // Added for safe unauthorized handling
+import { redirect } from 'next/navigation';
 
 async function getAuthenticatedUserId(): Promise<string> {
   const supabase = await createServerSupabaseClient();
