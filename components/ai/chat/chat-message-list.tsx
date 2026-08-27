@@ -7,7 +7,12 @@ import { useChat } from "@ai-sdk/react";
 
 import ChatMessage from "./chat-message";
 
-export default function ChatMessageList() {
+interface ChatComposerProps {
+  conversationId: string | null;
+  initialMessages?: any[];
+}
+
+export default function ChatMessageList({ conversationId, initialMessages }: ChatComposerProps) {
   const { messages, status } = useChat();
 
   const bottomRef =

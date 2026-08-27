@@ -39,7 +39,7 @@ export const AI_MODELS: AIModelDefinition[] = [
   },
 ];
 
-export const DEFAULT_MODEL = "openai-gpt-4o";
+export const DEFAULT_MODEL = "openai-gpt-5";
 
 export function getAIModel(
   modelId: string,

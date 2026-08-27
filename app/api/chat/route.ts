@@ -5,6 +5,7 @@ import { resolveAIModel } from '@/lib/ai/router';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 interface ChatRequestBody {
+  conversationId?: string;
   modelId?: string;
   messages?: UIMessage[];
 }

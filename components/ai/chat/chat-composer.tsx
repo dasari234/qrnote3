@@ -1,32 +1,28 @@
-"use client";
+'use client';
 
-import { Paperclip, Send } from "lucide-react";
-import { useState } from "react";
+import { Paperclip, Send } from 'lucide-react';
+import { useState } from 'react';
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
-import { useChatApp } from "@/context/ai-chat-context";
-import { useChat } from "@ai-sdk/react";
+import { useChatApp } from '@/context/ai-chat-context';
+import { useChat } from '@ai-sdk/react';
 
-export default function ChatComposer() {
+interface ChatComposerProps {
+  conversationId: string | null;
+}
+
+export default function ChatComposer({ conversationId }: ChatComposerProps) {
   const { modelId } = useChatApp();
 
-  const [input, setInput] =
-    useState("");
+  const [input, setInput] = useState('');
 
-  const {
-    sendMessage,
-    status,
-  } = useChat();
+  const { sendMessage, status } = useChat();
 
-  const isLoading =
-    status === "submitted" ||
-    status === "streaming";
+  const isLoading = status === 'submitted' || status === 'streaming';
 
-  async function submit(
-    event: React.FormEvent,
-  ) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
 
     const text = input.trim();
@@ -35,7 +31,7 @@ export default function ChatComposer() {
       return;
     }
 
-    setInput("");
+    setInput('');
 
     await sendMessage(
       {
@@ -44,28 +40,21 @@ export default function ChatComposer() {
       {
         body: {
           modelId,
+          conversationId,
         },
-      },
+      }
     );
   }
 
   return (
     <div className="border-t bg-background">
-      <form
-        onSubmit={submit}
-        className="mx-auto w-full max-w-4xl p-4"
-      >
+      <form onSubmit={submit} className="mx-auto w-full max-w-4xl p-4">
         <div className="relative rounded-2xl border bg-background shadow-sm">
           <Textarea
             value={input}
-            onChange={(event) =>
-              setInput(event.target.value)
-            }
+            onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey
-              ) {
+              if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
 
                 if (!isLoading) {
@@ -95,9 +84,7 @@ export default function ChatComposer() {
               type="submit"
               size="icon"
               disabled={
-                isLoading ||
-                !input.trim() ||
-                !modelId
+                isLoading || !input.trim() || !modelId || !conversationId
               }
             >
               <Send className="h-4 w-4" />

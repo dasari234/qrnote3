@@ -15,14 +15,15 @@ datasource db {
 }
 
 model Profile {
-  id    String   @id @db.Uuid
-  email     String   @unique
-  fullName  String?  @map("full_name")
-  avatarUrl String?  @map("avatar_url")
+  id           String   @id @db.Uuid
+  email        String   @unique
+  fullName     String?  @map("full_name")
+  avatarUrl    String?  @map("avatar_url")
   isSuperAdmin Boolean  @default(false) @map("is_super_admin")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
-  orders Order[]
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  orders       Order[]
+
   @@map("profiles")
   @@schema("public")
 }
@@ -51,7 +52,7 @@ model OrganizationMember {
   role      Role     @default(editor)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, userId])
   @@map("organization_members")
@@ -68,14 +69,14 @@ enum Role {
 }
 
 model OrgInvite {
-  id        String    @id @default(uuid()) @db.Uuid
-  orgId     String    @map("org_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
   email     String
-  role      Role      @default(editor)
-  token     String    @unique
-  accepted  Boolean   @default(false)
-  expiresAt DateTime  @map("expires_at") @db.Timestamptz
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  role      Role     @default(editor)
+  token     String   @unique
+  accepted  Boolean  @default(false)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
@@ -140,16 +141,16 @@ model QrCode {
   scanCount      Int      @default(0) @map("scan_count")
 
   // New fields for expiry
-  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
 
   // New fields for A/B testing
-  variant        String?  // "A" or "B" or null for non-test QR codes
-  testName       String?  @map("test_name")
-  testId         String?  @map("test_id")
+  variant  String? // "A" or "B" or null for non-test QR codes
+  testName String? @map("test_name")
+  testId   String? @map("test_id")
 
-  tags           Tag[]    @relation("QrCodeTags")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  tags      Tag[]    @relation("QrCodeTags")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
 
   workspace Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   folder    Folder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
@@ -209,16 +210,16 @@ enum OrderStatus {
 }
 
 model Plan {
-  id         String   @id @default(uuid()) @db.Uuid
-  name       String
-  price      Int      // price in paise (e.g., ₹100 => 10000)
-  currency   String   @default("INR")
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  price       Int // price in paise (e.g., ₹100 => 10000)
+  currency    String    @default("INR")
   description String?
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
 
-  orders     Order[]
+  orders Order[]
 
   @@map("plans")
   @@schema("public")
@@ -237,47 +238,80 @@ model Coupon {
   createdAt  DateTime  @default(now())
 
   // Add this line to map the reverse relation lookup link
-  orders     Order[]
+  orders Order[]
 
   @@map("coupons")
   @@schema("public")
 }
 
 model Order {
-  id               String      @id @default(uuid()) @db.Uuid
-  planId           String?     @map("plan_id") @db.Uuid
-  plan             Plan?       @relation(fields: [planId], references: [id], onDelete: SetNull)
-  userId           String?     @map("user_id") @db.Uuid
-  user             Profile?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  razorpayOrderId  String?     @unique @map("razorpay_order_id")
-  amount           Int
-  currency         String      @default("INR")
-  receipt          String?
-  status           OrderStatus @default(open)
-  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt        DateTime    @default(now()) @map("updated_at") @db.Timestamptz
+  id              String      @id @default(uuid()) @db.Uuid
+  planId          String?     @map("plan_id") @db.Uuid
+  plan            Plan?       @relation(fields: [planId], references: [id], onDelete: SetNull)
+  userId          String?     @map("user_id") @db.Uuid
+  user            Profile?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  razorpayOrderId String?     @unique @map("razorpay_order_id")
+  amount          Int
+  currency        String      @default("INR")
+  receipt         String?
+  status          OrderStatus @default(open)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime    @default(now()) @map("updated_at") @db.Timestamptz
 
   // Add these three fields to track the discount transaction properties
-  discount         Int         @default(0)
-  couponId         String?     @map("coupon_id") @db.Uuid
-  coupon           Coupon?     @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  discount Int     @default(0)
+  couponId String? @map("coupon_id") @db.Uuid
+  coupon   Coupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
 
-  payments         Payment[]
+  payments Payment[]
 
   @@map("orders")
   @@schema("public")
 }
 
 model Payment {
-  id                 String   @id @default(uuid()) @db.Uuid
-  orderId            String   @map("order_id") @db.Uuid
-  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  razorpayPaymentId  String   @unique @map("razorpay_payment_id")
-  razorpaySignature  String?  @map("razorpay_signature")
-  status             String
-  method             String?
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id                String   @id @default(uuid()) @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  razorpayPaymentId String   @unique @map("razorpay_payment_id")
+  razorpaySignature String?  @map("razorpay_signature")
+  status            String
+  method            String?
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@map("payments")
+  @@schema("public")
+}
+
+model AiConversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @default("New chat")
+  modelId   String?  @map("model_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  messages AiMessage[]
+
+  @@index([userId, updatedAt])
+  @@index([userId, createdAt])
+  @@map("ai_conversations")
+  @@schema("public")
+}
+
+model AiMessage {
+  id             String   @id
+  conversationId String   @map("conversation_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  role           String
+  parts          Json
+  modelId        String?  @map("model_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("ai_messages")
   @@schema("public")
 }
