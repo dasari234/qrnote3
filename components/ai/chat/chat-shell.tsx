@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
-import ChatComposer from "./chat-composer";
-import ChatHeader from "./chat-header";
-import ChatMessageList from "./chat-message-list";
-import ChatSidebar from "./chat-sidebar";
+import ChatComposer from './chat-composer';
+import ChatHeader from './chat-header';
+import ChatMessageList from './chat-message-list';
+import ChatSidebar from './chat-sidebar';
 
 export interface ChatConversation {
   id: string;
@@ -24,22 +24,13 @@ export default function ChatShell({
   initialConversations,
   initialConversationId,
 }: ChatShellProps) {
-  const [
-    conversations,
-    setConversations,
-  ] = useState(initialConversations);
+  const [conversations, setConversations] = useState(initialConversations);
 
-  const [
-    conversationId,
-    setConversationId,
-  ] = useState(
-    initialConversationId ?? null,
+  const [conversationId, setConversationId] = useState(
+    initialConversationId ?? null
   );
 
-  const [
-    sidebarOpen,
-    setSidebarOpen,
-  ] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
@@ -49,20 +40,13 @@ export default function ChatShell({
           selectedId={conversationId}
           onSelect={setConversationId}
           onCreate={(conversation) => {
-            setConversations((current) => [
-              conversation,
-              ...current,
-            ]);
+            setConversations((current) => [conversation, ...current]);
 
-            setConversationId(
-              conversation.id,
-            );
+            setConversationId(conversation.id);
           }}
           onDelete={(id) => {
             setConversations((current) =>
-              current.filter(
-                (item) => item.id !== id,
-              ),
+              current.filter((item) => item.id !== id)
             );
 
             if (conversationId === id) {
@@ -73,20 +57,27 @@ export default function ChatShell({
       )}
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <ChatHeader
-          onToggleSidebar={() =>
-            setSidebarOpen(
-              (value) => !value,
-            )
-          }
-        />
+        <ChatHeader onToggleSidebar={() => setSidebarOpen((value) => !value)} />
 
-        <ChatMessageList
-          conversationId={conversationId}
-        />
+        <ChatMessageList conversationId={conversationId} />
 
         <ChatComposer
           conversationId={conversationId}
+          onConversationCreated={(conversation: any) => {
+            setConversations((current) => {
+              const exists = current.some(
+                (item) => item.id === conversation.id
+              );
+
+              if (exists) {
+                return current;
+              }
+
+              return [conversation, ...current];
+            });
+
+            setConversationId(conversation.id);
+          }}
         />
       </section>
     </div>

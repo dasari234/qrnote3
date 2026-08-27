@@ -11,6 +11,7 @@ import { useChat } from '@ai-sdk/react';
 
 interface ChatComposerProps {
   conversationId: string | null;
+  onConversationCreated?: (conversation: any) => void;
 }
 
 export default function ChatComposer({ conversationId }: ChatComposerProps) {
@@ -49,7 +50,7 @@ export default function ChatComposer({ conversationId }: ChatComposerProps) {
   return (
     <div className="border-t bg-background">
       <form onSubmit={submit} className="mx-auto w-full max-w-4xl p-4">
-        <div className="relative rounded-2xl border bg-background shadow-sm">
+        <div className="flex flex-col rounded-2xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring">
           <Textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -64,31 +65,33 @@ export default function ChatComposer({ conversationId }: ChatComposerProps) {
             }}
             placeholder="Message AI..."
             disabled={isLoading}
-            className="min-h-[70px] resize-none border-0 pr-24 focus-visible:ring-0"
+            className="min-h-[70px] resize-none border-0 focus-visible:ring-0 shadow-none"
           />
 
-          <div className="absolute bottom-3 left-3">
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              disabled
-              title="File upload coming in Sprint 7"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-          </div>
+          <div className="flex items-center justify-between p-3 pt-0">
+            <div>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                disabled
+                title="File upload coming in Sprint 7"
+                className="h-8 w-8"
+              >
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
 
-          <div className="absolute bottom-3 right-3">
-            <Button
-              type="submit"
-              size="icon"
-              disabled={
-                isLoading || !input.trim() || !modelId || !conversationId
-              }
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            <div>
+              <Button
+                type="submit"
+                size="icon"
+                className="h-8 w-8"
+                disabled={isLoading || !input.trim() || !modelId}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
