@@ -1,44 +1,93 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import type { UIMessage } from "ai";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { useEffect, useRef, useState } from "react";
 
 import ChatComposer from "./chat-composer";
 import ChatMessageList from "./chat-message-list";
 
-interface Props {
+interface ChatConversation {
+  id: string;
+  title: string;
+  modelId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ChatWorkspaceProps {
   conversationId: string | null;
+
+  onConversationCreated?: (
+    conversation: ChatConversation,
+  ) => void;
 }
 
 export default function ChatWorkspace({
   conversationId,
-}: Props) {
-  const [messages, setMessages] =
-    useState<UIMessage[]>([]);
-
+  onConversationCreated,
+}: ChatWorkspaceProps) {
   const [loading, setLoading] =
     useState(false);
 
+  /*
+   * When the first prompt creates a conversation,
+   * the parent changes conversationId.
+   *
+   * We must NOT immediately reload the conversation
+   * from the database because the AI response may
+   * still be streaming in memory.
+   */
+  const skipNextLoadRef =
+    useRef(false);
+
+  const {
+    messages,
+    sendMessage,
+    setMessages,
+    status,
+    error,
+  } = useChat({
+    transport:
+      new DefaultChatTransport({
+        api: "/api/chat",
+      }),
+  });
+
+  /*
+   * Load persisted messages whenever the
+   * selected conversation changes.
+   */
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function loadConversation() {
+      /*
+       * New/empty chat.
+       */
       if (!conversationId) {
         setMessages([]);
+        return;
+      }
+
+      /*
+       * First prompt created this conversation.
+       * Keep the in-memory useChat messages.
+       */
+      if (skipNextLoadRef.current) {
+        skipNextLoadRef.current = false;
         return;
       }
 
       setLoading(true);
 
       try {
-        const response =
-          await fetch(
-            `/api/conversations/${conversationId}`,
-            {
-              cache: "no-store",
-            },
-          );
+        const response = await fetch(
+          `/api/conversations/${conversationId}`,
+          {
+            cache: "no-store",
+          },
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -49,21 +98,27 @@ export default function ChatWorkspace({
         const data =
           await response.json();
 
+        const persistedMessages: UIMessage[] =
+          (
+            data.conversation
+              ?.messages ?? []
+          ).map(
+            (message: UIMessage) => ({
+              id: message.id,
+              role: message.role,
+              parts: message.parts,
+            }),
+          );
+
         if (!cancelled) {
           setMessages(
-            data.conversation.messages.map(
-              (message: any) => ({
-                id: message.id,
-                role: message.role,
-                parts: message.parts,
-              }),
-            ),
+            persistedMessages,
           );
         }
-      } catch (error) {
+      } catch (loadError) {
         console.error(
           "Failed to load conversation:",
-          error,
+          loadError,
         );
 
         if (!cancelled) {
@@ -76,47 +131,52 @@ export default function ChatWorkspace({
       }
     }
 
-    load();
+    void loadConversation();
 
     return () => {
       cancelled = true;
     };
-  }, [conversationId]);
+  }, [conversationId, setMessages]);
 
-  if (!conversationId) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">
-            Start a new chat
-          </h2>
+  function handleConversationCreated(
+    conversation: ChatConversation,
+  ) {
+    /*
+     * The composer has already submitted the first
+     * message into this useChat instance.
+     *
+     * Keep those messages instead of fetching the
+     * database immediately.
+     */
+    skipNextLoadRef.current = true;
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            Select New chat to begin.
-          </p>
-        </div>
-      </div>
+    onConversationCreated?.(
+      conversation,
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-        Loading conversation...
-      </div>
-    );
-  }
+  const showLoading =
+    loading && messages.length === 0;
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <ChatMessageList
-        initialMessages={messages}
-        conversationId={conversationId}
+        messages={messages}
+        status={status}
+        loading={showLoading}
+        error={error}
       />
 
       <ChatComposer
-        conversationId={conversationId}
+        conversationId={
+          conversationId
+        }
+        sendMessage={sendMessage}
+        status={status}
+        onConversationCreated={
+          handleConversationCreated
+        }
       />
-    </>
+    </div>
   );
 }

@@ -1,11 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
-import ChatComposer from './chat-composer';
-import ChatHeader from './chat-header';
-import ChatMessageList from './chat-message-list';
-import ChatSidebar from './chat-sidebar';
+import ChatHeader from "./chat-header";
+import ChatSidebar from "./chat-sidebar";
+import ChatWorkspace from "./chat-workspace";
 
 export interface ChatConversation {
   id: string;
@@ -24,60 +23,131 @@ export default function ChatShell({
   initialConversations,
   initialConversationId,
 }: ChatShellProps) {
-  const [conversations, setConversations] = useState(initialConversations);
-
-  const [conversationId, setConversationId] = useState(
-    initialConversationId ?? null
+  const [
+    conversations,
+    setConversations,
+  ] = useState(
+    initialConversations,
   );
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [
+    conversationId,
+    setConversationId,
+  ] = useState<string | null>(
+    initialConversationId ?? null,
+  );
+
+  const [
+    sidebarOpen,
+    setSidebarOpen,
+  ] = useState(true);
+
+  function handleConversationCreated(
+    conversation: ChatConversation,
+  ) {
+    setConversations(
+      (current) => {
+        const exists =
+          current.some(
+            (item) =>
+              item.id ===
+              conversation.id,
+          );
+
+        if (exists) {
+          return current;
+        }
+
+        return [
+          conversation,
+          ...current,
+        ];
+      },
+    );
+
+    setConversationId(
+      conversation.id,
+    );
+  }
+
+  function handleConversationDelete(
+    id: string,
+  ) {
+    setConversations(
+      (current) =>
+        current.filter(
+          (item) =>
+            item.id !== id,
+        ),
+    );
+
+    if (conversationId === id) {
+      setConversationId(null);
+    }
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {sidebarOpen && (
         <ChatSidebar
-          conversations={conversations}
-          selectedId={conversationId}
-          onSelect={setConversationId}
-          onCreate={(conversation) => {
-            setConversations((current) => [conversation, ...current]);
+          conversations={
+            conversations
+          }
+          selectedId={
+            conversationId
+          }
+          onSelect={
+            setConversationId
+          }
+          onCreate={(
+            conversation,
+          ) => {
+            setConversations(
+              (current) => {
+                const exists =
+                  current.some(
+                    (item) =>
+                      item.id ===
+                      conversation.id,
+                  );
 
-            setConversationId(conversation.id);
-          }}
-          onDelete={(id) => {
-            setConversations((current) =>
-              current.filter((item) => item.id !== id)
+                if (exists) {
+                  return current;
+                }
+
+                return [
+                  conversation,
+                  ...current,
+                ];
+              },
             );
 
-            if (conversationId === id) {
-              setConversationId(null);
-            }
+            setConversationId(
+              conversation.id,
+            );
           }}
+          onDelete={
+            handleConversationDelete
+          }
         />
       )}
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <ChatHeader onToggleSidebar={() => setSidebarOpen((value) => !value)} />
+        <ChatHeader
+          onToggleSidebar={() =>
+            setSidebarOpen(
+              (value) => !value,
+            )
+          }
+        />
 
-        <ChatMessageList conversationId={conversationId} />
-
-        <ChatComposer
-          conversationId={conversationId}
-          onConversationCreated={(conversation: ChatConversation) => {
-            setConversations((current) => {
-              const exists = current.some(
-                (item) => item.id === conversation.id
-              );
-
-              if (exists) {
-                return current;
-              }
-
-              return [conversation, ...current];
-            });
-
-            setConversationId(conversation.id);
-          }}
+        <ChatWorkspace
+          conversationId={
+            conversationId
+          }
+          onConversationCreated={
+            handleConversationCreated
+          }
         />
       </section>
     </div>
