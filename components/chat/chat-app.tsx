@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Bot, Menu, Plus, Send, Sparkles, User, X } from 'lucide-react';
 
-import { AI_MODELS, DEFAULT_MODEL } from '@/lib/ai/models';
+import { AI_MODELS, DEFAULT_MODEL, getAIModel } from '@/lib/ai/models';
+import { AIModelDefinition } from '@/lib/ai/types';
 
 interface Message {
   id: string;
@@ -12,12 +13,21 @@ interface Message {
   content: string;
 }
 
+interface AIModel {
+  id: string;
+  provider: string;
+  name: string;
+  description: string;
+}
+
 export default function ChatApp() {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [input, setInput] = useState('');
 
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
+const [selectedModel, setSelectedModel] = useState<AIModelDefinition>(
+  getAIModel(DEFAULT_MODEL) || AI_MODELS[0]
+);
 
   const [loading, setLoading] = useState(false);
 
@@ -244,10 +254,8 @@ export default function ChatApp() {
             >
               <Menu size={20} />
             </button>
-
             <div>
               <h1 className="font-semibold">{selectedModel.name}</h1>
-
               <p className="text-xs text-gray-500">
                 {selectedModel.description}
               </p>
@@ -255,16 +263,14 @@ export default function ChatApp() {
           </div>
 
           {/* Model selector */}
-
           <select
             value={selectedModel.id}
             onChange={(event) => {
               const model = AI_MODELS.find(
                 (item) => item.id === event.target.value
               );
-
               if (model) {
-                setSelectedModel(model);
+                setSelectedModel(model as AIModelDefinition);
               }
             }}
             className="
