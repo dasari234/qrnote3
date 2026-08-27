@@ -14,7 +14,10 @@ interface ChatComposerProps {
   onConversationCreated?: (conversation: any) => void;
 }
 
-export default function ChatComposer({ conversationId }: ChatComposerProps) {
+export default function ChatComposer({
+  conversationId,
+  onConversationCreated,
+}: ChatComposerProps) {
   const { modelId } = useChatApp();
 
   const [input, setInput] = useState('');
@@ -28,23 +31,54 @@ export default function ChatComposer({ conversationId }: ChatComposerProps) {
 
     const text = input.trim();
 
-    if (!text || isLoading) {
+    if (!text || isLoading || !modelId) {
       return;
     }
 
-    setInput('');
+    try {
+      let activeConversationId = conversationId;
 
-    await sendMessage(
-      {
-        text,
-      },
-      {
-        body: {
-          modelId,
-          conversationId,
-        },
+      // First prompt in a new chat:
+      // create the conversation only now.
+      if (!activeConversationId) {
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create conversation');
+        }
+
+        const data = await response.json();
+
+        activeConversationId = data.conversation.id;
+
+        // Tell ChatShell about the newly-created chat.
+        onConversationCreated?.(data.conversation);
       }
-    );
+
+      setInput('');
+
+      await sendMessage(
+        {
+          text,
+        },
+        {
+          body: {
+            modelId,
+            conversationId: activeConversationId,
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Failed to submit message:', error);
+
+      // Restore prompt if something failed.
+      setInput(text);
+    }
   }
 
   return (

@@ -63,7 +63,7 @@ export default function ChatShell({
 
         <ChatComposer
           conversationId={conversationId}
-          onConversationCreated={(conversation: any) => {
+          onConversationCreated={(conversation: ChatConversation) => {
             setConversations((current) => {
               const exists = current.some(
                 (item) => item.id === conversation.id
