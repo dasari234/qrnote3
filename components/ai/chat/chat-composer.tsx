@@ -1,16 +1,13 @@
-"use client";
+'use client';
 
-import type { ChatStatus } from "ai";
-import {
-  Paperclip,
-  Send,
-} from "lucide-react";
-import { useState } from "react";
+import type { ChatStatus } from 'ai';
+import { Paperclip, Send } from 'lucide-react';
+import { useState } from 'react';
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
-import { useChatApp } from "@/context/ai-chat-context";
+import { useChatApp } from '@/context/ai-chat-context';
 
 interface ChatConversation {
   id: string;
@@ -28,18 +25,13 @@ interface ChatComposerProps {
       text: string;
     },
     options?: {
-      body?: Record<
-        string,
-        unknown
-      >;
-    },
+      body?: Record<string, unknown>;
+    }
   ) => Promise<unknown>;
 
   status: ChatStatus;
 
-  onConversationCreated?: (
-    conversation: ChatConversation,
-  ) => void;
+  onConversationCreated?: (conversation: ChatConversation) => void;
 }
 
 export default function ChatComposer({
@@ -48,62 +40,39 @@ export default function ChatComposer({
   status,
   onConversationCreated,
 }: ChatComposerProps) {
-  const { modelId } =
-    useChatApp();
+  const { modelId } = useChatApp();
 
-  const [input, setInput] =
-    useState("");
+  const [input, setInput] = useState('');
 
-  const isLoading =
-    status === "submitted" ||
-    status === "streaming";
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   async function createConversation() {
-    const response =
-      await fetch(
-        "/api/conversations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-        },
-      );
+    const response = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
     if (!response.ok) {
-      throw new Error(
-        "Failed to create conversation.",
-      );
+      throw new Error('Failed to create conversation.');
     }
 
-    const data =
-      await response.json();
+    const data = await response.json();
 
-    if (
-      !data.conversation?.id
-    ) {
-      throw new Error(
-        "Invalid conversation response.",
-      );
+    if (!data.conversation?.id) {
+      throw new Error('Invalid conversation response.');
     }
 
     return data.conversation as ChatConversation;
   }
 
-  async function submit(
-    event: React.FormEvent,
-  ) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
 
-    const text =
-      input.trim();
+    const text = input.trim();
 
-    if (
-      !text ||
-      isLoading ||
-      !modelId
-    ) {
+    if (!text || isLoading || !modelId) {
       return;
     }
 
@@ -111,11 +80,10 @@ export default function ChatComposer({
      * Clear immediately so Enter cannot submit
      * the same message twice.
      */
-    setInput("");
+    setInput('');
 
     try {
-      let activeConversationId =
-        conversationId;
+      let activeConversationId = conversationId;
 
       /*
        * IMPORTANT:
@@ -126,15 +94,11 @@ export default function ChatComposer({
        * The first prompt creates it here.
        */
       if (!activeConversationId) {
-        const conversation =
-          await createConversation();
+        const conversation = await createConversation();
 
-        activeConversationId =
-          conversation.id;
+        activeConversationId = conversation.id;
 
-        onConversationCreated?.(
-          conversation,
-        );
+        onConversationCreated?.(conversation);
       }
 
       /*
@@ -148,16 +112,12 @@ export default function ChatComposer({
         {
           body: {
             modelId,
-            conversationId:
-              activeConversationId,
+            conversationId: activeConversationId,
           },
-        },
+        }
       );
     } catch (error) {
-      console.error(
-        "Failed to submit message:",
-        error,
-      );
+      console.error('Failed to submit message:', error);
 
       /*
        * Restore prompt if creation or
@@ -169,29 +129,16 @@ export default function ChatComposer({
 
   return (
     <div className="border-t bg-background">
-      <form
-        onSubmit={submit}
-        className="mx-auto w-full max-w-4xl p-4"
-      >
-        <div className="flex flex-col rounded-2xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring">
+      <form onSubmit={submit} className="mx-auto w-full max-w-4xl p-4">
+        <div className="flex flex-col rounded-2xl border border-input bg-background shadow-sm p-1 focus-within:ring-1 focus-within:ring-ring">
           <Textarea
             value={input}
-            onChange={(event) =>
-              setInput(
-                event.target.value,
-              )
-            }
+            onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey
-              ) {
+              if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
 
-                if (
-                  isLoading ||
-                  !input.trim()
-                ) {
+                if (isLoading || !input.trim()) {
                   return;
                 }
 
@@ -203,37 +150,35 @@ export default function ChatComposer({
             className="min-h-[70px] resize-none border-0 shadow-none focus-visible:ring-0"
           />
 
-          <div className="flex items-center justify-between p-3 pt-0">
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              disabled
-              title="File upload coming in Sprint 7"
-              className="h-8 w-8"
-            >
-              <Paperclip className="h-4 w-4 text-muted-foreground" />
-            </Button>
+          <div className="flex items-center justify-between p-2 pt-0">
+            <div>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                disabled
+                title="File upload coming in Sprint 7"
+                className="h-8 w-8"
+              >
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </div>
 
-            <Button
-              type="submit"
-              size="icon"
-              className="h-8 w-8"
-              disabled={
-                isLoading ||
-                !input.trim() ||
-                !modelId
-              }
-              aria-label="Send message"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            <div>
+              <Button
+                type="submit"
+                size="icon"
+                className="h-8 w-8"
+                disabled={isLoading || !input.trim() || !modelId}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
         <p className="mt-2 text-center text-xs text-muted-foreground">
-          Enter to send · Shift + Enter for
-          a new line
+          Enter to send · Shift + Enter for a new line
         </p>
       </form>
     </div>
