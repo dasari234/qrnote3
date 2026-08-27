@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+
 import type { UIMessage } from "ai";
 
 export function getTextFromMessage(
@@ -88,7 +89,7 @@ export async function saveChatMessages({
       userId,
       role: message.role,
       // 2. Safely cast the complex layout array to satisfy Prisma's strict JSON type constraints
-      parts: message.parts as unknown as Prisma.InputJsonValue,
+      parts: message.parts as unknown as Prisma.JsonArray,
       modelId: message.role === "assistant" ? modelId : null,
     }));
 
