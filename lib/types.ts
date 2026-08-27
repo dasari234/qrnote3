@@ -124,3 +124,20 @@ export interface OrganizationMember {
   role: 'owner' | 'admin' | 'editor' | 'viewer';
   created_at: string;
 }
+
+export type MessageRole = "user" | "assistant";
+
+export interface ChatMessage {
+  id: string;
+  role: MessageRole;
+  content: string;
+}
+
+export interface ChatRequest {
+  provider: "openai" | "anthropic" | "google";
+  model: string;
+  messages: {
+    role: "user" | "assistant" | "system";
+    content: string;
+  }[];
+}
