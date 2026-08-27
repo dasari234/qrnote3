@@ -1,34 +1,24 @@
-import {
-  convertToModelMessages,
-  streamText,
-  type UIMessage,
-} from "ai";
+import { convertToModelMessages, streamText, type UIMessage } from 'ai';
 
-import { getAIConfig } from "@/lib/ai/config";
-import { resolveAIModel } from "@/lib/ai/router";
+import { getAIConfig } from '@/lib/ai/config';
+import { resolveAIModel } from '@/lib/ai/router';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 interface ChatRequestBody {
   modelId?: string;
   messages?: UIMessage[];
 }
 
-function isValidMessages(
-  messages: unknown,
-): messages is UIMessage[] {
+function isValidMessages(messages: unknown): messages is UIMessage[] {
   return (
     Array.isArray(messages) &&
-    messages.every(
-      (message) =>
-        typeof message === "object" &&
-        message !== null,
-    )
+    messages.every((message) => typeof message === 'object' && message !== null)
   );
 }
 
 export async function POST(req: Request) {
   try {
-    const body =
-      (await req.json()) as ChatRequestBody;
+    const body = (await req.json()) as ChatRequestBody;
 
     const modelId = body.modelId;
 
@@ -36,11 +26,11 @@ export async function POST(req: Request) {
       return Response.json(
         {
           error: {
-            code: "MODEL_REQUIRED",
-            message: "modelId is required.",
+            code: 'MODEL_REQUIRED',
+            message: 'modelId is required.',
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -48,11 +38,11 @@ export async function POST(req: Request) {
       return Response.json(
         {
           error: {
-            code: "INVALID_MESSAGES",
-            message: "Invalid messages payload.",
+            code: 'INVALID_MESSAGES',
+            message: 'Invalid messages payload.',
           },
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -60,10 +50,25 @@ export async function POST(req: Request) {
 
     const model = resolveAIModel(modelId);
 
-    const modelMessages =
-      await convertToModelMessages(
-        body.messages,
+    const supabase = await createServerSupabaseClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return Response.json(
+        {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required.',
+          },
+        },
+        { status: 401 }
       );
+    }
+
+    const modelMessages = await convertToModelMessages(body.messages);
 
     const result = streamText({
       model,
@@ -74,27 +79,25 @@ export async function POST(req: Request) {
       maxOutputTokens: config.maxTokens,
 
       onError({ error }) {
-        console.error("AI stream error:", error);
+        console.error('AI stream error:', error);
       },
     });
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
-    console.error("AI chat request failed:", error);
+    console.error('AI chat request failed:', error);
 
     const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to process AI request.";
+      error instanceof Error ? error.message : 'Unable to process AI request.';
 
     return Response.json(
       {
         error: {
-          code: "AI_REQUEST_FAILED",
+          code: 'AI_REQUEST_FAILED',
           message,
         },
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -42,7 +42,7 @@ export function AiChatProvider({
    * google-gemini-1-5-pro
    */
   const [modelId, setModelId] =
-    useState<string>("openai-gpt-4o");
+    useState<string>("openai-gpt-5");
 
   const [currentScreen, setCurrentScreen] =
     useState<ScreenType>("chat");
