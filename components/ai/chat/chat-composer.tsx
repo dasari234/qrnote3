@@ -31,15 +31,17 @@ export default function ChatComposer({
 
     const text = input.trim();
 
-    if (!text || isLoading || !modelId) {
+      if (!text || isLoading || !modelId) {
       return;
     }
+
+    // This stops subsequent Enter keystrokes from reading the same text value
+    setInput('');
 
     try {
       let activeConversationId = conversationId;
 
-      // First prompt in a new chat:
-      // create the conversation only now.
+      // First prompt in a new chat: create the conversation only now.
       if (!activeConversationId) {
         const response = await fetch('/api/conversations', {
           method: 'POST',
@@ -53,14 +55,11 @@ export default function ChatComposer({
         }
 
         const data = await response.json();
-
         activeConversationId = data.conversation.id;
 
         // Tell ChatShell about the newly-created chat.
         onConversationCreated?.(data.conversation);
       }
-
-      setInput('');
 
       await sendMessage(
         {
@@ -76,7 +75,7 @@ export default function ChatComposer({
     } catch (error) {
       console.error('Failed to submit message:', error);
 
-      // Restore prompt if something failed.
+      // Restore prompt text only if the entire submission routine fails.
       setInput(text);
     }
   }
@@ -92,9 +91,11 @@ export default function ChatComposer({
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
 
-                if (!isLoading) {
-                  event.currentTarget.form?.requestSubmit();
+                if (isLoading || !input.trim()) {
+                  return;
                 }
+
+                event.currentTarget.form?.requestSubmit();
               }
             }}
             placeholder="Message AI..."
