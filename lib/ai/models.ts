@@ -39,6 +39,8 @@ export const AI_MODELS: AIModelDefinition[] = [
   },
 ];
 
+export const DEFAULT_MODEL = "openai-gpt-4o";
+
 export function getAIModel(
   modelId: string,
 ): AIModelDefinition | undefined {
