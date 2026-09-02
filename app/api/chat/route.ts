@@ -1,13 +1,27 @@
-import { convertToModelMessages, streamText, type UIMessage } from 'ai';
+import {
+  convertToModelMessages,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from 'ai';
 
 import { getAIConfig } from '@/lib/ai/config';
+
 import { resolveAIModel } from '@/lib/ai/router';
+
+import { createAITools } from '@/lib/ai/tools';
+
+import { AI_AGENT_SYSTEM_PROMPT } from '@/lib/ai/agent';
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+
+import { prisma } from '@/lib/prisma';
 
 interface ChatRequestBody {
   conversationId?: string;
   modelId?: string;
   messages?: UIMessage[];
+  attachmentIds?: string[];
 }
 
 function isValidMessages(messages: unknown): messages is UIMessage[] {
@@ -17,9 +31,29 @@ function isValidMessages(messages: unknown): messages is UIMessage[] {
   );
 }
 
+export const runtime = 'nodejs';
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as ChatRequestBody;
+
+    const supabase = await createServerSupabaseClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return Response.json(
+        {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required.',
+          },
+        },
+        { status: 401 }
+      );
+    }
 
     const modelId = body.modelId;
 
@@ -47,55 +81,101 @@ export async function POST(req: Request) {
       );
     }
 
+    if (body.conversationId) {
+      const conversation = await prisma.aiConversation.findFirst({
+        where: {
+          id: body.conversationId,
+          userId: user.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!conversation) {
+        return Response.json(
+          {
+            error: {
+              code: 'CONVERSATION_NOT_FOUND',
+              message: 'Conversation not found.',
+            },
+          },
+          { status: 404 }
+        );
+      }
+    }
+
+    if (body.attachmentIds?.length) {
+      const attachments = await prisma.aiAttachment.findMany({
+        where: {
+          id: {
+            in: body.attachmentIds,
+          },
+          userId: user.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (attachments.length !== body.attachmentIds.length) {
+        return Response.json(
+          {
+            error: {
+              code: 'INVALID_ATTACHMENTS',
+              message: 'One or more attachments are not accessible.',
+            },
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const config = getAIConfig();
 
     const model = resolveAIModel(modelId);
 
-    const supabase = await createServerSupabaseClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return Response.json(
-        {
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Authentication required.',
-          },
-        },
-        { status: 401 }
-      );
-    }
+    const tools = createAITools({
+      userId: user.id,
+    });
 
     const modelMessages = await convertToModelMessages(body.messages);
 
     const result = streamText({
       model,
+
       messages: modelMessages,
+
+      system: AI_AGENT_SYSTEM_PROMPT,
 
       temperature: config.temperature,
 
       maxOutputTokens: config.maxTokens,
+
+      tools,
+
+      stopWhen: stepCountIs(6),
 
       onError({ error }) {
         console.error('AI stream error:', error);
       },
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+      originalMessages: body.messages,
+    });
   } catch (error) {
     console.error('AI chat request failed:', error);
-
-    const message =
-      error instanceof Error ? error.message : 'Unable to process AI request.';
 
     return Response.json(
       {
         error: {
           code: 'AI_REQUEST_FAILED',
-          message,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Unable to process AI request.',
         },
       },
       { status: 500 }

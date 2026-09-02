@@ -2,12 +2,13 @@
 
 import type { ChatStatus } from 'ai';
 import { Paperclip, Send } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 import { useChatApp } from '@/context/ai-chat-context';
+import AttachmentPreview, { ChatAttachment } from './attachment-preview';
 
 interface ChatConversation {
   id: string;
@@ -24,6 +25,14 @@ interface ChatComposerProps {
     message: {
       text: string;
     },
+    files?:
+      | {
+          type: 'file';
+          url: string;
+          mediaType: string;
+          filename: string;
+        }[]
+      | undefined,
     options?: {
       body?: Record<string, unknown>;
     }
@@ -43,6 +52,11 @@ export default function ChatComposer({
   const { modelId } = useChatApp();
 
   const [input, setInput] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
+
+  const [uploading, setUploading] = useState(false);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
@@ -109,10 +123,12 @@ export default function ChatComposer({
         {
           text,
         },
+        messageFiles.length ? messageFiles : undefined,
         {
           body: {
             modelId,
             conversationId: activeConversationId,
+            attachmentIds: attachments.map((item) => item.id),
           },
         }
       );
@@ -127,10 +143,76 @@ export default function ChatComposer({
     }
   }
 
+  async function uploadFiles(files: FileList) {
+    setUploading(true);
+
+    try {
+      const uploaded: ChatAttachment[] = [];
+
+      for (let index = 0; index < files.length; index++) {
+        const file = files.item(index);
+
+        if (!file) {
+          continue;
+        }
+
+        const formData = new FormData();
+
+        formData.append('file', file);
+
+        if (conversationId) {
+          formData.append('conversationId', conversationId);
+        }
+
+        const response = await fetch('/api/ai/files', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data?.error?.message ?? 'File upload failed.');
+        }
+
+        if (data.attachment) {
+          uploaded.push(data.attachment);
+        }
+      }
+
+      setAttachments((current) => [...current, ...uploaded]);
+    } catch (error) {
+      console.error('File upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const messageFiles = attachments
+    .filter((attachment) => attachment.url && attachment.status !== 'failed')
+    .map((attachment) => ({
+      type: 'file' as const,
+      url: attachment.url!,
+      mediaType: attachment.mimeType,
+      filename: attachment.fileName,
+    }));
+
   return (
     <div className="border-t bg-background">
       <form onSubmit={submit} className="mx-auto w-full max-w-4xl p-4">
         <div className="flex flex-col rounded-2xl border border-input bg-background shadow-sm p-1 focus-within:ring-1 focus-within:ring-ring">
+          <AttachmentPreview
+            attachments={attachments}
+            onRemove={async (id) => {
+              await fetch(`/api/ai/files/${id}`, {
+                method: 'DELETE',
+              });
+
+              setAttachments((current) =>
+                current.filter((item) => item.id !== id)
+              );
+            }}
+          />
           <Textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -152,15 +234,39 @@ export default function ChatComposer({
 
           <div className="flex items-center justify-between p-2 pt-0">
             <div>
+              <input
+                ref={fileRef}
+                type="file"
+                hidden
+                multiple
+                accept="
+    image/png,
+    image/jpeg,
+    image/webp,
+    image/gif,
+    application/pdf,
+    text/plain,
+    text/markdown,
+    text/csv,
+    application/json
+  "
+                onChange={(event) => {
+                  if (event.target.files) {
+                    void uploadFiles(event.target.files);
+                  }
+
+                  event.target.value = '';
+                }}
+              />
               <Button
                 type="button"
                 size="icon"
                 variant="ghost"
-                disabled
-                title="File upload coming in Sprint 7"
-                className="h-8 w-8"
+                disabled={isLoading || uploading}
+                onClick={() => fileRef.current?.click()}
+                title="Attach files"
               >
-                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                <Paperclip className="h-4 w-4" />
               </Button>
             </div>
 

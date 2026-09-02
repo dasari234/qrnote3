@@ -1,36 +1,32 @@
 import {
-    BuiltInAgent,
-    CopilotRuntime,
-    createCopilotRuntimeHandler,
+  BuiltInAgent,
+  CopilotRuntime,
+  createCopilotRuntimeHandler,
 } from '@copilotkit/runtime/v2';
-import { NextRequest } from 'next/server';
 
-// Initialize the v2 agent runtime abstraction engine
 const runtime = new CopilotRuntime({
   agents: {
     default: new BuiltInAgent({
-      model: 'openai/gpt-4o-mini',
+      model: 'openai:gpt-5.4-mini',
+
+      prompt: `
+      You are the QRNote Copilot.
+
+      Help users work with their
+      QRNote workspace.
+
+      Be concise and action oriented.
+      Never expose secrets or internal
+      configuration.
+      `,
     }),
   },
 });
 
-// Configure the automatic runtime REST interceptor
 const handler = createCopilotRuntimeHandler({
   runtime,
   basePath: '/api/copilotkit',
 });
 
-// Export the framework HTTP handlers cleanly
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ slug?: string[] }> }
-) {
-  return handler(req);
-}
+export { handler as DELETE, handler as GET, handler as PATCH, handler as POST };
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ slug?: string[] }> }
-) {
-  return handler(req);
-}
