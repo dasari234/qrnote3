@@ -3,20 +3,42 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
+  Bot,
   Building2,
   ChevronLeft,
   LayoutDashboard,
   ShieldAlert,
   Users,
-} from 'lucide-react';
+} from "lucide-react";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
 const adminNav = [
-  { href: '/dashboard/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { href: '/dashboard/admin/orgs', label: 'Organizations', icon: Building2, exact: false },
-  { href: '/dashboard/admin/users', label: 'Users', icon: Users, exact: false },
+  {
+    href: "/dashboard/admin",
+    label: "Overview",
+    icon: LayoutDashboard,
+    exact: true,
+  },
+  {
+    href: "/dashboard/admin/orgs",
+    label: "Organizations",
+    icon: Building2,
+    exact: false,
+  },
+  {
+    href: "/dashboard/admin/users",
+    label: "Users",
+    icon: Users,
+    exact: false,
+  },
+  {
+    href: "/dashboard/admin/ai",
+    label: "AI Administration",
+    icon: Bot,
+    exact: false,
+  },
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {
