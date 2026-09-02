@@ -1,6 +1,6 @@
 'use client';
 
-import type { ChatStatus } from 'ai';
+import type { ChatRequestOptions, ChatStatus } from 'ai';
 import { Paperclip, Send } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -25,21 +25,10 @@ interface ChatComposerProps {
     message: {
       text: string;
     },
-    files?:
-      | {
-          type: 'file';
-          url: string;
-          mediaType: string;
-          filename: string;
-        }[]
-      | undefined,
-    options?: {
-      body?: Record<string, unknown>;
-    }
+    options?: ChatRequestOptions
   ) => Promise<unknown>;
 
   status: ChatStatus;
-
   onConversationCreated?: (conversation: ChatConversation) => void;
 }
 
@@ -123,12 +112,12 @@ export default function ChatComposer({
         {
           text,
         },
-        messageFiles.length ? messageFiles : undefined,
         {
           body: {
             modelId,
             conversationId: activeConversationId,
             attachmentIds: attachments.map((item) => item.id),
+            files: messageFiles.length ? messageFiles : undefined,
           },
         }
       );
