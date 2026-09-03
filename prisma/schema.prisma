@@ -264,6 +264,7 @@ model Order {
   coupon   Coupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
 
   payments Payment[]
+  invoices Invoice[]
 
   @@map("orders")
   @@schema("public")
@@ -279,7 +280,67 @@ model Payment {
   method            String?
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
 
+  // Dynamic relation field added automatically by Prisma:
+  refunds Refund[]
+
   @@map("payments")
+  @@schema("public")
+}
+
+model Refund {
+  id               String   @id @default(uuid()) @db.Uuid
+  paymentId        String   @map("payment_id") @db.Uuid
+  payment          Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  razorpayRefundId String   @unique @map("razorpay_refund_id")
+  amount           Int
+  reason           String?
+  status           String   @default("created")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("refunds")
+  @@schema("public")
+}
+
+model WebhookEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventType String   @map("event_type")
+  payload   Json
+  processed Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("webhook_events")
+  @@schema("public")
+}
+
+model Subscription {
+  id                     String   @id @default(uuid()) @db.Uuid
+  userId                 String?  @map("user_id") @db.Uuid // Adapt or connect to Profile if needed
+  razorpaySubscriptionId String   @unique @map("razorpay_subscription_id")
+  status                 String
+  currentPeriodStart     DateTime @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd       DateTime @map("current_period_end") @db.Timestamptz
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("subscriptions")
+  @@schema("public")
+}
+
+model Invoice {
+  id                String   @id @default(uuid()) @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount            Int
+  currency          String   @default("INR")
+  razorpayInvoiceId String?  @map("razorpay_invoice_id")
+  sent              Boolean  @default(false)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("invoices")
   @@schema("public")
 }
 

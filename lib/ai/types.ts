@@ -1,6 +1,6 @@
-export type AIProviderId = "openai" | "anthropic" | "google";
+export type AIProviderId = 'openai' | 'anthropic' | 'google';
 
-export type AIExecutionMode = "direct" | "gateway";
+export type AIExecutionMode = 'direct' | 'gateway';
 
 export interface AIModelDefinition {
   id: string;
@@ -10,6 +10,8 @@ export interface AIModelDefinition {
   description?: string;
   gatewayModel: string;
   enabled: boolean;
+  supportsTemperature: boolean;
+  supportsVision: boolean;
 }
 
 export interface AIChatRequest {

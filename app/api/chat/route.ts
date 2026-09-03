@@ -35,10 +35,6 @@ function supportsTemperature(modelId: string): boolean {
     return false;
   }
 
-  /**
-   * GPT-5 / GPT-5-mini reasoning models don't accept
-   * custom temperature values.
-   */
   if (model.provider === 'openai' && /^gpt-5(?:-|$)/i.test(model.model)) {
     return false;
   }
@@ -185,15 +181,10 @@ export async function POST(req: Request) {
      */
     const streamOptions: Parameters<typeof streamText>[0] = {
       model,
-
       messages: modelMessages,
-
       system: AI_AGENT_SYSTEM_PROMPT,
-
       maxOutputTokens: config.maxTokens,
-
       tools,
-
       stopWhen: stepCountIs(6),
 
       onError({ error }) {
@@ -201,7 +192,7 @@ export async function POST(req: Request) {
       },
     };
 
-    if (supportsTemperature(modelId)) {
+    if (modelDefinition.supportsTemperature) {
       streamOptions.temperature = config.temperature;
     }
 
@@ -218,9 +209,7 @@ export async function POST(req: Request) {
 
     const result = streamText(streamOptions);
 
-    return result.toUIMessageStreamResponse({
-      originalMessages: body.messages,
-    });
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('AI chat request failed:', error);
 
