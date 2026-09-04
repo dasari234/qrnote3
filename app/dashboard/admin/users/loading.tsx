@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { RecentQrShimmer } from '../shimmer/recent-qr-shimmer';
-
+import { RecentQrShimmer } from '../../shimmer/recent-qr-shimmer';
 
 export default function DashboardLoading() {
   return (

@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { RecentQrShimmer } from '../shimmer/recent-qr-shimmer';
+import { RecentQrShimmer } from '../../shimmer/recent-qr-shimmer';
 
-
-export default function DashboardLoading() {
+export default function OrgLoading() {
   return (
     <div className="space-y-6">
       {/* Header */}

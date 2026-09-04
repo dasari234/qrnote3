@@ -1,6 +1,6 @@
 import { DashboardStatsShimmer } from "../shimmer/stats-shimmer";
 
-export default function UsersLoading() {
+export default function AdminDashboardLoading() {
   return (
     <div className="space-y-6">
       {/* Header */}
