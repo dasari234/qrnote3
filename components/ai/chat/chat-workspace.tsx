@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useChat } from '@ai-sdk/react';
 
-import ChatComposer from "./chat-composer";
-import ChatMessageList from "./chat-message-list";
+import { DefaultChatTransport, type UIMessage } from 'ai';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import ChatComposer from './chat-composer';
+import ChatMessageList from './chat-message-list';
 
 interface ChatConversation {
   id: string;
@@ -18,145 +20,122 @@ interface ChatConversation {
 interface ChatWorkspaceProps {
   conversationId: string | null;
 
-  onConversationCreated?: (
-    conversation: ChatConversation,
-  ) => void;
+  onConversationCreated?: (conversation: ChatConversation) => void;
+
+  onConversationUpdated?: (conversationId: string) => void;
 }
 
 export default function ChatWorkspace({
   conversationId,
   onConversationCreated,
+  onConversationUpdated,
 }: ChatWorkspaceProps) {
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   /*
-   * When the first prompt creates a conversation,
-   * the parent changes conversationId.
+   * Tracks conversations that were created
+   * by the first prompt.
    *
-   * We must NOT immediately reload the conversation
-   * from the database because the AI response may
-   * still be streaming in memory.
+   * Their messages already exist in the
+   * useChat state, so don't immediately
+   * overwrite them with a database fetch.
    */
-  const skipNextLoadRef =
-    useRef(false);
+  const skipNextLoadRef = useRef<string | null>(null);
 
-  const {
-    messages,
-    sendMessage,
-    setMessages,
-    status,
-    error,
-  } = useChat({
-    transport:
-      new DefaultChatTransport({
-        api: "/api/chat",
-      }),
+  const requestIdRef = useRef(0);
+
+  const { messages, sendMessage, setMessages, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
   });
 
-  /*
-   * Load persisted messages whenever the
-   * selected conversation changes.
-   */
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadConversation() {
-      /*
-       * New/empty chat.
-       */
-      if (!conversationId) {
-        setMessages([]);
-        return;
-      }
-
-      /*
-       * First prompt created this conversation.
-       * Keep the in-memory useChat messages.
-       */
-      if (skipNextLoadRef.current) {
-        skipNextLoadRef.current = false;
-        return;
-      }
+  const loadConversation = useCallback(
+    async (id: string) => {
+      const requestId = ++requestIdRef.current;
 
       setLoading(true);
 
       try {
-        const response = await fetch(
-          `/api/conversations/${conversationId}`,
-          {
-            cache: "no-store",
-          },
-        );
+        const response = await fetch(`/api/conversations/${id}`, {
+          cache: 'no-store',
+        });
 
         if (!response.ok) {
-          throw new Error(
-            "Unable to load conversation.",
-          );
+          throw new Error('Unable to load conversation.');
         }
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
-        const persistedMessages: UIMessage[] =
-          (
-            data.conversation
-              ?.messages ?? []
-          ).map(
-            (message: UIMessage) => ({
-              id: message.id,
-              role: message.role,
-              parts: message.parts,
-            }),
-          );
-
-        if (!cancelled) {
-          setMessages(
-            persistedMessages,
-          );
-        }
-      } catch (loadError) {
-        console.error(
-          "Failed to load conversation:",
-          loadError,
+        const persistedMessages = (data.conversation?.messages ?? []).map(
+          (message: UIMessage) => ({
+            id: message.id,
+            role: message.role,
+            parts: message.parts,
+          })
         );
 
-        if (!cancelled) {
-          setMessages([]);
+        /*
+         * Ignore responses from old
+         * requests after the user switches
+         * conversations quickly.
+         */
+        if (requestId !== requestIdRef.current) {
+          return;
         }
+
+        setMessages(persistedMessages);
+      } catch (error) {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        console.error('Failed to load conversation:', error);
+
+        setMessages([]);
       } finally {
-        if (!cancelled) {
+        if (requestId === requestIdRef.current) {
           setLoading(false);
         }
       }
+    },
+    [setMessages]
+  );
+
+  useEffect(() => {
+    /*
+     * New chat.
+     */
+    if (!conversationId) {
+      requestIdRef.current += 1;
+      setMessages([]);
+      setLoading(false);
+      return;
     }
 
-    void loadConversation();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [conversationId, setMessages]);
-
-  function handleConversationCreated(
-    conversation: ChatConversation,
-  ) {
     /*
-     * The composer has already submitted the first
-     * message into this useChat instance.
-     *
-     * Keep those messages instead of fetching the
-     * database immediately.
+     * The composer just created this
+     * conversation. Keep the active
+     * useChat state.
      */
-    skipNextLoadRef.current = true;
+    if (skipNextLoadRef.current === conversationId) {
+      skipNextLoadRef.current = null;
 
-    onConversationCreated?.(
-      conversation,
-    );
+      setLoading(false);
+
+      return;
+    }
+
+    void loadConversation(conversationId);
+  }, [conversationId, loadConversation, setMessages]);
+
+  function handleConversationCreated(conversation: ChatConversation) {
+    skipNextLoadRef.current = conversation.id;
+
+    onConversationCreated?.(conversation);
   }
 
-  const showLoading =
-    loading && messages.length === 0;
+  const showLoading = loading && messages.length === 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -168,14 +147,11 @@ export default function ChatWorkspace({
       />
 
       <ChatComposer
-        conversationId={
-          conversationId
-        }
+        conversationId={conversationId}
         sendMessage={sendMessage}
         status={status}
-        onConversationCreated={
-          handleConversationCreated
-        }
+        onConversationCreated={handleConversationCreated}
+        onConversationUpdated={onConversationUpdated}
       />
     </div>
   );

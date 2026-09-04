@@ -6,6 +6,7 @@ import {
 } from 'ai';
 
 import { AI_AGENT_SYSTEM_PROMPT } from '@/lib/ai/agent';
+import { saveChatMessages } from '@/lib/ai/chat-persistence';
 import { getAIConfig } from '@/lib/ai/config';
 import { getAIModel } from '@/lib/ai/models';
 import { resolveAIModel } from '@/lib/ai/router';
@@ -24,22 +25,15 @@ interface ChatRequestBody {
 function isValidMessages(messages: unknown): messages is UIMessage[] {
   return (
     Array.isArray(messages) &&
-    messages.every((message) => typeof message === 'object' && message !== null)
+    messages.every(
+      (message) =>
+        typeof message === 'object' &&
+        message !== null &&
+        typeof (message as UIMessage).id === 'string' &&
+        typeof (message as UIMessage).role === 'string' &&
+        Array.isArray((message as UIMessage).parts)
+    )
   );
-}
-
-function supportsTemperature(modelId: string): boolean {
-  const model = getAIModel(modelId);
-
-  if (!model) {
-    return false;
-  }
-
-  if (model.provider === 'openai' && /^gpt-5(?:-|$)/i.test(model.model)) {
-    return false;
-  }
-
-  return true;
 }
 
 export const runtime = 'nodejs';
@@ -68,7 +62,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const modelId = body.modelId;
+    const modelId = body.modelId?.trim();
 
     if (!modelId) {
       return Response.json(
@@ -94,6 +88,49 @@ export async function POST(req: Request) {
       );
     }
 
+    /*
+     * This route expects the client to create the
+     * conversation when the first prompt is sent.
+     *
+     * Keeping this server-side validation strict
+     * prevents messages from being stored without
+     * a conversation owner.
+     */
+    if (!body.conversationId) {
+      return Response.json(
+        {
+          error: {
+            code: 'CONVERSATION_REQUIRED',
+            message: 'conversationId is required.',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    const conversation = await prisma.aiConversation.findFirst({
+      where: {
+        id: body.conversationId,
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    if (!conversation) {
+      return Response.json(
+        {
+          error: {
+            code: 'CONVERSATION_NOT_FOUND',
+            message: 'Conversation not found.',
+          },
+        },
+        { status: 404 }
+      );
+    }
+
     const modelDefinition = getAIModel(modelId);
 
     if (!modelDefinition) {
@@ -108,50 +145,30 @@ export async function POST(req: Request) {
       );
     }
 
-    /**
-     * Validate conversation ownership.
+    /*
+     * Validate attachment ownership and
+     * conversation association.
      */
-    if (body.conversationId) {
-      const conversation = await prisma.aiConversation.findFirst({
-        where: {
-          id: body.conversationId,
-          userId: user.id,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const attachmentIds = [
+      ...new Set((body.attachmentIds ?? []).filter(Boolean)),
+    ];
 
-      if (!conversation) {
-        return Response.json(
-          {
-            error: {
-              code: 'CONVERSATION_NOT_FOUND',
-              message: 'Conversation not found.',
-            },
-          },
-          { status: 404 }
-        );
-      }
-    }
-
-    /**
-     * Validate attachment ownership.
-     */
-    if (body.attachmentIds?.length) {
+    if (attachmentIds.length > 0) {
       const attachments = await prisma.aiAttachment.findMany({
         where: {
           id: {
-            in: body.attachmentIds,
+            in: attachmentIds,
           },
           userId: user.id,
         },
         select: {
           id: true,
+          conversationId: true,
+          status: true,
         },
       });
 
-      if (attachments.length !== body.attachmentIds.length) {
+      if (attachments.length !== attachmentIds.length) {
         return Response.json(
           {
             error: {
@@ -162,6 +179,62 @@ export async function POST(req: Request) {
           { status: 403 }
         );
       }
+
+      const invalidConversationAttachment = attachments.some(
+        (attachment) =>
+          attachment.conversationId !== null &&
+          attachment.conversationId !== conversation.id
+      );
+
+      if (invalidConversationAttachment) {
+        return Response.json(
+          {
+            error: {
+              code: 'ATTACHMENT_CONVERSATION_MISMATCH',
+              message:
+                'One or more attachments belong to another conversation.',
+            },
+          },
+          { status: 403 }
+        );
+      }
+
+      const failedAttachments = attachments.filter(
+        (attachment) => attachment.status === 'failed'
+      );
+
+      if (failedAttachments.length > 0) {
+        return Response.json(
+          {
+            error: {
+              code: 'ATTACHMENT_NOT_READY',
+              message: 'One or more attachments failed to process.',
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      /*
+       * Associate previously uploaded files
+       * with this conversation.
+       *
+       * This is especially important for the
+       * first prompt because the conversation
+       * was created after the user selected files.
+       */
+      await prisma.aiAttachment.updateMany({
+        where: {
+          id: {
+            in: attachmentIds,
+          },
+          userId: user.id,
+          conversationId: null,
+        },
+        data: {
+          conversationId: conversation.id,
+        },
+      });
     }
 
     const config = getAIConfig();
@@ -174,44 +247,101 @@ export async function POST(req: Request) {
 
     const modelMessages = await convertToModelMessages(body.messages);
 
-    /**
-     * Build streamText options dynamically.
+    /*
+     * Persist the incoming user message before
+     * starting the model.
      *
-     * Do not send temperature to GPT-5/GPT-5-mini.
+     * This guarantees that the prompt is not lost
+     * even if the provider fails.
      */
+    await saveChatMessages({
+      conversationId: conversation.id,
+      userId: user.id,
+      modelId,
+      messages: body.messages,
+    });
+
     const streamOptions: Parameters<typeof streamText>[0] = {
       model,
+
       messages: modelMessages,
+
       system: AI_AGENT_SYSTEM_PROMPT,
+
       maxOutputTokens: config.maxTokens,
+
       tools,
-      stopWhen: stepCountIs(6),
+
+      stopWhen: stepCountIs(Number(process.env.AI_AGENT_MAX_STEPS ?? 6)),
 
       onError({ error }) {
-        console.error('AI stream error:', error);
+        console.error('[AI STREAM ERROR]', error);
       },
     };
 
+    /*
+     * GPT-5 and GPT-5-mini currently have
+     * supportsTemperature=false in models.ts.
+     */
     if (modelDefinition.supportsTemperature) {
       streamOptions.temperature = config.temperature;
     }
 
-    console.log('[AI CHAT]', {
+    console.info('[AI CHAT]', {
       userId: user.id,
+      conversationId: conversation.id,
       modelId,
       provider: modelDefinition.provider,
       model: modelDefinition.model,
-      conversationId: body.conversationId ?? null,
-      attachmentCount: body.attachmentIds?.length ?? 0,
-      messageCount: body.messages.length,
-      temperatureApplied: supportsTemperature(modelId),
+      messages: body.messages.length,
+      attachments: attachmentIds.length,
+      temperature: modelDefinition.supportsTemperature
+        ? config.temperature
+        : undefined,
     });
 
     const result = streamText(streamOptions);
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+      originalMessages: body.messages,
+
+      /*
+       * AI SDK gives us the generated UI
+       * messages after streaming completes.
+       *
+       * Merge them with the original messages
+       * and let persistence deduplicate IDs.
+       */
+      onFinish: async ({ messages }) => {
+        try {
+          const completedMessages = messages ?? [];
+
+          if (completedMessages.length === 0) {
+            console.warn(
+              '[AI CHAT] No completed messages returned from stream.'
+            );
+
+            return;
+          }
+
+          await saveChatMessages({
+            conversationId: conversation.id,
+            userId: user.id,
+            modelId,
+            messages: completedMessages,
+          });
+
+          console.info('[AI CHAT SAVED]', {
+            conversationId: conversation.id,
+            messageCount: completedMessages.length,
+          });
+        } catch (persistError) {
+          console.error('[AI PERSISTENCE ERROR]', persistError);
+        }
+      },
+    });
   } catch (error) {
-    console.error('AI chat request failed:', error);
+    console.error('[AI CHAT REQUEST FAILED]', error);
 
     return Response.json(
       {

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   MessageSquare,
@@ -6,69 +6,65 @@ import {
   Search,
   Settings,
   Trash2,
-  User
-} from "lucide-react";
+  User,
+} from 'lucide-react';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ChatConversation } from './chat-types';
 
-import type { ChatConversation } from "./chat-shell";
 
 interface Props {
   conversations: ChatConversation[];
+
   selectedId: string | null;
+
   onSelect: (id: string) => void;
-  onCreate: (
-    conversation: ChatConversation,
-  ) => void;
+
+  onNewChat: () => void;
+
   onDelete: (id: string) => void;
+
+  loading?: boolean;
 }
 
 export default function ChatSidebar({
   conversations,
   selectedId,
   onSelect,
-  onCreate,
+  onNewChat,
   onDelete,
 }: Props) {
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState('');
 
-  const filtered =
-    useMemo(() => {
-      const value =
-        search.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    const value = search.trim().toLowerCase();
 
-      if (!value) {
-        return conversations;
-      }
+    if (!value) {
+      return conversations;
+    }
 
-      return conversations.filter(
-        (conversation) =>
-          conversation.title
-            .toLowerCase()
-            .includes(value),
-      );
-    }, [conversations, search]);
+    return conversations.filter((conversation) =>
+      conversation.title.toLowerCase().includes(value)
+    );
+  }, [conversations, search]);
 
-  const today = [];
-  const yesterday = [];
-  const older = [];
+  const today: ChatConversation[] = [];
+
+  const yesterday: ChatConversation[] = [];
+
+  const older: ChatConversation[] = [];
 
   const now = new Date();
 
   for (const conversation of filtered) {
-    const date = new Date(
-      conversation.updatedAt,
-    );
+    const date = new Date(conversation.updatedAt);
 
-    const diff =
-      now.getTime() - date.getTime();
+    const diff = now.getTime() - date.getTime();
 
-    const days =
-      diff / (1000 * 60 * 60 * 24);
+    const days = diff / (1000 * 60 * 60 * 24);
 
     if (days < 1) {
       today.push(conversation);
@@ -79,44 +75,12 @@ export default function ChatSidebar({
     }
   }
 
-  async function createChat() {
-    const response = await fetch(
-      "/api/conversations",
-      {
-        method: "POST",
-      },
-    );
-
-    if (!response.ok) {
-      return;
-    }
-
-    const data =
-      await response.json();
-
-    onCreate(data.conversation);
-  }
-
-  async function deleteChat(
-    id: string,
-  ) {
-    const response = await fetch(
-      `/api/conversations/${id}`,
-      {
-        method: "DELETE",
-      },
-    );
-
-    if (response.ok) {
-      onDelete(id);
-    }
-  }
-
   return (
     <aside className="flex w-[280px] shrink-0 flex-col border-r bg-muted/20">
       <div className="p-3">
         <Button
-          onClick={createChat}
+          type="button"
+          onClick={onNewChat}
           className="w-full justify-start gap-2"
           variant="outline"
         >
@@ -131,9 +95,7 @@ export default function ChatSidebar({
 
           <Input
             value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
+            onChange={(event) => setSearch(event.target.value)}
             placeholder="Search chats"
             className="pl-9"
           />
@@ -146,7 +108,7 @@ export default function ChatSidebar({
           conversations={today}
           selectedId={selectedId}
           onSelect={onSelect}
-          onDelete={deleteChat}
+          onDelete={onDelete}
         />
 
         <ConversationGroup
@@ -154,7 +116,7 @@ export default function ChatSidebar({
           conversations={yesterday}
           selectedId={selectedId}
           onSelect={onSelect}
-          onDelete={deleteChat}
+          onDelete={onDelete}
         />
 
         <ConversationGroup
@@ -162,12 +124,23 @@ export default function ChatSidebar({
           conversations={older}
           selectedId={selectedId}
           onSelect={onSelect}
-          onDelete={deleteChat}
+          onDelete={onDelete}
         />
+
+        {filtered.length === 0 && (
+          <div className="px-3 py-10 text-center">
+            <MessageSquare className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" />
+
+            <p className="text-sm text-muted-foreground">
+              {search.trim() ? 'No chats found' : 'No conversations yet'}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="border-t p-2">
         <Button
+          type="button"
           variant="ghost"
           className="w-full justify-start gap-3"
         >
@@ -176,6 +149,7 @@ export default function ChatSidebar({
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           className="w-full justify-start gap-3"
         >
@@ -195,9 +169,13 @@ function ConversationGroup({
   onDelete,
 }: {
   title: string;
+
   conversations: ChatConversation[];
+
   selectedId: string | null;
+
   onSelect: (id: string) => void;
+
   onDelete: (id: string) => void;
 }) {
   if (conversations.length === 0) {
@@ -210,43 +188,38 @@ function ConversationGroup({
         {title}
       </p>
 
-      {conversations.map(
-        (conversation) => (
+      <div className="space-y-1">
+        {conversations.map((conversation) => (
           <div
             key={conversation.id}
-            className={`group flex items-center rounded-lg ${
-              selectedId ===
-              conversation.id
-                ? "bg-muted"
-                : "hover:bg-muted"
-            }`}
+            className={[
+              'group flex items-center rounded-lg transition-colors',
+              selectedId === conversation.id ? 'bg-muted' : 'hover:bg-muted',
+            ].join(' ')}
           >
             <button
-              onClick={() =>
-                onSelect(conversation.id)
-              }
+              type="button"
+              onClick={() => onSelect(conversation.id)}
               className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left text-sm"
             >
               <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
 
-              <span className="truncate">
-                {conversation.title}
-              </span>
+              <span className="truncate">{conversation.title}</span>
             </button>
 
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              className="mr-1 h-7 w-7 opacity-0 group-hover:opacity-100"
-              onClick={() =>
-                onDelete(conversation.id)
-              }
+              className="mr-1 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              onClick={() => onDelete(conversation.id)}
+              aria-label={`Delete ${conversation.title}`}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
-        ),
-      )}
+        ))}
+      </div>
     </div>
   );
 }
