@@ -128,9 +128,15 @@ export default function ChatMessageList({
             {error && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm"
               >
-                {error.message || 'Unable to generate a response.'}
+                <div className="font-medium text-destructive">
+                  Unable to generate a response
+                </div>
+
+                <div className="mt-1 text-muted-foreground">
+                  {error.message || 'Please try again.'}
+                </div>
               </div>
             )}
           </div>

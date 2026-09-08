@@ -2,7 +2,7 @@ import {
   convertToModelMessages,
   stepCountIs,
   streamText,
-  type UIMessage,
+  type UIMessage
 } from 'ai';
 
 import { AI_AGENT_SYSTEM_PROMPT } from '@/lib/ai/agent';
@@ -36,11 +36,29 @@ function isValidMessages(messages: unknown): messages is UIMessage[] {
   );
 }
 
-export const runtime = 'nodejs';
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
 
+  if (typeof error === 'object' && error !== null) {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return 'Unknown AI provider error.';
+    }
+  }
+
+  return String(error);
+}
+
+export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  let userId: string | undefined;
+  let conversationId: string | undefined;
+
   try {
     const body = (await req.json()) as ChatRequestBody;
 
@@ -61,6 +79,8 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+
+    userId = user.id;
 
     const modelId = body.modelId?.trim();
 
@@ -88,14 +108,6 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
-     * This route expects the client to create the
-     * conversation when the first prompt is sent.
-     *
-     * Keeping this server-side validation strict
-     * prevents messages from being stored without
-     * a conversation owner.
-     */
     if (!body.conversationId) {
       return Response.json(
         {
@@ -108,9 +120,11 @@ export async function POST(req: Request) {
       );
     }
 
+    conversationId = body.conversationId;
+
     const conversation = await prisma.aiConversation.findFirst({
       where: {
-        id: body.conversationId,
+        id: conversationId,
         userId: user.id,
       },
       select: {
@@ -145,15 +159,9 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
-     * Validate attachment ownership and
-     * conversation association.
-     */
-    const attachmentIds = [
-      ...new Set((body.attachmentIds ?? []).filter(Boolean)),
-    ];
+    const attachmentIds = [...new Set(body.attachmentIds ?? [])];
 
-    if (attachmentIds.length > 0) {
+    if (attachmentIds.length) {
       const attachments = await prisma.aiAttachment.findMany({
         where: {
           id: {
@@ -180,13 +188,13 @@ export async function POST(req: Request) {
         );
       }
 
-      const invalidConversationAttachment = attachments.some(
+      const wrongConversation = attachments.some(
         (attachment) =>
           attachment.conversationId !== null &&
           attachment.conversationId !== conversation.id
       );
 
-      if (invalidConversationAttachment) {
+      if (wrongConversation) {
         return Response.json(
           {
             error: {
@@ -199,11 +207,11 @@ export async function POST(req: Request) {
         );
       }
 
-      const failedAttachments = attachments.filter(
+      const failed = attachments.some(
         (attachment) => attachment.status === 'failed'
       );
 
-      if (failedAttachments.length > 0) {
+      if (failed) {
         return Response.json(
           {
             error: {
@@ -215,14 +223,6 @@ export async function POST(req: Request) {
         );
       }
 
-      /*
-       * Associate previously uploaded files
-       * with this conversation.
-       *
-       * This is especially important for the
-       * first prompt because the conversation
-       * was created after the user selected files.
-       */
       await prisma.aiAttachment.updateMany({
         where: {
           id: {
@@ -239,6 +239,16 @@ export async function POST(req: Request) {
 
     const config = getAIConfig();
 
+    console.info('[AI CHAT REQUEST]', {
+      userId: user.id,
+      conversationId: conversation.id,
+      modelId,
+      provider: modelDefinition.provider,
+      providerModel: modelDefinition.model,
+      messageCount: body.messages.length,
+      attachmentCount: attachmentIds.length,
+    });
+
     const model = resolveAIModel(modelId);
 
     const tools = createAITools({
@@ -248,11 +258,11 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(body.messages);
 
     /*
-     * Persist the incoming user message before
-     * starting the model.
+     * Save the incoming user message.
      *
-     * This guarantees that the prompt is not lost
-     * even if the provider fails.
+     * saveChatMessages() is idempotent,
+     * so the final save can safely include it
+     * again.
      */
     await saveChatMessages({
       conversationId: conversation.id,
@@ -274,83 +284,78 @@ export async function POST(req: Request) {
 
       stopWhen: stepCountIs(Number(process.env.AI_AGENT_MAX_STEPS ?? 6)),
 
+      abortSignal: req.signal,
+
       onError({ error }) {
-        console.error('[AI STREAM ERROR]', error);
+        console.error('[AI PROVIDER ERROR]', {
+          message: getErrorMessage(error),
+          modelId,
+          provider: modelDefinition.provider,
+          model: modelDefinition.model,
+          conversationId: conversation.id,
+        });
       },
     };
 
-    /*
-     * GPT-5 and GPT-5-mini currently have
-     * supportsTemperature=false in models.ts.
-     */
     if (modelDefinition.supportsTemperature) {
       streamOptions.temperature = config.temperature;
     }
 
-    console.info('[AI CHAT]', {
-      userId: user.id,
-      conversationId: conversation.id,
-      modelId,
-      provider: modelDefinition.provider,
-      model: modelDefinition.model,
-      messages: body.messages.length,
-      attachments: attachmentIds.length,
-      temperature: modelDefinition.supportsTemperature
-        ? config.temperature
-        : undefined,
-    });
-
     const result = streamText(streamOptions);
+
+    /*
+     * Make sure the stream is consumed so
+     * onFinish runs reliably, including
+     * disconnect/abort cases.
+     */
+    result.consumeStream();
 
     return result.toUIMessageStreamResponse({
       originalMessages: body.messages,
 
-      /*
-       * AI SDK gives us the generated UI
-       * messages after streaming completes.
-       *
-       * Merge them with the original messages
-       * and let persistence deduplicate IDs.
-       */
-      onFinish: async ({ messages }) => {
+      onFinish: async ({ messages, isAborted }) => {
         try {
-          const completedMessages = messages ?? [];
-
-          if (completedMessages.length === 0) {
-            console.warn(
-              '[AI CHAT] No completed messages returned from stream.'
-            );
-
-            return;
+          if (isAborted) {
+            console.warn('[AI CHAT ABORTED]', {
+              conversationId: conversation.id,
+            });
           }
 
+          /*
+           * AI SDK supplies the complete UI
+           * message history here.
+           */
           await saveChatMessages({
             conversationId: conversation.id,
             userId: user.id,
             modelId,
-            messages: completedMessages,
+            messages,
           });
 
-          console.info('[AI CHAT SAVED]', {
+          console.info('[AI CHAT PERSISTED]', {
             conversationId: conversation.id,
-            messageCount: completedMessages.length,
+            messageCount: messages.length,
+            isAborted,
           });
-        } catch (persistError) {
-          console.error('[AI PERSISTENCE ERROR]', persistError);
+        } catch (error) {
+          console.error('[AI PERSISTENCE ERROR]', error);
         }
       },
     });
   } catch (error) {
-    console.error('[AI CHAT REQUEST FAILED]', error);
+    const message = getErrorMessage(error);
+
+    console.error('[AI CHAT FATAL ERROR]', {
+      message,
+      userId,
+      conversationId,
+    });
 
     return Response.json(
       {
         error: {
           code: 'AI_REQUEST_FAILED',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Unable to process AI request.',
+          message,
         },
       },
       { status: 500 }
