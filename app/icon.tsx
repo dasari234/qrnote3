@@ -15,14 +15,14 @@ export default function Icon() {
       <div
         style={{
           fontSize: 24,
-          background: '#000',
+          background: '#fff',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: '20%',
-          color: 'white',
+          color: 'black',
         }}
       >
         {/* Crisp vector representation of the Lucide QrCode icon */}
