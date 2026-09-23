@@ -4,15 +4,15 @@ import { useCart } from "@/components/providers/cart/cart-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { ChevronDown, Menu, ShoppingCart } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -49,7 +49,7 @@ export function DashboardHeader({ setMobileOpen, profile, initials, signOut }: D
       <div className="flex-1" />
 
       <div className="flex items-center justify-end gap-2">
-        {isMounted && cartItemCount > 0 && (
+        {/* {isMounted && cartItemCount > 0 && (
           <Button variant="ghost" size="icon" className="relative" asChild>
             <Link href="/dashboard/billing/cart" aria-label="View Shopping Cart">
               <ShoppingCart className="h-5 w-5 text-foreground" />
@@ -60,7 +60,7 @@ export function DashboardHeader({ setMobileOpen, profile, initials, signOut }: D
 
             </Link>
           </Button>
-        )}
+        )} */}
 
         <ThemeToggle />
 
